@@ -17437,3 +17437,294 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* === L4 SKY — begin === */
+/* The lens sky's host styles (L4, ruling 1 as amended 10 Nov 2026), derived MECHANICALLY from the carry's
+   p2-carry-v18/sky.css (11,522 B, md5 89f56ebe061f66985d30888e5969f10b): the nine mockup token names renamed to
+   their live twins (--on-n/-2/-3 -> --on-night/-2/-3, --ink3 -> --ink-3, --serif/--sans/--mono -> --font-serif/
+   --font-body/--font-mono, --card -> --card-1, --star -> --gold-star); every sky rule scoped under .sky; the sheet,
+   switch, mark and seed rules under .lx (the L4 surfaces' one class); the keyframe ANIMATION rules kept inside
+   .sky, so a .mark.still in a sheet never animates (.pt split: its static transform under .lx); the duplicate
+   block (sky.css 110-128) dropped. Tokens only; the engine's SVG colours are content (canon R2). The sky host
+   carries BOTH classes (class="sky lx"). Reduced motion stills it. Size + md5 of this block: docs/checkpoints/l4.md. */
+.sky{background-color:var(--sky);background-image:var(--sky-a),var(--sky-b);color:var(--on-night);position:relative;overflow:hidden;z-index:1;display:flex;flex-direction:column;flex:none}
+.sky > canvas.paint{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.sky > *:not(canvas){position:relative}
+.sky .rail{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 0 22px;min-height:44px}
+.sky .rail .wm{color:var(--on-night)}
+.sky .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--on-night) 35%, transparent);overflow:hidden;background:var(--sky);flex:none}
+.sky .av svg{width:100%;height:100%;display:block}
+.sky .eyebrow{color:var(--on-night-3)}
+.sky .greet{font-family:var(--font-serif);font-weight:500;letter-spacing:-.015em;line-height:1.06;text-wrap:balance;margin:6px 22px 0;color:var(--on-night);font-size:min(40px,calc((100cqw - 44px) / 7.4))}
+.sky .srchpill{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 14px 0 11px;border-radius:999px;border:1px solid color-mix(in srgb, var(--on-night) 28%, transparent);font:500 13.5px var(--font-body);color:var(--on-night);background:color-mix(in srgb, var(--sky) 35%, transparent);flex:none}
+.sky .srchpill svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.sky .field{position:relative;margin-top:10px;height:300px}
+.sky .field.many{height:360px}
+.sky .field.tight{height:340px}
+.sky .field > svg.bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.sky .hint{margin:2px 22px 6px;text-align:center;font-size:12.5px;line-height:1.4;color:var(--on-night-3)}
+.sky .hint .yline{display:inline-flex;align-items:center;gap:8px;color:var(--on-night-2);font-size:14px}
+.sky .hint .yline .seedbox{width:28px;height:28px;background:none}
+.sky .hint small{display:block;font:11px var(--font-mono);letter-spacing:.08em;color:var(--on-night-3);margin-top:4px}
+.sky .honest{display:flex;flex-direction:column;align-items:center;gap:2px;margin:0 22px 4px;text-align:center}
+.sky .honest p{margin:0;font:italic 400 17px/1.35 var(--font-serif);color:var(--on-night);text-wrap:balance;letter-spacing:-.01em}
+.sky .honest .row{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.sky .thread{fill:none;stroke-linecap:butt}
+.sky .orb{position:absolute;left:0;top:0;border:0;background:transparent;padding:0;cursor:pointer;border-radius:16px;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;width:140px;transition:opacity var(--dur) var(--ease)}
+.sky .orb.up{flex-direction:column-reverse}
+.sky .orb.lft,.sky .orb.rgt{flex-direction:row;width:auto;gap:6px}
+.sky .orb.lft{flex-direction:row-reverse}
+.sky .orb.lft .l,.sky .orb.rgt .l{max-width:104px;text-align:left}
+.sky .orb.lft .l{text-align:right}
+.sky .orb:focus-visible{outline:2px solid var(--gold-star);outline-offset:-1px}
+.sky .orb .art{display:block;flex:none}
+.sky .orb .br{display:block;width:100%;height:100%;--sw:0deg;--sc:1.09}
+.sky .orb .art svg{display:block;width:100%;height:100%;overflow:visible}
+.sky .orb .l{font-family:var(--font-serif);font-style:italic;font-size:12.5px;line-height:15px;color:var(--on-night);text-align:center;max-width:150px;text-wrap:balance;padding:0 4px}
+.sky .orb.offer .body,.sky .orb.later .body,.sky .orb.deciding .body{opacity:.55}
+.sky .orb.later{opacity:.55}
+.sky .orb.offer .l,.sky .orb.later .l,.sky .orb.deciding .l{color:var(--on-night-2)}
+.sky .field.deciding .orb:not(.deciding){opacity:.38}
+.sky .field.deciding .orb.deciding .body{opacity:1}
+.sky .orb.deciding .l{font-size:13.5px;font-weight:500}
+.sky .orb.cat .l,.sky .orb.book .l{color:var(--on-night)}
+.sky .field.many .orb .l,.sky .field.tight .orb .l{display:none}
+.sky .field.many .orb.named .l,.sky .field.tight .orb.named .l{display:block}
+.sky .field.many .orb:focus-visible .l,.sky .field.many .orb:hover .l,.sky .field.tight .orb:focus-visible .l,.sky .field.tight .orb:hover .l{display:block}
+.sky .field.nonames .orb .l,.sky .field.nonames .orb.named .l{display:none}
+.sky .field.nonames .orb:focus-visible .l,.sky .field.nonames .orb:hover .l{display:block}
+.sky .orb .l{transition:opacity var(--dur) var(--ease)}
+.sky .orb .l.hid{opacity:0;pointer-events:none}
+.sky .orb:focus-visible .l.hid,.sky .orb:hover .l.hid{opacity:1}
+.sky .homecnt{display:flex;gap:18px;font:12px var(--font-mono);letter-spacing:.04em;color:var(--on-night-3);padding:0 22px}
+.sky .homecnt b{color:var(--on-night);font-weight:500}
+.sky .core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:0;background:none;padding:0;border-radius:50%;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;touch-action:manipulation}
+.sky .core:focus-visible{outline:2px solid var(--gold-star);outline-offset:6px}
+.sky .core.held{filter:brightness(1.12)}
+.sky .core svg{display:block;overflow:visible;pointer-events:none}
+.sky .door{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 22px 8px;min-height:44px;padding:0 2px;font:500 13.5px var(--font-body);color:var(--on-night-2);border-top:1px solid color-mix(in srgb, var(--on-night) 14%, transparent);width:calc(100% - 44px);text-align:left}
+.sky .door b{color:var(--on-night);font-weight:500}
+.sky .door .chev{color:var(--on-night-3);font-size:18px}
+.sky .door:focus-visible{outline:2px solid var(--gold-star);outline-offset:2px}
+.sky .modes{display:inline-flex;gap:2px;margin:12px 22px 0;padding:3px;border-radius:999px;border:1px solid color-mix(in srgb, var(--on-night) 22%, transparent);align-self:flex-start}
+.sky .modes button{min-height:36px;padding:0 14px;border-radius:999px;font:500 13px var(--font-body);color:var(--on-night-2)}
+.sky .modes button[aria-pressed="true"]{background:color-mix(in srgb, var(--on-night) 14%, transparent);color:var(--on-night)}
+.lx .togrow{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:52px;padding:6px 0;border-bottom:1px solid var(--line)}
+.lx .togrow:last-child{border-bottom:0}
+.lx .togrow > span:first-child{display:flex;flex-direction:column;font:500 15px var(--font-body);color:var(--ink)}
+.lx .togrow small{font:12.5px var(--font-body);color:var(--ink-3);margin-top:2px}
+.lx .knob{flex:none;width:44px;height:26px;border-radius:13px;background:var(--line);position:relative;transition:background var(--dur) var(--ease)}
+.lx .knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--card-1);box-shadow:0 1px 0 rgba(0,0,0,.2);transition:transform var(--dur) var(--ease)}
+.lx .togrow[aria-pressed="true"] .knob{background:var(--gold)}
+.lx .togrow[aria-pressed="true"] .knob::after{transform:translateX(18px)}
+.lx .yrow{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:56px;border-bottom:1px solid var(--line)}
+.lx .yrow:last-child{border-bottom:0}
+.lx .yrow > span:first-child{display:flex;align-items:center;gap:10px;font:500 15px var(--font-body);color:var(--ink);min-width:0}
+.lx .yrow small{display:block;font:12.5px var(--font-body);color:var(--ink-3);margin-top:2px}
+.lx .yrow .chev{color:var(--ink-3);font-size:18px}
+.lx .mark.sm{width:30px;height:30px}
+@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(var(--ax),var(--ay))}}
+@keyframes turn{to{transform:rotate(360deg)}}
+@keyframes sway{0%,100%{transform:rotate(calc(var(--sw) * -1)) scale(1)}50%{transform:rotate(var(--sw)) scale(var(--sc))}}
+@keyframes ripple{0%{transform:scale(.2);opacity:0}20%{opacity:var(--ro)}100%{transform:scale(1.22);opacity:0}}
+@keyframes grain{to{transform:translateY(7px)}}
+@keyframes pulse{0%,100%{transform:scale(.93);opacity:.74}50%{transform:scale(1.07);opacity:1}}
+@keyframes morph{0%,14%,100%{transform:var(--tf)}50%,64%{transform:var(--tg)}}
+@keyframes tilt{0%,14%,100%{transform:rotate(0deg) scale(1,1)}50%,64%{transform:rotate(var(--tl)) scale(1,.6)}}
+.sky .orb .art{animation:drift var(--dur) ease-in-out var(--del) infinite}
+.sky .orb .br{animation:sway var(--bd) ease-in-out var(--bdl) infinite}
+.sky .sw{animation:sway var(--d) ease-in-out var(--dl,0s) infinite}
+.sky .rp{animation:ripple var(--d) linear var(--dl,0s) infinite;opacity:0}
+.sky .gr{animation:grain var(--d) linear infinite}
+.sky .pu{animation:pulse var(--d) ease-in-out var(--dl,0s) infinite}
+.sky .tn{animation:turn var(--d) linear infinite}
+.sky .tn.rev{animation-direction:reverse}
+.sky .fb,.lx .fb{transform-box:fill-box;transform-origin:center}
+.lx .pt{transform:var(--tf)}
+.sky .pt{transform:var(--tf);animation:morph 64s ease-in-out infinite}
+.sky .tiltg{animation:tilt 64s ease-in-out infinite}
+.sky .sping{animation:turn 300s linear infinite}
+.sky .sping.rev{animation-direction:reverse}
+.sky .still *{animation:none!important}
+.sky .still .rp{opacity:0}
+.lx .mark{display:inline-block;width:30px;height:30px;flex:none;vertical-align:middle}
+.lx .mark svg{display:block;width:100%;height:100%;overflow:hidden}
+.lx .mark.xl{width:52px;height:52px}
+.lx .seedbox{display:block;width:44px;height:44px;border-radius:50%;background:var(--sky);flex:none;overflow:hidden}
+.lx .seedbox svg{display:block;width:100%;height:100%;overflow:visible}
+@media (prefers-reduced-motion:reduce){
+  .sky .orb .art,.sky .orb .br,.sky .sw,.sky .rp,.sky .gr,.sky .pu,.sky .tn,.sky .pt,.sky .tiltg,.sky .sping{animation:none!important}
+  .sky .rp{opacity:0}
+  .sky .orb{transition:none!important}
+}
+/* === L4 SKY — end === */
+
+/* === L4 LENSES — begin === */
+/* L4.3: the Lenses page (#lenses), the offer card, the Later + lens sheets, the say-back pinned in Yumi's panel,
+   the L4 toast (rulings 85-87; S10-S16). Built to design/praxis-lens-sheet.html. Every rule is scoped under .lx
+   (the L4 surfaces' one class) or an lx- class, so nothing here reaches another surface. Tokens only. Desktop is
+   the base; the phone steps down at 759 (CLAUDE.md §3). Z-index: scrim 10020 · sheet 10021 (app modals) · toast 10022. */
+.lx .pill{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;padding:12px 20px;min-height:44px;font:500 15px var(--font-body);background:var(--gold);color:var(--on-gold);border:0;cursor:pointer}
+.lx .ghost{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:999px;padding:11px 18px;font:500 14px var(--font-body);border:1px solid var(--line);color:var(--ink);background:none;cursor:pointer}
+.lx .quiet{display:inline-flex;align-items:center;min-height:44px;font:500 13px var(--font-body);color:var(--ink-3);text-decoration:underline;text-underline-offset:3px;padding:12px 8px;background:none;border:0;cursor:pointer}
+.lx .txtbtn{display:inline-flex;align-items:center;min-height:44px;padding:0 10px;font:500 14px var(--font-body);color:var(--ink-2);text-decoration:underline;text-underline-offset:3px;background:none;border:0;cursor:pointer}
+.lx .txtbtn:disabled,.lx .ghost:disabled{opacity:.5;text-decoration:none;cursor:default}
+.lx .pill:focus-visible,.lx .ghost:focus-visible,.lx .quiet:focus-visible,.lx .txtbtn:focus-visible,.lx .lx-lrow:focus-visible,.lx .lx-cover:focus-visible,.lx .lx-back:focus-visible,.lx .lx-x:focus-visible{outline:2px solid var(--gold-ink);outline-offset:2px}
+.lx .lx-eyebrow,.lx .lx-ql{display:block;font:11px var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--gold-ink);margin-bottom:4px}
+.lx .lx-cnt{display:block;font:12px var(--font-mono);color:var(--ink-3);letter-spacing:.02em}
+.lx .lx-fine{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.45}
+.lx .lx-fine2{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.45;padding:12px 0}
+.lx .lx-quietink{color:var(--ink-2)}
+.lx .lx-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.lx .lx-acts .pill{flex:1 1 auto;min-width:140px}
+.lx .lx-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lx .lx-grid .pill,.lx .lx-grid .ghost{width:100%}
+/* the page */
+.lx.lx-page{display:flex;justify-content:center;background:var(--page);color:var(--ink);min-height:100%}
+.lx .lx-pcol{width:100%;max-width:680px;display:flex;flex-direction:column}
+.lx .lx-phd{display:flex;align-items:center;gap:10px;padding:12px 16px 0;min-height:52px}
+.lx .lx-back{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--ink-2);margin-left:-10px;background:none;border:0;cursor:pointer}
+.lx .lx-back svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lx .lx-phd h1{margin:0;font:500 30px/1 var(--font-serif);letter-spacing:-.015em;color:var(--ink)}
+.lx .lx-pbody{padding:14px 16px 96px;display:flex;flex-direction:column;gap:14px}
+.lx .lx-stack{display:flex;flex-direction:column;gap:10px}
+.lx .lx-ystate{display:flex;align-items:center;gap:12px;background:var(--umber);color:var(--on-night);border-radius:18px;padding:12px 16px 12px 12px}
+.lx .lx-ystate .seedbox{width:40px;height:40px;background:none}
+.lx .lx-ystate p{margin:0;font:italic 400 16px/1.35 var(--font-serif);color:var(--on-night)}
+.lx .lx-ystate small{display:block;font:11px var(--font-mono);letter-spacing:.08em;color:var(--on-night-3);margin-top:3px}
+.lx .lx-sect{display:flex;flex-direction:column;gap:8px}
+.lx .lx-k{display:flex;justify-content:space-between;align-items:baseline}
+.lx .lx-k span:last-child{font:12px var(--font-mono);letter-spacing:.02em;color:var(--ink-3)}
+.lx .lx-card{background:var(--card-1);border-radius:20px;box-shadow:var(--card-hi);display:flex;flex-direction:column;padding:4px 16px}
+.lx .lx-lrow{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 0;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;color:var(--ink);cursor:pointer}
+.lx .lx-lrow:last-child{border-bottom:0}
+.lx .lx-lrow .mark{width:36px;height:36px}
+.lx .lx-lrow .tx{display:flex;flex-direction:column;min-width:0;flex:1}
+.lx .lx-lrow em{font:italic 500 16px/1.25 var(--font-serif);color:var(--ink)}
+.lx .lx-lrow small{font:12.5px var(--font-body);color:var(--ink-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lx .chev{color:var(--ink-3);font-size:18px}
+.lx .lx-fold{display:flex;flex-direction:column;gap:6px}
+.lx .lx-fold > button{display:flex;justify-content:space-between;align-items:center;min-height:44px;font:500 14px var(--font-body);color:var(--ink-2);width:100%;background:none;border:0;cursor:pointer;padding:0}
+.lx .lx-fold .in{display:flex;flex-direction:column;gap:6px;padding:4px 0 0}
+.lx .lx-fold .row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--ink-2)}
+.lx .lx-fold .row em{font-family:var(--font-serif);color:var(--ink)}
+.lx .lx-consent{background:var(--card-1);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--card-hi)}
+.lx .lx-consent h3{margin:0;font:500 22px/1.15 var(--font-serif);letter-spacing:-.01em;color:var(--ink)}
+.lx .lx-consent p{margin:0;font-size:14.5px;color:var(--ink-2);line-height:1.45}
+.lx .lx-next{display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--ink-2);padding:2px}
+.lx .lx-next div{display:grid;grid-template-columns:16px 1fr;gap:6px}
+.lx .lx-next div::before{content:"→";color:var(--ink-3)}
+/* the offer card */
+.lx .lx-offer{background:var(--card-1);border-radius:20px;padding:16px;box-shadow:var(--card-hi);display:flex;flex-direction:column;gap:12px}
+.lx .lx-ln{display:flex;align-items:center;gap:12px;min-width:0}
+.lx .lx-ln em{font:italic 500 20px/1.2 var(--font-serif);color:var(--ink);overflow-wrap:anywhere;min-width:0}
+.lx .lx-read{margin:0;font:400 15.5px/1.5 var(--font-body);color:var(--ink)}
+.lx .lx-read .cl{color:var(--ink-2)}
+.lx .lx-yq{margin:0}
+.lx .lx-yq em{font-family:var(--font-serif);font-style:italic;font-size:17px;line-height:1.4;display:block;color:var(--ink)}
+.lx .lx-themes{display:flex;gap:6px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.lx .lx-themes li{font:500 12.5px var(--font-body);color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:6px 10px}
+.lx .lx-themes li b{color:var(--ink);font-weight:600}
+.lx .lx-covers{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin:0 -2px;scrollbar-width:none}
+.lx .lx-covers::-webkit-scrollbar{display:none}
+.lx .lx-cover{flex:none;width:58px;height:84px;border-radius:5px;padding:6px;display:flex;flex-direction:column;justify-content:flex-end;text-align:left;background:var(--card-2);color:var(--ink);border:0;box-shadow:var(--card-hi);position:relative;overflow:hidden;cursor:pointer;transition:opacity var(--dur) var(--ease)}
+.lx .lx-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.lx .lx-cover b{display:block;font:500 9.5px/1.15 var(--font-serif);letter-spacing:-.01em}
+.lx .lx-cover small{display:block;font:8.5px/1.2 var(--font-body);color:var(--ink-2);margin-top:2px}
+.lx .lx-cover.out{opacity:.35}
+.lx .lx-cover.out::after{content:"";position:absolute;inset:0;border-radius:5px;border:1px dashed var(--ink)}
+.lx .lx-cover[aria-pressed="true"]{outline:2px solid var(--gold);outline-offset:2px}
+.lx .lx-clause{background:var(--card-2);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.lx .lx-clause p{margin:0;font:italic 400 15.5px/1.45 var(--font-serif);color:var(--ink)}
+.lx .lx-clause .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.lx .lx-clause small{font:12.5px var(--font-body);color:var(--ink-3)}
+.lx .lx-said{display:flex;flex-direction:column;gap:6px}
+.lx .lx-said em{display:block;font:italic 400 16px/1.4 var(--font-serif);color:var(--ink);padding-left:12px;border-left:2px solid var(--gold)}
+.lx .lx-said .row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.lx .lx-said .row small{font:12.5px var(--font-body);color:var(--ink-3)}
+/* the sheets */
+.lx-scrim{position:fixed;inset:0;background:var(--scrim);z-index:10020}
+.lx.lx-sheet{position:fixed;right:40px;bottom:40px;top:auto;width:440px;max-height:calc(100vh - 80px);overflow-y:auto;background:var(--card-1);color:var(--ink);border-radius:24px;padding:8px 18px 22px;display:flex;flex-direction:column;gap:14px;z-index:10021;box-shadow:var(--card-hi)}
+.lx .lx-handle{align-self:center;width:38px;height:4px;border-radius:2px;background:var(--line);flex:none}
+.lx .lx-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.lx .lx-top .lx-ln{flex:1}
+.lx .lx-x{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3);flex:none;margin:-6px -8px 0 0;background:none;border:0;cursor:pointer}
+.lx .lx-x svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.lx .lx-qc{background:var(--card-2);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.lx .lx-qc b{font:500 16px var(--font-serif);color:var(--ink)}
+.lx .lx-qc p{margin:0;font-size:14px;color:var(--ink-2)}
+.lx .lx-line{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 4px 4px 16px;background:var(--card-2);flex:1;min-width:0}
+.lx .lx-line input{flex:1;min-width:0;border:0;background:none;font:italic 400 15.5px var(--font-serif);color:var(--ink);outline:none;min-height:40px}
+.lx .lx-line input::placeholder{color:var(--ink-3);font-style:italic}
+.lx .lx-line button{min-width:44px;height:44px;border-radius:50%;background:var(--gold);color:var(--on-gold);display:grid;place-items:center;border:0;cursor:pointer}
+.lx .lx-line button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.lx .lx-line button:disabled{opacity:.5}
+.lx .lx-line .lx-n{font:11px var(--font-mono);color:var(--ink);opacity:.9;flex:none}
+/* the say-back, pinned in Yumi's panel (her panel's own ground; terracotta stays hers) */
+.yumi-panel-lens-view.lx{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto}
+.lx .lx-phead{position:sticky;top:0;background:var(--page);padding:6px 18px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px;z-index:1}
+.lx .lx-pin{display:flex;align-items:center;gap:10px}
+.lx .lx-pin em{display:block;font:italic 500 17px/1.25 var(--font-serif);color:var(--ink)}
+.lx .lx-pin small{display:block;font:12px var(--font-mono);color:var(--ink-3);letter-spacing:.02em;margin-top:2px}
+.lx .lx-first{margin:0;font:400 13.5px/1.45 var(--font-body);color:var(--ink-2)}
+.lx .lx-conv{padding:14px 18px 18px;display:flex;flex-direction:column;gap:14px}
+.lx .lx-turn{display:flex;gap:10px;align-items:flex-start}
+.lx .lx-turn .seedbox{width:32px;height:32px;margin-top:2px}
+.lx .lx-turn p{margin:0;font:400 15.5px/1.5 var(--font-body);color:var(--ink)}
+.lx .lx-me{margin-left:auto;max-width:86%}
+.lx .lx-me p{background:var(--card-2);border-radius:16px 16px 4px 16px;padding:10px 14px;font:italic 400 15.5px/1.45 var(--font-serif)}
+.lx .lx-yq2{font:italic 400 17px/1.4 var(--font-serif);color:var(--ink);display:block;margin-top:6px}
+.lx .lx-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.lx .lx-chip{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:999px;font:500 14px var(--font-body);border:1px solid var(--line);color:var(--ink);background:none;cursor:pointer}
+.lx .lx-chip.gold{background:var(--gold);color:var(--on-gold);border-color:transparent}
+.lx .lx-chip em{font-family:var(--font-serif);font-style:italic;margin-left:4px}
+.lx .lx-pfoot{display:flex;gap:8px;padding:10px 18px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.lx .lx-pfoot .pill,.lx .lx-pfoot .ghost{flex:1 1 auto}
+/* What Yumi Sees rows, the Shelf's lens mark, the lens panel's Lenses row */
+.lx-wys-row{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-bottom:1px solid var(--line)}
+.lx-wys-row:last-child{border-bottom:0}
+.lx-wys-row p{margin:0;font-style:italic}
+.lx-wys-row .txtbtn{align-self:flex-start;min-height:44px;background:none;border:0;padding:0;font:500 14px var(--font-body);color:var(--ink-2);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.lx.lx-band-lens{display:inline-grid;place-items:center;width:44px;height:44px;margin:-8px 2px -8px -10px;background:none;border:0;border-radius:50%;cursor:pointer;flex:none}
+.lx.lx-band-lens .mark{width:24px;height:24px}
+.lx.lx-band-lens:focus-visible{outline:2px solid var(--gold-ink);outline-offset:-2px}
+.lens-panel-lenses-row{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:52px;padding:8px 0;background:none;border:0;border-bottom:1px solid var(--line);font:500 15px var(--font-body);color:var(--ink);cursor:pointer;text-align:left}
+.lens-panel-lenses-row .chev{color:var(--ink-3);font-size:18px}
+/* the L4 toast */
+.lx.lx-toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-140%);width:min(460px,calc(100vw - 32px));z-index:10022;background:var(--umber);color:var(--on-night);border-radius:999px;padding:10px 10px 10px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;font:14px/1.3 var(--font-body);box-shadow:var(--card-hi);opacity:0;pointer-events:none;transition:transform var(--dur) var(--ease),opacity var(--dur) var(--ease)}
+.lx.lx-toast.is-show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+.lx .lx-toast-t{min-width:0}
+.lx .lx-toast-b{color:var(--gold-star);font:500 14px var(--font-body);min-height:44px;padding:0 10px;border-radius:999px;flex:none;background:none;border:0;cursor:pointer}
+@media (max-width:759px){
+  .lx.lx-sheet{left:0;right:0;bottom:0;width:auto;max-height:92vh;border-radius:24px 24px 0 0;padding-bottom:max(22px,env(safe-area-inset-bottom,0px))}
+}
+@media (prefers-reduced-motion:reduce){
+  .lx.lx-toast,.lx .lx-cover{transition:none}
+}
+/* L4.4: the sky's place on Home and You (dark-launched behind praxis_sky). The sky host is class="sky lx lx-sky". */
+.home-page.lum-amber-deep > .sky.lx-sky{margin:0 0 12px;border-radius:0 0 28px 28px;padding-bottom:4px}
+.sky.lx-sky .lx-date{display:block;margin:12px 22px 0;font:12px var(--font-mono);letter-spacing:.06em;text-transform:none}
+/* the live app has no global button reset (the mockups' review page did): the sky's own buttons get theirs here,
+   keeping each one's own border (the door's top rule, the switches' and rows' bottom rule) */
+.sky.lx-sky .door{background:none;border-left:0;border-right:0;border-bottom:0;cursor:pointer}
+.sky.lx-sky .modes button{background:none;border:0;cursor:pointer}
+.sky.lx-sky .modes button[aria-pressed="true"]{background:color-mix(in srgb, var(--on-night) 14%, transparent)}
+.lx .togrow,.lx .yrow{background:none;border-top:0;border-left:0;border-right:0;cursor:pointer;text-align:left;color:var(--ink);font:inherit}
+.sky.lx-sky .lx-dim{color:var(--on-night-3)}
+.lx .lx-ycol{display:flex;flex-direction:column}
+.lx .lx-stats{font-family:var(--font-mono)}
+.pf-sky-host.lx-you-host{height:auto}
+.pf-sky-host.lx-you-host > .sky{border-radius:0 0 28px 28px;padding-bottom:10px}
+@media (min-width:1200px){
+  /* seventh r8 / S8: the sky is the sticky left column (600px), the paper on the right */
+  .home-page.lum-amber-deep.home-composed.home-sky-on{grid-template-columns:600px minmax(0,1fr)}
+  .home-page.lum-amber-deep.home-sky-on > .sky.lx-sky{grid-column:1;grid-row:1 / span 4;position:sticky;top:0;align-self:start;min-height:100vh;border-radius:0;margin:0;justify-content:center}
+  .home-page.lum-amber-deep.home-sky-on > .home-alt{grid-column:2;grid-row:1}
+  .home-page.lum-amber-deep.home-sky-on > .home-ydock{grid-column:2}
+  .home-page.lum-amber-deep.home-sky-on .home-variant{grid-column:2;grid-row:2}
+  .home-page.lum-amber-deep.home-sky-on .home-glimpses{grid-column:2;grid-row:3}
+  .home-page.lum-amber-deep.home-sky-on .sky.lx-sky .field{height:440px;margin-top:16px}
+  .home-page.lum-amber-deep.home-sky-on .sky.lx-sky .field.many{height:480px}
+  .home-page.lum-amber-deep.home-sky-on .sky.lx-sky .greet{font-size:44px}
+}
+/* === L4 LENSES — end === */

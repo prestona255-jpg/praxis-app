@@ -171,3 +171,9 @@ Ruled in the design chat, 25 Oct (recorded in docs/checkpoints/l3.md, "Rulings, 
 12. Notes row, final (ruled 25 Oct, RT-2 — supersedes item 6's placeholder): "Your 20 most recent notes, each shortened to about 240 characters."
 13. The list gate when the reader list could not be read and the device is NOT offline (ruled 26 Oct, F-L3.2-c) — a second card in the same quiet dialect. Title: "Couldn't check the list" · Body: "Praxis couldn't reach its reader list just now. Nothing is wrong on your side." · Actions: Try again · Sign out.
 14. The offline card (ruled 26 Oct, F-L3.2-c): "You're offline." stays for the true offline case only, and gains Try again beside Sign out (Sign out ruled kept). Try again re-asks the list without a reload.
+
+## Added 14 Nov, before the L4 commit
+Ratified by Preston, 14 Nov 2026 (recorded in docs/checkpoints/l4.md, "The say-back's consent lines"). These lines are part of this sheet.
+
+1. Card 1 (the one yes), row 3 ("What you say to her"), after item 11's line, same register: "What you say back to a lens. Your one line goes to Claude when you send it." — the say-back sends one line the reader wrote (≤140 characters) in the re-reading call. Inside row 3, so the lead's "Three things go there" stays true.
+2. What Yumi Sees · lines kept with lenses the reader still keeps: What you said back to lenses you keep · Let her forget this (Undo). It sits beside the let-go row (the "Let-go words" line under "What Yumi sees", worded as written there), which L4 now shows — item 6's omission ends at L4.

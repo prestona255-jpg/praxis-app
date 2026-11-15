@@ -9,7 +9,7 @@
 // in APP_SHELL (same-origin), no longer loaded from third-party CDNs.
 // =====================================================================
 
-var CACHE_VERSION = 'praxis-v3.316';
+var CACHE_VERSION = 'praxis-v3.317';
 
 var APP_SHELL = [
   '/',
@@ -48,6 +48,7 @@ var APP_SHELL = [
   '/js/yumi-ui.js',
   '/js/spotlight.js',
   '/js/writing-canvas.js',
+  '/js/hand.js',   // L4.4: the sky engine (PraxisHand), before views
   '/js/views.js',
   '/js/import-capture.js',
   '/js/app.js'

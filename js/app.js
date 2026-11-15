@@ -34,6 +34,19 @@ document.addEventListener('DOMContentLoaded', function() {
   // already contain — and it lives on the render heartbeat rather than at boot
   // because the qualifying moment (first book + first marginalia) happens
   // mid-session, by which time a boot-only check has already run and lost.
+  // L4.4: the motion gate's instrument (Stage 6 removes it). ?sky=on|off sets the
+  // per-device sky key BEFORE the first render (renderRoute below); only that one
+  // query parameter is stripped (the hash route and any share-target params stay),
+  // so a reload never re-applies it. Default: off.
+  (function () {
+    var m = /[?&]sky=(on|off)\b/.exec(location.search || '');
+    if (!m) { return; }
+    sv('praxis_sky', m[1] === 'on');
+    if (window.history && history.replaceState) {
+      var rest = (location.search || '').replace(/[?&]sky=(on|off)\b/, '').replace(/^&/, '?');
+      try { history.replaceState(null, '', location.pathname + (rest === '?' ? '' : rest) + location.hash); } catch (e) {}
+    }
+  })();
   if (location.hash === '') {
     location.hash = '#home';
   }

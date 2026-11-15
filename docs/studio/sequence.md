@@ -31,6 +31,10 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-10 (RULING 83 — L4 moves ahead of L2; Preston, 8 Nov 2026)** — L4 lens engine + sky → L2 file import → L4b
+  the Day Three rooms → L5 the walk → L6 capture debts → L7b native shell; nothing in L4 depends on import; the main
+  account's 148 books are the test library. Supersedes r79's order. Preston's own ruling, so recorded as ruled, not
+  `PROPOSED:`. Record: `docs/checkpoints/p2-seventeenth-sitting-rulings.md`.
 - **2026-10-30 (L1.2c — the status zone, the Add-a-book radios, the soil band; v3.316, local)** — Preston's felt pass on
   v3.315 PASSED L1.2a/b and found three paint defects; no re-order, no retirement, so no `PROPOSED:` flag. L1 stays at the
   top of `## Now`; L1's close-out follows his L1.2c pass. Record: `docs/checkpoints/l1.md`.
@@ -899,6 +903,7 @@ flagged at the top of the Builder's sequence page for his call — never applied
 
 ## Shipped
 
+- [x] **2026-11-08 · L1 — THE NEW LOOK, shipped v3.313–v3.316, `c6a32eb`; felt pass PASS 8 Nov; hands on: lens palettes → L4 (done here), 'Match my phone' → L5, icon + storyboard → L7b; L1-NAME and D11–D14 on the ledger.** Record: `docs/checkpoints/l1.md`.
 - [x] **2026-10-27 · L3 — CONSENT + HYGIENE, the first iPhone beta — CLOSED (L3.1 `59d3ee0` v3.309 · L3.2 `7ff0ec3` v3.310 · L3.2b `452cf7c` v3.311 · L3.2c `f54be02` v3.312; pushed together 2026-10-26; phone check 3 + 4 PASS, 1 · 2 · 5 DEFERRED to the first invite)**:
   the one yes before anything of the reader's reaches Claude, the asks before voice leaves the phone, "Yumi may read
   this" per artifact, opt-in error counts, the honest camera card (L3.1); new accounts start empty, the invite allowlist
@@ -1420,20 +1425,18 @@ flagged at the top of the Builder's sequence page for his call — never applied
 re-run w/ arc + ghost-doc write still parked to H-1. P2 owes: Preston's felt pass on the spine mockup ·
 the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + card. Hygiene fork ruled (split).
 
-- [~] **L1 — THE NEW LOOK: the Sunflower token reskin (canon 1.4; L1.2a/b PUSHED v3.315 · L1.2c built v3.316)** —
-  **Where it stands (2026-10-30):** L1.1 pushed `1a74f48`; felt pass on the phone PASSED the paint, five defects → L1.2a
-  (`94ebcb9`: F1 header re-dock, F3 ↓ icon, F4 stat lines → ink, F5 greeting scrolls, M9 arc rooms, ruling-43 sweep) and
-  L1.2b (`b73459e`, the flat pass, `docs/checkpoints/l1-flat.md`), pushed; felt pass PASS on v3.315 with three paint defects
-  → L1.2c (the status zone + closed scrims, the Add-a-book radios, the soil band). Then Preston's short felt pass, then the close-out.
-  The original L1.1 note follows.
-  night by default with a Night · Day row in Settings; one definition per token in theme.css (night `:root` + the day block
-  declared twice, byte-identical); every other sheet points there; 796 consumer literals ruled by table (187 left: theory +
-  camera); six self-hosted OFL fonts (Fraunces, DM Sans, DM Mono) precached; the PWA shell (#24180C theme-color + manifest,
-  apple metas, touch icon). L1.1 commits on Preston's word, then his twelve-route felt pass on the phone; L1.2 waits on it —
-  first the arc / sub-theory / commons / reader / walk shared-token sweep (Preston 28 Oct: reachable until L5), then
-  the flat pass (backdrop-filter 20 → 0, flat gold). Hands on: lens palettes → L4, "Match my phone" → L5, icon +
-  storyboard → L7b. Record: `docs/checkpoints/l1.md`.
-  touches: [cross-cutting]
+- [~] **L4 — THE LENS ENGINE + THE SKY (ruling 83, opened 2026-11-10; Stages 1–5 built local, v3.317 at the push; the sky dark behind `praxis_sky`)** —
+  the lens eval v2 (the engine contract §1 prompt, the ten-step eval with the voice lint; tools/lens-eval-test 14/14);
+  `/userLensOffers` (offers, Later that never expires, Not this remembered until its books leave, let-go words →
+  readerModel.lensWords; lens-contract rule 4: the save opens only after a found/absent load; tools/lens-data-test 99/99
+  after the §9 fix round: the floor on every lens call, pending marks on every offer writer, a uid guard on the merge);
+  the Lenses page (`#lenses`), the lens sheet and the say-back pinned in Yumi's panel (sweep 61/61); the sky (hand.js L4
+  edition, lifted byte-for-byte; the scoped sky block in components.css) on Home and You, dark-launched (sweep 29/29;
+  key-off DOM identical to HEAD but for the post-yes Yumi row, ruling 84 as amended). Owed at the push gate: Preston
+  publishes the `/userLensOffers` rule BEFORE the push; one real generation on his account; the phone walk; then
+  `?sky=on` and the motion gate (contract §6) → Stage 6 flips it (v3.318). **Lane order (ruling 83): L4 → L2 → L4b → L5
+  → L6 → L7b; the Scan lane as before.** Record: `docs/checkpoints/l4.md`.
+  touches: [lenses, home, profile, shelf, yumi, yumi-sees]
 - [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
   RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → spine mockup LANDED (`design/praxis-spine-v1.html`) + mockup-stage acceptance card LANDED (`docs/checkpoints/onboarding-acceptance-mockup.md`; 9 OWNER rows open, 6 debts named) → Preston's felt pass on the changed frames → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.
   touches: [home, intros, shelf, yumi]
@@ -1533,8 +1536,8 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   redrawn (r45: the labelled pill, scope under the box, one list in three groups) · the lens page (r46) · the category
   page (r47) · the Notebook head + its Settings link · the What Yumi Sees page ("Everything she sees right now") · the
   bottom tabs (Home · Shelf · Notebook · Capture · You) + the Search pill, the floating "+" retired. Needs L4's lens
-  engine; L5's walk lands on finished rooms. **Beta lane order: L1 → L2 → L4 → L4b → L5 → L6 → L7b; the Scan lane as
-  before.** The design chat writes its prompt when L4 closes. Source: `docs/checkpoints/l1-felt-pass.md` §C–§D.
+  engine; L5's walk lands on finished rooms. **Beta lane order (ruling 83, 8 Nov 2026): L4 → L2 → L4b → L5 → L6 →
+  L7b; the Scan lane as before** (L1 shipped). The design chat writes its prompt when L4 closes. Source: `docs/checkpoints/l1-felt-pass.md` §C–§D.
   touches: [search, lenses, notebook, yumi-sees, nav]
 
 **Canonical order set at the R-ARC close-out (2026-07-18, Preston-ruled — enact, don't relitigate).**

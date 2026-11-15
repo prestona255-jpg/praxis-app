@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Praxis Lens Sky</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="L4 design mockup, 8 Nov 2026 (Fable 5.1): the lens sky on Home and You, night and day, 390 and 1360, at 0 · 1 · 3 · 5 · 8 · 12+ lenses, with the honest states. Drawn from hand.js, the one engine the build lifts.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* ---------- the review chrome (not Praxis): a plain desk around the frame ---------- */
+:root{--pg:#F8F5EC;--pg-ink:#2B2216;--pg-ink-2:#6F6552;--pg-line:#E1DCCB;--serif:"Fraunces",Georgia,serif;--sans:"DM Sans",-apple-system,system-ui,sans-serif;--mono:"DM Mono",ui-monospace,monospace;--ease:cubic-bezier(.2,.7,.2,1);--dur:280ms;--dur-half:140ms}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pg:#17150F;--pg-ink:#EDE6D6;--pg-ink-2:#A39B88;--pg-line:#2E2A20;color-scheme:dark}}
+:root[data-theme="dark"]{--pg:#17150F;--pg-ink:#EDE6D6;--pg-ink-2:#A39B88;--pg-line:#2E2A20;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--pg);color:var(--pg-ink);font-family:var(--sans)}
+body{padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1420px;margin:0 auto}
+header h1{font-family:var(--serif);font-weight:500;font-size:28px;margin:0;letter-spacing:-.01em}
+header p{margin:6px 0 12px;color:var(--pg-ink-2);font-size:14px;max-width:70ch;line-height:1.5}
+.ctrls{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-bottom:12px}
+.ctrls .lbl{font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--pg-ink-2)}
+.seg{display:inline-flex;border:1px solid var(--pg-line);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;color:var(--pg-ink-2);font:500 13px var(--sans);padding:8px 13px;border-radius:999px;cursor:pointer;white-space:nowrap;min-height:36px}
+.seg button[aria-pressed="true"]{background:var(--pg-ink);color:var(--pg)}
+.seg button:focus-visible{outline:2px solid #D9931A;outline-offset:2px}
+.note{font-size:13px;color:var(--pg-ink-2);line-height:1.5;max-width:76ch;margin:10px 0 0}
+.note b{color:var(--pg-ink);font-weight:500}
+.stage{display:flex;justify-content:flex-start;margin-top:8px;overflow-x:auto;padding-bottom:8px}
+.stage > .frame{margin:0 auto}
+body[data-bare="1"]{padding:0;background:#000}
+body[data-bare="1"] header,body[data-bare="1"] .ctrls,body[data-bare="1"] .note{display:none}
+body[data-bare="1"] .stage{margin:0}
+
+/* ---------- the frame: a phone at 390, a desk at 1360 ---------- */
+.frame{width:390px;height:844px;border-radius:38px;padding:10px;background:#111;box-shadow:0 20px 50px rgba(0,0,0,.22);flex:none}
+.frame[data-w="1360"]{width:1360px;height:860px;border-radius:18px;padding:8px}
+body[data-bare="1"] .frame{border-radius:0;padding:0;box-shadow:none;width:100vw;height:100vh;height:100dvh}
+.frame[data-w="1360"] .screen{border-radius:12px}
+body[data-bare="1"] .screen{border-radius:0}
+
+/* ---------- the screen: Sunflower tokens, night in :root's place (ruling 41), day under [data-mood="day"] ---------- */
+.screen{border-radius:30px;overflow:hidden;font-size:15px;line-height:1.45;height:100%;display:none;flex-direction:column;position:relative;
+  --page:#24180C;--card:#4A2E18;--card2:#63401F;--ink:#F5E8C4;--ink2:#CDB894;--ink3:#BAA48C;
+  --gold:#E8B23A;--on-gold:#1C120A;--gold-ink:#E8B23A;--star:#E8B23A;
+  --sky:#1C120A;--umber:#4A2E18;--on-n:#F5E8C4;--on-n2:#CDB894;--on-n3:#BAA48C;
+  --yumi:#C8552E;--stem:#8DB08A;--line:rgba(255,255,255,.14);
+  --lamp:radial-gradient(120% 70% at 50% -10%, rgba(92,59,33,.55), rgba(92,59,33,0) 60%);
+  --lamp-foot:radial-gradient(80% 40% at 50% 100%, rgba(232,178,58,.10), rgba(232,178,58,0) 70%);
+  --pool:radial-gradient(82% 46% at 50% 56%, rgba(92,59,33,.58), rgba(92,59,33,0) 72%);
+  --sky-a:var(--pool);--sky-b:none;
+  --spill:linear-gradient(180deg, rgba(232,178,58,.10), rgba(232,178,58,0) 140px);
+  --card-hi:inset 0 1px 0 rgba(255,255,255,.07);
+  --bl-core:#FDFAF3;--bl-gold:#C79A3A;--bl-light:#DFB759;--bl-wisdom:#F8E078;--bl-theory:#F0A88A;--bl-emp:#F8C8AA;--bl-edge:rgba(255,241,210,0);
+  background:var(--page);color:var(--ink)}
+.screen[data-mood="day"]{
+  --page:#EDD79E;--card:#FBF3D9;--card2:#E2C98C;--ink:#2A1E10;--ink2:#6F5A34;--ink3:#6B5936;
+  --gold:#D9931A;--on-gold:#2A1E10;--gold-ink:#835508;--star:#E8B23A;
+  --sky:#2B1E12;--stem:#45704F;--line:rgba(42,30,16,.16);
+  --sky-a:var(--lamp-foot);--sky-b:var(--lamp);
+  --spill:linear-gradient(180deg, rgba(92,59,33,.16), rgba(92,59,33,0) 140px);
+  --card-hi:inset 0 1px 0 rgba(255,255,255,.55), 0 1px 0 rgba(42,30,16,.05);
+  --bl-core:#FFF8E6;--bl-gold:#B06F12;--bl-light:#E0A030;--bl-wisdom:#F8DF86;--bl-theory:#E8845E;--bl-emp:#F0B48C;--bl-edge:rgba(42,30,16,.38)}
+.screen.on{display:flex;container-type:inline-size}
+:where(.screen) button{appearance:none;border:0;background:none;padding:0;margin:0;font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;text-align:left}
+.screen button:focus-visible{outline:2px solid var(--gold-ink);outline-offset:2px}
+.sky button:focus-visible{outline-color:var(--star)}
+.k{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-ink)}
+.sky .k{color:var(--star)}
+.p{margin:0;color:var(--ink2)}
+.sky .p{color:var(--on-n2)}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;padding:12px 20px;min-height:44px;font:500 15px var(--sans);background:var(--gold);color:var(--on-gold)}
+.ghost{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:999px;padding:11px 18px;font:500 14px var(--sans);border:1px solid var(--line);color:var(--ink)}
+.sky .ghost{border-color:rgba(245,232,196,.28);color:var(--on-n)}
+.quiet{display:inline-flex;align-items:center;min-height:44px;font:500 13px var(--sans);color:var(--ink3);text-decoration:underline;text-underline-offset:3px;padding:12px 8px}
+.sky .quiet{color:var(--on-n2)}
+.card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--card-hi);display:flex;flex-direction:column;gap:12px;width:100%}
+.fine2{margin:0;font-size:12.5px;color:var(--ink3);line-height:1.45}
+.wm{font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:-.01em}
+.eyebrow{font-family:var(--mono);font-size:12px;color:var(--ink3);letter-spacing:.04em}
+
+/* ---------- THE SKY (lifted by L4 as is): night ground, the pool, a current, painted forms. Never still; reduced motion stills it. ---------- */
+.sky{background-color:var(--sky);background-image:var(--sky-a),var(--sky-b);color:var(--on-n);position:relative;overflow:hidden;z-index:1;display:flex;flex-direction:column;flex:none}
+.sky > canvas.paint{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.sky > *:not(canvas){position:relative}
+.rail{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 0 22px;min-height:44px}
+.rail .wm{color:var(--on-n)}
+.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(245,232,196,.35);overflow:hidden;background:#1C120A;flex:none}
+.av svg{width:100%;height:100%;display:block}
+.sky .eyebrow{color:var(--on-n3)}
+.greet{font-family:var(--serif);font-weight:500;letter-spacing:-.015em;line-height:1.06;text-wrap:balance;margin:6px 22px 0;color:var(--on-n);font-size:min(40px,calc((100cqw - 44px) / 7.4))}
+.srchpill{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 14px 0 11px;border-radius:999px;border:1px solid rgba(245,232,196,.28);font:500 13.5px var(--sans);color:var(--on-n);background:rgba(28,18,10,.35);flex:none}
+.srchpill svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.field{position:relative;margin-top:10px;height:300px}
+.field.many{height:360px}
+.field.tight{height:340px}
+.field > svg.bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none}
+.core svg{display:block;overflow:visible}
+.hint{margin:2px 22px 6px;text-align:center;font-size:12.5px;line-height:1.4;color:var(--on-n3)}
+.hint .yline{display:inline-flex;align-items:center;gap:8px;color:var(--on-n2);font-size:14px}
+.hint .yline .seedbox{width:28px;height:28px;background:none}
+.hint small{display:block;font:11px var(--mono);letter-spacing:.08em;color:var(--on-n3);margin-top:4px}
+.honest{display:flex;flex-direction:column;align-items:center;gap:2px;margin:0 22px 4px;text-align:center}
+.honest p{margin:0;font:italic 400 17px/1.35 var(--serif);color:var(--on-n);text-wrap:balance;letter-spacing:-.01em}
+.honest .row{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.thread{fill:none;stroke-linecap:butt}
+.orb{position:absolute;left:0;top:0;border:0;background:transparent;padding:0;cursor:pointer;border-radius:16px;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;width:140px;transition:opacity var(--dur) var(--ease)}
+.orb.up{flex-direction:column-reverse}
+.orb.lft,.orb.rgt{flex-direction:row;width:auto;gap:6px}
+.orb.lft{flex-direction:row-reverse}
+.orb.lft .l,.orb.rgt .l{max-width:104px;text-align:left}
+.orb.lft .l{text-align:right}
+.orb:focus-visible{outline:2px solid #FFD873;outline-offset:-1px}
+.orb .art{display:block;flex:none}
+.orb .br{display:block;width:100%;height:100%;--sw:0deg;--sc:1.09}
+.orb .art svg{display:block;width:100%;height:100%;overflow:visible}
+.orb .l{font-family:var(--serif);font-style:italic;font-size:12.5px;line-height:15px;color:var(--on-n);text-align:center;max-width:150px;text-wrap:balance;padding:0 4px}
+.orb.offer .body,.orb.later .body,.orb.deciding .body{opacity:.55}
+.orb.later{opacity:.55}
+.orb.offer .l,.orb.later .l,.orb.deciding .l{color:var(--on-n2)}
+.field.deciding .orb:not(.deciding){opacity:.38}
+.field.deciding .orb.deciding .body{opacity:1}
+.orb.deciding .l{font-size:13.5px;font-weight:500}
+.orb.cat .l,.orb.book .l{color:var(--on-n)}
+.field.many .orb .l,.field.tight .orb .l{display:none}
+.field.many .orb.named .l,.field.tight .orb.named .l{display:block}
+.field.many .orb:focus-visible .l,.field.many .orb:hover .l,.field.tight .orb:focus-visible .l,.field.tight .orb:hover .l{display:block}
+.field.nonames .orb .l,.field.nonames .orb.named .l{display:none}
+.field.nonames .orb:focus-visible .l,.field.nonames .orb:hover .l{display:block}
+.orb .l{transition:opacity var(--dur) var(--ease)}
+.orb .l.hid{opacity:0;pointer-events:none}
+.orb:focus-visible .l.hid,.orb:hover .l.hid{opacity:1}
+.homecnt{display:flex;gap:18px;font:12px var(--mono);letter-spacing:.04em;color:var(--on-n3);padding:0 22px}
+.homecnt b{color:var(--on-n);font-weight:500}
+.core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:0;background:none;padding:0;border-radius:50%;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;touch-action:manipulation}
+.core:focus-visible{outline:2px solid #FFD873;outline-offset:6px}
+.core.held{filter:brightness(1.12)}
+.core svg{display:block;overflow:visible;pointer-events:none}
+.door{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 22px 8px;min-height:44px;padding:0 2px;font:500 13.5px var(--sans);color:var(--on-n2);border-top:1px solid rgba(245,232,196,.14);width:calc(100% - 44px);text-align:left}
+.door b{color:var(--on-n);font-weight:500}
+.door .chev{color:var(--on-n3);font-size:18px}
+.door:focus-visible{outline:2px solid var(--star);outline-offset:2px}
+.modes{display:inline-flex;gap:2px;margin:12px 22px 0;padding:3px;border-radius:999px;border:1px solid rgba(245,232,196,.22);align-self:flex-start}
+.modes button{min-height:36px;padding:0 14px;border-radius:999px;font:500 13px var(--sans);color:var(--on-n2)}
+.modes button[aria-pressed="true"]{background:rgba(245,232,196,.14);color:var(--on-n)}
+.togrow{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:52px;padding:6px 0;border-bottom:1px solid var(--line)}
+.togrow:last-child{border-bottom:0}
+.togrow > span:first-child{display:flex;flex-direction:column;font:500 15px var(--sans);color:var(--ink)}
+.togrow small{font:12.5px var(--sans);color:var(--ink3);margin-top:2px}
+.knob{flex:none;width:44px;height:26px;border-radius:13px;background:var(--line);position:relative;transition:background var(--dur) var(--ease)}
+.knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--card);box-shadow:0 1px 0 rgba(0,0,0,.2);transition:transform var(--dur) var(--ease)}
+.togrow[aria-pressed="true"] .knob{background:var(--gold)}
+.togrow[aria-pressed="true"] .knob::after{transform:translateX(18px)}
+.sheet .yrow{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:56px;border-bottom:1px solid var(--line)}
+.sheet .yrow:last-child{border-bottom:0}
+.sheet .yrow > span:first-child{display:flex;align-items:center;gap:10px;font:500 15px var(--sans);color:var(--ink);min-width:0}
+.sheet .yrow small{display:block;font:12.5px var(--sans);color:var(--ink3);margin-top:2px}
+.sheet .yrow .chev{color:var(--ink3);font-size:18px}
+.sheet .mark.sm{width:30px;height:30px}
+@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(var(--ax),var(--ay))}}
+@keyframes turn{to{transform:rotate(360deg)}}
+@keyframes sway{0%,100%{transform:rotate(calc(var(--sw) * -1)) scale(1)}50%{transform:rotate(var(--sw)) scale(var(--sc))}}
+@keyframes ripple{0%{transform:scale(.2);opacity:0}20%{opacity:var(--ro)}100%{transform:scale(1.22);opacity:0}}
+@keyframes grain{to{transform:translateY(7px)}}
+@keyframes pulse{0%,100%{transform:scale(.93);opacity:.74}50%{transform:scale(1.07);opacity:1}}
+@keyframes morph{0%,14%,100%{transform:var(--tf)}50%,64%{transform:var(--tg)}}
+@keyframes tilt{0%,14%,100%{transform:rotate(0deg) scale(1,1)}50%,64%{transform:rotate(var(--tl)) scale(1,.6)}}
+.orb .art{animation:drift var(--dur) ease-in-out var(--del) infinite}
+.orb .br{animation:sway var(--bd) ease-in-out var(--bdl) infinite}
+.sw{animation:sway var(--d) ease-in-out var(--dl,0s) infinite}
+.rp{animation:ripple var(--d) linear var(--dl,0s) infinite;opacity:0}
+.gr{animation:grain var(--d) linear infinite}
+.pu{animation:pulse var(--d) ease-in-out var(--dl,0s) infinite}
+.tn{animation:turn var(--d) linear infinite}
+.tn.rev{animation-direction:reverse}
+.fb{transform-box:fill-box;transform-origin:center}
+.pt{transform:var(--tf);animation:morph 64s ease-in-out infinite}
+.tiltg{animation:tilt 64s ease-in-out infinite}
+.sping{animation:turn 300s linear infinite}
+.sping.rev{animation-direction:reverse}
+.still *{animation:none!important}
+.still .rp{opacity:0}
+.mark{display:inline-block;width:30px;height:30px;flex:none;vertical-align:middle}
+.mark svg{display:block;width:100%;height:100%;overflow:hidden}
+.mark.xl{width:52px;height:52px}
+.seedbox{display:block;width:44px;height:44px;border-radius:50%;background:var(--sky);flex:none;overflow:hidden}
+.seedbox svg{display:block;width:100%;height:100%;overflow:visible}
+
+/* ---------- paper under the sky (Day Three's Home / You, carried) ---------- */
+.body2{padding:14px 16px 96px;display:flex;flex-direction:column;gap:12px;background:var(--page)}
+.spill{background-image:var(--spill)}
+.leftoff{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;text-align:left}
+.leftoff .nt{width:44px;height:64px;border-radius:8px;background:var(--card2);display:grid;place-items:center;color:var(--gold-ink);font:500 11px var(--mono)}
+.leftoff b{display:block;font:500 15px/1.25 var(--serif)}
+.leftoff small{display:block;font:12.5px var(--sans);color:var(--ink3);margin-top:2px}
+.leftoff .chev{color:var(--ink3);font-size:18px}
+.cvcol{display:flex;gap:8px;flex-wrap:wrap}
+.cvcol i{display:block;width:44px;height:64px;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.yumi{display:flex;align-items:center;gap:12px;background:var(--umber);color:var(--on-n);border-radius:999px;padding:8px 16px 8px 8px;position:relative;overflow:hidden;width:100%;text-align:left}
+.yumi em{font:italic 400 15px/1.3 var(--serif);color:var(--on-n);letter-spacing:-.005em;display:block}
+.yumi small{display:block;font:11px var(--mono);color:var(--on-n3);margin-top:2px;letter-spacing:.04em}
+.yumi > div{min-width:0}
+.next{display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--ink2);padding:2px 6px}
+.next div{display:grid;grid-template-columns:16px 1fr;gap:6px}
+.next div::before{content:"→";color:var(--ink3)}
+.tabs{margin-top:auto;display:flex;justify-content:space-around;padding:10px 6px 14px;border-top:1px solid var(--line);background:var(--page);position:relative;z-index:2}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:4px;font:500 11px var(--sans);color:var(--ink3);letter-spacing:.02em;min-width:44px;min-height:44px;justify-content:flex-end;text-align:center}
+.tabs .on2{color:var(--gold-ink)}
+.tabs svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.you-name{display:flex;align-items:center;gap:14px;margin:12px 22px 0}
+.you-name .av{width:56px;height:56px}
+.you-name h2{font:500 34px/1 var(--serif);letter-spacing:-.015em;margin:0;color:var(--on-n)}
+.you-name small{display:block;font:12px var(--mono);color:var(--on-n3);letter-spacing:.04em;margin-top:6px}
+.stat{display:flex;gap:18px;flex-wrap:wrap}
+.stat div{display:flex;flex-direction:column}
+.stat b{font-family:var(--serif);font-weight:500;font-size:34px;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink)}
+.stat span{font-size:12px;color:var(--ink3)}
+.yrows{padding:4px 18px}
+.yrows button{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:56px;padding:10px 0;border-bottom:1px solid var(--line)}
+.yrows button:last-child{border-bottom:0}
+.yrows button > span:first-child{display:flex;flex-direction:column;font:500 15px var(--sans);color:var(--ink)}
+.yrows small{font:12.5px var(--sans);color:var(--ink3);margin-top:2px}
+.yrows .chev{color:var(--ink3);font-size:18px}
+.scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.screen[data-id="you"] .sky{border-radius:0 0 28px 28px;padding-bottom:10px}
+.screen[data-id="home"] .sky{padding-bottom:4px}
+
+/* ---------- the desk at 1360 (seventh r8): the sky is the sticky left column, the paper on the right unchanged ---------- */
+.screen[data-w="1360"]{flex-direction:row}
+.screen[data-w="1360"] .scroll{flex-direction:row;overflow:hidden}
+.screen[data-w="1360"] .sky{width:600px;flex:none;height:100%;border-radius:0;justify-content:center;padding-bottom:0}
+.screen[data-w="1360"] .field{height:440px;margin-top:16px}
+.screen[data-w="1360"] .field.many{height:480px}
+.screen[data-w="1360"] .greet{font-size:44px}
+.screen[data-w="1360"] .paperside{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column}
+.screen[data-w="1360"] .body2{max-width:640px;width:100%;margin:0 auto;padding:28px 28px 40px}
+.screen[data-w="1360"] .tabs{display:none}
+.screen[data-w="1360"] .rail{padding-top:16px}
+.screen[data-w="1360"] .hint{font-size:13.5px}
+
+/* ---------- a lens sheet stub (deliverable 2 draws the real one), the scrim, the toast ---------- */
+.scrim{position:absolute;inset:0;background:rgba(28,18,10,.55);z-index:4}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:92%;overflow-y:auto;background:var(--card);color:var(--ink);border-radius:24px 24px 0 0;padding:8px 18px 22px;display:flex;flex-direction:column;gap:14px;z-index:5}
+.screen[data-w="1360"] .sheet{left:auto;right:40px;bottom:40px;width:420px;border-radius:24px}
+.sheet .handle{align-self:center;width:38px;height:4px;border-radius:2px;background:var(--line)}
+.sheet .ln{display:flex;align-items:center;gap:12px;min-width:0}
+.sheet .ln em{font:italic 500 20px/1.2 var(--serif);overflow-wrap:anywhere;min-width:0;color:var(--ink)}
+.sheet .cnt{font:12px var(--mono);color:var(--ink3);letter-spacing:.02em}
+.sheet .yq{margin:0;font-size:15px;color:var(--ink2)}
+.sheet .yq em{font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.4;display:block;color:var(--ink)}
+.sheet .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sheet .grid2 .pill,.sheet .grid2 .ghost{width:100%}
+.sheet .later{font-size:12.5px;color:var(--ink3);margin:0}
+.toast{position:absolute;left:16px;right:16px;top:14px;z-index:7;background:var(--umber);color:var(--on-n);border-radius:999px;padding:10px 10px 10px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.screen[data-w="1360"] .toast{left:auto;right:40px;width:460px}
+.toast button{color:var(--star);font:500 14px var(--sans);min-height:36px;padding:0 10px;border-radius:999px;flex:none}
+.toast span{min-width:0;line-height:1.3}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.bloom{position:absolute;right:14px;bottom:86px;width:44px;height:44px;z-index:3}
+.bloom svg{width:100%;height:100%;display:block}
+.screen[data-w="1360"] .bloom{bottom:24px;right:24px}
+
+@media (prefers-reduced-motion:reduce){
+  .orb .art,.orb .br,.sw,.rp,.gr,.pu,.tn,.pt,.tiltg,.sping{animation:none!important}
+  .rp{opacity:0}
+  .orb{transition:none!important}
+}
+</style>
+<div class="wrap">
+  <header>
+    <h1>Praxis Lens Sky</h1>
+    <p>L4 design, deliverable 1 (8 Nov 2026, Fable 5.1). Home and You in lens mode, drawn from <code>hand.js</code>, the one engine the build lifts. Night is the default with the Pool; day keeps the lamp. Garden colours only (ruling 82). Lens size follows its book count; the sky turns and drifts, paper is still. Tap a lens for its stub sheet; tap the dashed one to decide it.</p>
+  </header>
+  <div class="ctrls">
+    <span class="lbl">Surface</span><span class="seg" data-ctl="s"><button type="button" data-v="home">Home</button><button type="button" data-v="you">You</button></span>
+    <span class="lbl">Mood</span><span class="seg" data-ctl="m"><button type="button" data-v="night">Night</button><button type="button" data-v="day">Day</button></span>
+    <span class="lbl">Width</span><span class="seg" data-ctl="w"><button type="button" data-v="390">390</button><button type="button" data-v="1360">1360</button></span>
+    <span class="lbl">Lenses</span><span class="seg" data-ctl="n"><button type="button" data-v="0">0</button><button type="button" data-v="1">1</button><button type="button" data-v="3">3</button><button type="button" data-v="5">5</button><button type="button" data-v="8">8</button><button type="button" data-v="12">12</button><button type="button" data-v="16">16</button></span>
+    <span class="lbl">Threads</span><span class="seg" data-ctl="t"><button type="button" data-v="1">On</button><button type="button" data-v="0">Off</button></span>
+    <span class="lbl">You sky</span><span class="seg" data-ctl="mode"><button type="button" data-v="lenses">Lenses</button><button type="button" data-v="cats">Categories</button><button type="button" data-v="marks">Marks</button></span>
+    <span class="lbl">State</span><span class="seg" data-ctl="st"><button type="button" data-v="lenses">Lenses</button><button type="button" data-v="offer">An offer waiting</button><button type="button" data-v="seed0">No books</button><button type="button" data-v="under">Under the floor</button><button type="button" data-v="reading">No lenses yet</button><button type="button" data-v="nothing">Nothing clear</button></span>
+  </div>
+  <div class="stage">
+    <div class="frame" id="frame" data-w="390">
+      <!-- HOME -->
+      <div class="screen on" data-id="home" id="scr-home">
+        <div class="scroll">
+          <div class="sky" id="sky-home">
+            <canvas class="paint" aria-hidden="true"></canvas>
+            <div class="rail"><span class="wm">praxis</span><span style="display:flex;align-items:center;gap:8px"><button type="button" class="srchpill" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Search</span></button><span class="av" id="hm-av" role="img" aria-label="Your avatar"></span></span></div>
+            <span class="eyebrow" id="hm-date" style="margin:12px 22px 0"></span>
+            <h2 class="greet" id="hm-hello"></h2>
+            <div class="field" id="hm-field" data-field="home">
+              <svg class="bg" aria-hidden="true"><g data-stars></g><g data-threads></g></svg>
+              <button type="button" class="core" data-core aria-label="Your centre. Hold it for your sky’s settings."><svg data-bloom viewBox="-90 -90 180 180" aria-hidden="true" id="hm-bloom"></svg></button>
+            </div>
+            <div class="honest" id="hm-honest" hidden></div>
+            <p class="hint" id="hm-hint"></p>
+            <div class="homecnt" id="hm-cnt"></div>
+            <button type="button" class="door" id="hm-door" hidden></button>
+          </div>
+          <div class="paperside">
+            <div class="body2 spill" id="hm-body"></div>
+          </div>
+        </div>
+        <div class="tabs" id="hm-tabs"></div>
+        <div class="scrim" id="hm-scrim" hidden></div>
+        <div class="sheet" id="hm-sheet" role="dialog" aria-label="Lens" hidden></div>
+        <span class="bloom" id="hm-bloombtn" role="img" aria-label="Yumi"></span>
+        <div class="toast" id="hm-toast" hidden><span id="hm-toast-t"></span><button type="button" id="hm-toast-b" hidden>Undo</button></div>
+      </div>
+      <!-- YOU -->
+      <div class="screen" data-id="you" id="scr-you">
+        <div class="scroll">
+          <div class="sky" id="sky-you">
+            <canvas class="paint" aria-hidden="true"></canvas>
+            <div class="rail"><span class="wm">praxis</span><span class="k" style="color:var(--on-n3)">You</span></div>
+            <div class="you-name"><span class="av" id="yo-av" role="img" aria-label="Your avatar"></span><div><h2>Preston</h2><small id="yo-since"></small></div></div>
+            <div class="modes" id="yo-modes" role="group" aria-label="What the sky shows"></div>
+            <div class="field" id="yo-field" data-field="you">
+              <svg class="bg" aria-hidden="true"><g data-stars></g><g data-threads></g></svg>
+              <button type="button" class="core" data-core aria-label="Your centre. Hold it for your sky’s settings."><svg data-bloom viewBox="-90 -90 180 180" aria-hidden="true" id="yo-bloom"></svg></button>
+            </div>
+            <div class="honest" id="yo-honest" hidden></div>
+            <p class="hint" id="yo-hint"></p>
+          </div>
+          <div class="paperside">
+            <div class="body2 spill" id="yo-body"></div>
+          </div>
+        </div>
+        <div class="tabs" id="yo-tabs"></div>
+        <div class="scrim" id="yo-scrim" hidden></div>
+        <div class="sheet" id="yo-sheet" role="dialog" aria-label="Lens" hidden></div>
+        <span class="bloom" id="yo-bloombtn" role="img" aria-label="Yumi"></span>
+        <div class="toast" id="yo-toast" hidden><span id="yo-toast-t"></span><button type="button" id="yo-toast-b" hidden>Undo</button></div>
+      </div>
+    </div>
+  </div>
+  <p class="note" id="note"></p>
+</div>
+<script src="hand.js"></script>
+<script>
+(function(){
+  var H=PraxisHand, $=function(id){return document.getElementById(id);};
+  /* ---------- the fixture: Preston's 148-book shelf as the test library (ruling 83); 16 lenses, one offer waiting on the Lenses page ---------- */
+  var LENSES=[
+   {name:'Who gets to deposit',origin:'hers',books:['b1','b3','b7','b2','b49','b34'],q:'When you say a classroom banks, who is counting?'},
+   {name:'The machine as teacher',origin:'hers',books:['b8','b9','b10','b11','b12','b54','b53'],q:'What does a predictive system assume a student already is?'},
+   {name:'Freedom as practice',origin:'hers',books:['b16','b15','b18','b5','b52'],q:'Where in these pages is freedom a verb?'},
+   {name:'The margin as a place to write from',origin:'hers',books:['b22','b19','b20','b41','b36'],q:'What can only be said from the edge?'},
+   {name:'Love as a discipline',origin:'hers',books:['b21','b49','b2','b43'],q:'Is love in these books a feeling or a practice?'},
+   {name:'What the body remembers',origin:'hers',books:['b44','b24','b14','b31'],q:'Where does a school leave its marks?'},
+   {name:'Books I teach from',origin:'yours',books:['b1','b2','b7','b6','b27','b39'],q:''},
+   {name:'Cruel optimism, everywhere',origin:'yours',books:['b13','b28','b29','b47','b9'],q:''},
+   {name:'Reading for Austin',origin:'yours',books:['b4','b8','b35','b34','b17'],q:''},
+   {name:'Surveillance before the screen',origin:'hers',books:['b14','b53','b30'],q:'Who was watched before there were screens to watch from?'},
+   {name:'The sacred in the ordinary',origin:'hers',books:['b39','b45','b40'],q:'Where do these three find the holy?'},
+   {name:'Teaching in the dark',origin:'hers',books:['b5','b16','b1','b57'],q:'What has to be hidden for teaching to happen?'},
+   {name:'Water, grammar, animacy',origin:'yours',books:['b39','b9','b58'],q:''},
+   {name:'What a test can’t see',origin:'hers',books:['b1','b3','b8','b19','b11','b60','b61','b62','b63'],q:'What does the exam stand in for?'},
+   {name:'Archives and wounds',origin:'hers',books:['b36','b20','b64'],q:'Is every record a wound?'},
+   {name:'Maps against the pacing guide',origin:'yours',books:['b16','b39','b1','b2','b5','b11','b65','b66','b67','b68','b69','b70'],q:''}
+  ];
+  var OFFER={name:'Hustle and its discontents',books:['b28','b29','b47'],reading:'Three books that sell the grind and three that count its cost sit on the same shelf. Read together they ask what the hustle is for.',q:'What does the grind promise, and to whom?'};
+  var looks=[],i; for(i=0;i<LENSES.length;i++){ LENSES[i].look=H.makeLook(LENSES[i].name,looks); looks.push(LENSES[i].look); } OFFER.look=H.makeLook(OFFER.name,looks);
+  var COV=['#5B7A8C','#9C4A6E','#C9A66B','#3D6446','#B84A2E','#2F7F9E','#7A5C3A','#D9931A','#6F5A34','#8A6A2E'];
+
+  /* ---------- You in its three modes: the shelf by category, and the books that carry the most marginalia (ruling 87) ---------- */
+  var CATS=[['Theory & Philosophy',31],['Education',27],['Social & Political Thought',22],['Race & Identity',18],['Literary Fiction',14],['Essays & Criticism',9],['Memoir & Biography',8],['History',6],['Poetry',5],['Technology & Society',4],['Religion & Spirituality',2],['Psychology & Mind',1],['Science & Nature',1]];
+  var MARKS=[['Pedagogy of the Oppressed',6,0,[4,2,0]],['Power, Crisis, and Education for Liberation',4,1,[3,1,0]],['Teaching to Transgress',3,1,[2,0,1]],['Cruel Optimism',3,0,[2,1,0]],['Braiding Sweetgrass',2,4,[1,0,1]],['Ghosts in the Schoolyard',2,1,[1,1,0]],['The Undercommons',2,0,[1,1,0]],['Beloved',1,4,[0,0,1]]];
+  function catLook(i,others){ var lk=H.makeLook(CATS[i][0],others),g=H.gardenColour(i); lk.pi=i; lk.c=[g.c,H.mix(g.c,H.LIGHT,.35)]; return lk; }
+  var CATLOOKS=[]; for(i=0;i<CATS.length;i++){ CATLOOKS.push(catLook(i,CATLOOKS)); }
+  var MARKLOOKS=[]; for(i=0;i<MARKS.length;i++){ (function(){ var lk=H.makeLook(MARKS[i][0],MARKLOOKS),g=H.gardenColour(MARKS[i][2]); lk.c=[g.c,H.mix(g.c,H.LIGHT,.35)]; lk.pi=MARKS[i][2]; MARKLOOKS.push(lk); })(); }
+
+  /* ---------- state from the hash: s · m · w · n · t · nm · st · mode ---------- */
+  var Q={s:'home',m:'night',w:'390',n:'8',t:'1',nm:'1',st:'lenses',mode:'lenses'};
+  function readHash(){ var h=location.hash.replace(/^#/,''),parts=h.split('&'),i,kv; for(i=0;i<parts.length;i++){ kv=parts[i].split('='); if(kv[0]&&kv.length>1&&Q.hasOwnProperty(kv[0])){ Q[kv[0]]=decodeURIComponent(kv[1]); } } if(/[?&]bare=1/.test(location.search)){ document.body.setAttribute('data-bare','1'); } }
+  function writeHash(){ var k,o=[]; for(k in Q){ if(Q.hasOwnProperty(k)){ o.push(k+'='+Q[k]); } } var nh='#'+o.join('&'); if(location.hash!==nh){ try{ history.replaceState(null,'',nh); }catch(e){} } }
+  var LIVE={kept:[],offer:null,later:2};
+  function resetLive(){ var n=+Q.n; LIVE.kept=LENSES.slice(0,n); LIVE.offer=(Q.st==='offer')?OFFER:null; LIVE.later=(n>=5)?2:0; }
+
+  function lensItems(){ var items=[],i,k; if(Q.st==='seed0'||Q.st==='under'||Q.st==='reading'||Q.st==='nothing'){ return items; } for(i=0;i<LIVE.kept.length;i++){ k=LIVE.kept[i]; items.push({name:k.name,look:k.look,books:k.books.length,state:(k.origin==='yours'?'own':'kept'),src:k}); } return items; }
+  function catItems(){ var o=[],i; for(i=0;i<CATS.length;i++){ o.push({name:CATS[i][0],look:CATLOOKS[i],books:CATS[i][1],state:'cat',aria:CATS[i][0]+'. '+plural(CATS[i][1],'book')+' on your shelf. Opens the shelf, filtered.',src:{books:[]}}); } return o; }
+  function markItems(){ var o=[],i,m; for(i=0;i<MARKS.length;i++){ m=MARKS[i]; o.push({name:m[0],look:MARKLOOKS[i],books:m[1],size:m[1]*2,state:'book',aria:m[0]+'. '+plural(m[1],'note')+': '+m[3][0]+' marginalia, '+m[3][1]+' questions, '+m[3][2]+' journal. Opens the Notebook, filtered.',src:{books:[],m:m}}); } return o; }
+  function skyItems(){ if(Q.s==='you'&&Q.mode==='cats'){ return catItems(); } if(Q.s==='you'&&Q.mode==='marks'){ return markItems(); } return lensItems(); }
+  function shares(items){ var o=[],i,j,a,b,n,k; for(i=0;i<items.length;i++){ for(j=i+1;j<items.length;j++){ a=items[i].src.books; b=items[j].src.books; n=0; for(k=0;k<a.length;k++){ if(b.indexOf(a[k])>=0){ n++; } } if(n){ o.push([i,j,n]); } } } return o; }
+  function keptLooks(){ var o=[],k; for(k=0;k<LIVE.kept.length;k++){ o.push(LIVE.kept[k].look); } return o; }
+  function books(){ return Q.st==='seed0'?0:(Q.st==='under'?3:(Q.st==='reading'||Q.st==='nothing'?6:148)); }
+  function plural(n,w){ return n+' '+w+(n===1?'':(w==='lens'?'es':'s')); }
+  function esc(s){ return H.esc(s); }
+
+  var skyHome=null, skyYou=null;
+
+  /* ---------- the Home lines. Yumi's reading and her offers live on the Lenses page (ruling 86); Home carries one quiet door to it. ---------- */
+  function honest(n,surface){
+    var st=Q.st,h='',hint='';
+    if(st==='seed0'){ h='<p>The seed waits for your first book.</p>'; }
+    else if(st==='under'){ h='<p>Lenses come once your shelf holds five books. It holds 3.</p><div class="row"><button type="button" class="quiet" data-go="lenses">Name your own</button></div>'; }
+    else if(st==='reading'){ h='<p>No lenses yet. Yumi is reading across your shelf.</p><div class="row"><button type="button" class="quiet" data-go="lenses">Lenses ›</button></div>'; }
+    else if(st==='nothing'){ h='<p>No lenses yet. Yumi didn’t find clear ones this time.</p><div class="row"><button type="button" class="quiet" data-go="lenses">Name your own</button><button type="button" class="quiet" data-go="lenses">Ask Yumi again</button></div>'; }
+    else if(n===0){ h='<p>No lens yet. Name your own, or ask Yumi to read across your shelf.</p><div class="row"><button type="button" class="quiet" data-go="lenses">Lenses ›</button></div>'; }
+    else if(n===1){ hint=surface==='you'?'Your galaxy, in lens mode: your first lens around your flower · tap it':'Your first lens, around your flower · tap it'; }
+    else { hint=(surface==='you'?'Your galaxy, in lens mode: ':'')+plural(n,'lens')+' around your flower · tap one'; }
+    return {h:h,hint:hint};
+  }
+  function doorText(){ var parts=[]; if(LIVE.offer){ parts.push('<b>Yumi has an offer for you</b>'); } if(LIVE.later){ parts.push(LIVE.later+' waiting in Later'); } if(!parts.length){ return ''; } return parts.join(' · ')+' <span style="color:var(--on-n3)">· Lenses</span>'; }
+
+  function paintHome(){
+    var now=new Date(), hr=now.getHours(), D=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"], M=["January","February","March","April","May","June","July","August","September","October","November","December"], items=skyItems(), n=LIVE.kept.length, hn=honest(n,'home'), h='', bk=books(), dt=doorText();
+    $('hm-av').innerHTML=H.svgEl(H.bloom(keptLooks(),11),'-90 -90 180 180'); $('hm-av').className='av still';
+    $('hm-date').textContent=D[now.getDay()]+', '+M[now.getMonth()]+' '+now.getDate();
+    $('hm-hello').textContent=(hr<12?'Good morning':(hr<18?'Good afternoon':'Good evening'))+', Preston.';
+    if(skyHome){ skyHome.set(items,shares(items),keptLooks()); skyHome.toggles({threads:Q.t==='1',names:Q.nm==='1'}); }
+    $('hm-honest').hidden=!hn.h; $('hm-honest').innerHTML=hn.h;
+    $('hm-hint').hidden=!hn.hint; $('hm-hint').innerHTML=hn.hint;
+    $('hm-cnt').innerHTML='<span><b>'+bk+'</b> books</span><span><b>'+n+'</b> '+(n===1?'lens':'lenses')+'</span><span><b>'+(bk?23:0)+'</b> notes</span>';
+    $('hm-door').hidden=!dt; $('hm-door').innerHTML='<span>'+dt+'</span><span class="chev">›</span>'; $('hm-door').setAttribute('data-go','lenses');
+    if(bk===0){ h+='<div class="card"><span class="k">Begin</span><p class="p" style="color:var(--ink)">Scan a book’s barcode, photograph a shelf, or type a title. Five books let Yumi offer lenses, if you let her.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="pill">Add a book</button></div></div>'; }
+    else {
+      h+='<button type="button" class="card leftoff"><span class="nt">NOTE</span><span><b>Where you left off</b><small>Yesterday, in <i>Power, Crisis, and Education for Liberation</i>: “De Lissovoy’s ‘politics of being’ — the student as someone…”</small></span><span class="chev">›</span></button>';
+      h+='<div class="card"><span class="k">Still reading</span><div class="cvcol"><i style="background:'+COV[0]+'"></i><i style="background:'+COV[3]+'"></i><i style="background:'+COV[7]+'"></i></div><p class="fine2">Each cover opens its own book.</p></div>';
+    }
+    h+='<div class="next"><div>Arcs — where notes become theory — open in the next release.</div></div>';
+    $('hm-body').innerHTML=h;
+    seeds($('scr-home'));
+  }
+  function modesHtml(){ var M=[['lenses','Lenses'],['cats','Categories'],['marks','Marks']],h='',i; for(i=0;i<M.length;i++){ h+='<button type="button" data-mode="'+M[i][0]+'" aria-pressed="'+(Q.mode===M[i][0])+'">'+M[i][1]+'</button>'; } return h; }
+  function paintYou(){
+    var items=skyItems(), n=LIVE.kept.length, hn=honest(n,'you'), h='', bk=books(), tot=0, i;
+    $('yo-av').innerHTML=H.svgEl(H.bloom(keptLooks(),11),'-90 -90 180 180'); $('yo-av').className='av still';
+    $('yo-since').textContent='Reading here since October 15 · '+plural(bk,'book');
+    $('yo-modes').innerHTML=modesHtml();
+    if(Q.mode==='cats'){ hn={h:'',hint:'Your shelf by category: '+CATS.length+' categories around your flower · sized by books · tap one to open the shelf there'}; }
+    if(Q.mode==='marks'){ for(i=0;i<MARKS.length;i++){ tot+=MARKS[i][1]; } hn={h:'',hint:'Your marginalia: '+tot+' notes on '+MARKS.length+' books · sized by notes · 14 marginalia · 6 questions · 3 journal'}; }
+    if(skyYou){ skyYou.set(items,(Q.mode==='lenses')?shares(items):[],keptLooks()); skyYou.toggles({threads:Q.t==='1',names:Q.nm==='1'}); }
+    $('yo-honest').hidden=!hn.h; $('yo-honest').innerHTML=hn.h;
+    $('yo-hint').hidden=!hn.hint; $('yo-hint').innerHTML=hn.hint;
+    h+='<div class="card"><span class="k">Numbers</span><div class="stat"><div><b>'+bk+'</b><span>books</span></div><div><b>'+n+'</b><span>'+(n===1?'lens':'lenses')+'</span></div><div><b>'+(bk?23:0)+'</b><span>notes</span></div><div><b>'+(bk?1:0)+'</b><span>artifact</span></div></div><p class="fine2">Nothing here is ranked.</p></div>';
+    h+='<div class="card yrows"><button type="button"><span>What Yumi sees<small>Her ledger of you · the yes</small></span><span class="chev">›</span></button><button type="button"><span>Settings<small>Reads along · outside angles · voice · error counts · stance</small></span><span class="chev">›</span></button><button type="button"><span>Your data<small>Export everything · delete your account</small></span><span class="chev">›</span></button><button type="button"><span>About Praxis<small>The covenant in full</small></span><span class="chev">›</span></button><button type="button"><span>Tell Preston<small>What’s broken, what’s missing, what you loved</small></span><span class="chev">›</span></button></div>';
+    h+='<div class="next"><div>Arcs — where notes become theory — open in the next release.</div></div>';
+    $('yo-body').innerHTML=h;
+    seeds($('scr-you'));
+  }
+  function seeds(root){ var els=root.querySelectorAll('[data-yseed]'),i; for(i=0;i<els.length;i++){ if(!els[i].innerHTML){ els[i].innerHTML=H.yumiSeed(); } } var b=root.querySelector('.bloom'); if(b&&!b.innerHTML){ b.innerHTML=H.bloomSvg(); } }
+  var TABS=[['home','Home','<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>'],['shelf','Shelf','<path d="M4 4h4v16H4zM10 4h4v16h-4zM16 5l4-1 1 15-4 1z"/>'],['notebook','Notebook','<path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM9 7h6M9 11h6"/>'],['capture','Capture','<path d="M12 5v14M5 12h14"/>'],['you','You','<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>']];
+  function paintTabs(id,on){ var h='',j; for(j=0;j<TABS.length;j++){ h+='<button type="button" data-tab="'+TABS[j][0]+'" class="'+(TABS[j][0]===on?'on2':'')+'" aria-current="'+(TABS[j][0]===on?'page':'false')+'"><svg viewBox="0 0 24 24">'+TABS[j][2]+'</svg>'+TABS[j][1]+'</button>'; } $(id).innerHTML=h; }
+
+  /* ---------- sheets: the lens stub (deliverable 2 draws the real one), the sky sheet (long-press on the flower, ruling 85), the Lenses-page stub (ruling 86) ---------- */
+  function showSheet(pfx,h,label){ var sh=$(pfx+'-sheet'); sh.innerHTML='<div class="handle"></div>'+h; sh.setAttribute('aria-label',label||'Sheet'); sh.hidden=false; $(pfx+'-scrim').hidden=false; return sh; }
+  function closeSheet(pfx){ $(pfx+'-sheet').hidden=true; $(pfx+'-scrim').hidden=true; }
+  function markSvg(look,name,cls){ return '<span class="mark '+(cls||'xl')+' still">'+H.formSvg(look,H.hash(name),'-38 -38 76 76')+'</span>'; }
+  function openLens(pfx,item){
+    var h='';
+    if(item.state==='cat'){ h+='<span class="k">Shelf · category</span><div class="ln">'+markSvg(item.look,item.name)+'<em>'+esc(item.name)+'</em></div><span class="cnt">'+plural(item.books,'BOOK').toUpperCase()+' · OPENS THE SHELF, FILTERED</span><div class="grid2"><button type="button" class="ghost" data-ans="close">Close</button></div>'; }
+    else if(item.state==='book'){ h+='<span class="k">Notebook · this book</span><div class="ln">'+markSvg(item.look,item.name)+'<em>'+esc(item.name)+'</em></div><span class="cnt">'+plural(item.books,'NOTE').toUpperCase()+' · '+item.src.m[3][0]+' MARGINALIA · '+item.src.m[3][1]+' QUESTIONS · '+item.src.m[3][2]+' JOURNAL</span><p class="later">Opens the Notebook filtered to this book.</p><div class="grid2"><button type="button" class="ghost" data-ans="close">Close</button></div>'; }
+    else {
+      h+='<span class="k">'+(item.state==='own'?'Your lens':'Her lens, taken up')+'</span><div class="ln">'+markSvg(item.look,item.name)+'<em>'+esc(item.name)+'</em></div><span class="cnt">'+plural(item.books,'BOOK').toUpperCase()+(item.src.q?' · HER QUESTION PINNED':'')+'</span>';
+      if(item.src.q){ h+='<p class="yq"><em>'+esc(item.src.q)+'</em></p>'; }
+      h+='<p class="later">The lens sheet is drawn next (deliverable 2): her reading, the covers with her reason, the say-back, and the door to Open Lens.</p><div class="grid2"><button type="button" class="ghost" data-ans="close">Close</button></div>';
+    }
+    showSheet(pfx,h,'Lens').onclick=function(e){ if(e.target.closest('[data-ans]')){ closeSheet(pfx); } };
+  }
+  function openSkySheet(pfx){
+    var t=Q.t==='1',nm=Q.nm==='1',h='';
+    h+='<span class="k">Your sky</span>';
+    h+='<button type="button" class="togrow" data-tog="t" aria-pressed="'+t+'"><span>Threads<small>Join lenses that share a book</small></span><span class="knob" aria-hidden="true"></span></button>';
+    h+='<button type="button" class="togrow" data-tog="nm" aria-pressed="'+nm+'"><span>Names<small>Show each lens’s name; off, names come on touch</small></span><span class="knob" aria-hidden="true"></span></button>';
+    h+='<button type="button" class="yrow" data-go="lenses"><span><span style="display:flex;flex-direction:column">Lenses<small>'+(LIVE.offer?'Yumi has an offer for you · ':'')+(LIVE.later?LIVE.later+' in Later · ':'')+plural(LIVE.kept.length,'lens')+' kept</small></span></span><span class="chev">›</span></button>';
+    h+='<p class="later">Hold the flower any time to come back here.</p>';
+    showSheet(pfx,h,'Your sky').onclick=function(e){ var tg=e.target.closest('[data-tog]'),go=e.target.closest('[data-go]'); if(tg){ var k=tg.getAttribute('data-tog'); Q[k]=(Q[k]==='1')?'0':'1'; tg.setAttribute('aria-pressed',Q[k]==='1'); var S=(Q.s==='home')?skyHome:skyYou; S.toggles({threads:Q.t==='1',names:Q.nm==='1'}); S.build(); writeHash(); paintCtrls(); return; } if(go){ closeSheet(pfx); openLensesPage(pfx); } };
+  }
+  function openLensesPage(pfx){
+    var h='<span class="k">Lenses · the page</span><p class="yq" style="color:var(--ink3);font-size:13.5px">Yumi’s reading, her offers, Later and your kept lenses live here, off Home (ruling 86). This is the door; the page itself is drawn with the lens sheet.</p>',i;
+    if(Q.st==='reading'){ h+='<div class="yrow"><span><span class="seedbox" data-yseed></span><span style="display:flex;flex-direction:column">Reading across your shelf…<small>USUALLY A FEW SECONDS · 6 BOOKS</small></span></span></div>'; }
+    if(Q.st==='nothing'){ h+='<div class="yrow"><span><span style="display:flex;flex-direction:column">Yumi didn’t find clear lenses this time — your shelf may be small or wide-ranging.<small>Name your own below, or ask again as it grows.</small></span></span></div>'; }
+    if(LIVE.offer){ h+='<button type="button" class="yrow" data-offer="1"><span>'+markSvg(LIVE.offer.look,LIVE.offer.name,'sm')+'<span style="display:flex;flex-direction:column">'+esc(LIVE.offer.name)+'<small>Yumi’s offer · rests on '+plural(LIVE.offer.books.length,'book')+'</small></span></span><span class="chev">›</span></button>'; }
+    if(LIVE.later){ h+='<div class="yrow"><span><span style="display:flex;flex-direction:column">Later<small>'+LIVE.later+' set aside · never expires</small></span></span></div>'; }
+    for(i=0;i<Math.min(3,LIVE.kept.length);i++){ h+='<div class="yrow"><span>'+markSvg(LIVE.kept[i].look,LIVE.kept[i].name,'sm')+'<span style="display:flex;flex-direction:column">'+esc(LIVE.kept[i].name)+'<small>'+plural(LIVE.kept[i].books.length,'book')+'</small></span></span></div>'; }
+    if(LIVE.kept.length>3){ h+='<p class="later">… and '+(LIVE.kept.length-3)+' more.</p>'; }
+    h+='<div class="grid2"><button type="button" class="ghost" data-ans="close">Close</button><button type="button" class="ghost" data-ans="own">Name your own</button></div>';
+    showSheet(pfx,h,'Lenses').onclick=function(e){ if(e.target.closest('[data-offer]')){ closeSheet(pfx); openOffer(pfx); return; } if(e.target.closest('[data-ans]')){ closeSheet(pfx); } };
+    seeds($(pfx+'-sheet'));
+  }
+  function openOffer(pfx){
+    var o=LIVE.offer,h='';
+    h+='<span class="k">Yumi’s offer · 1 of 1</span><div class="ln">'+markSvg(o.look,o.name)+'<em>'+esc(o.name)+'</em></div><span class="cnt">RESTS ON '+plural(o.books.length,'BOOK').toUpperCase()+'</span>';
+    h+='<p class="yq"><em>'+esc(o.reading)+'</em></p><p class="yq">The question she would hold for it: <em>'+esc(o.q)+'</em></p>';
+    h+='<div class="grid2"><button type="button" class="pill" data-ans="take">Take it up</button><button type="button" class="ghost" data-ans="later">Later</button><button type="button" class="ghost" data-ans="not">Not this</button><button type="button" class="ghost" data-ans="tell">Not quite — tell her</button></div>';
+    h+='<p class="later">Not this is remembered: she won’t offer it again while these books are on your shelf. Later never expires.</p>';
+    showSheet(pfx,h,'Yumi’s offer').onclick=function(e){ var b=e.target.closest('[data-ans]'); if(!b){return;} var a=b.getAttribute('data-ans'); closeSheet(pfx);
+      if(a==='take'){ LIVE.kept=LIVE.kept.concat([{name:OFFER.name,origin:'hers',books:OFFER.books,q:OFFER.q,look:OFFER.look}]); LIVE.offer=null; Q.st='lenses'; Q.n=String(LIVE.kept.length); toast(pfx,'Kept. <em>'+esc(OFFER.name)+'</em> is yours now; her question stays pinned to it.',false); render(false); }
+      if(a==='later'){ LIVE.offer=null; LIVE.later++; Q.st='lenses'; toast(pfx,'Set aside. It waits in Later, as long as you like.',false); render(false); }
+      if(a==='not'){ LIVE.offer=null; Q.st='lenses'; toast(pfx,'Not this — remembered. She won’t offer <em>'+esc(OFFER.name)+'</em> again while these books are on your shelf.',true); render(false); }
+      if(a==='tell'){ toast(pfx,'The say-back opens in deliverable 2.',false); }
+    };
+  }
+  function toast(pfx,text,undo){ var el=$(pfx+'-toast'),b=$(pfx+'-toast-b'); $(pfx+'-toast-t').innerHTML=text; b.hidden=!undo; el.hidden=false; window.clearTimeout(toast.t); toast.t=window.setTimeout(function(){ el.hidden=true; },undo?6000:2600); }
+
+  /* ---------- render ---------- */
+  function render(reset){
+    var pfx=(Q.s==='home')?'hm':'yo', scr=$('scr-'+Q.s), other=$(Q.s==='home'?'scr-you':'scr-home'), S;
+    if(reset!==false){ resetLive(); $('hm-toast').hidden=true; $('yo-toast').hidden=true; }
+    $('frame').setAttribute('data-w',Q.w);
+    document.body.setAttribute('data-mood',Q.m);
+    [$('scr-home'),$('scr-you')].forEach(function(s){ s.setAttribute('data-mood',Q.m); s.setAttribute('data-w',Q.w); });
+    other.className='screen'; scr.className='screen on';
+    if(!skyHome){ skyHome=H.Sky($('sky-home'),{}); skyYou=H.Sky($('sky-you'),{}); }
+    if(Q.s==='home'){ paintHome(); paintTabs('hm-tabs','home'); } else { paintYou(); paintTabs('yo-tabs','you'); }
+    S=(Q.s==='home')?skyHome:skyYou; S.sig=''; S.build(); H.startSkies();
+    paintCtrls(); writeHash(); note();
+  }
+  function paintCtrls(){ var segs=document.querySelectorAll('.seg'),i,j,bs,k; for(i=0;i<segs.length;i++){ k=segs[i].getAttribute('data-ctl'); bs=segs[i].querySelectorAll('button'); for(j=0;j<bs.length;j++){ bs[j].setAttribute('aria-pressed',String(bs[j].getAttribute('data-v')===Q[k])); } } }
+  function note(){ var n=LIVE.kept.length, lines=[]; lines.push('<b>'+(Q.s==='home'?'Home':'You · '+({lenses:'lens mode',cats:'categories',marks:'marks'})[Q.mode])+' · '+Q.m+' · '+Q.w+'</b> — '+(Q.s==='you'&&Q.mode!=='lenses'?(Q.mode==='cats'?CATS.length+' categories sized by books':MARKS.length+' books sized by notes'):plural(n,'kept lens'))+'. ');
+    lines.push('Orbit period 300 s'+((Q.s==='you'&&Q.mode!=='lenses'?skyItems().length:n)>(Q.w==='1360'?12:8)?', two rings (the fuller ones outside, the inner ring turning the other way; names on the three fullest, the rest on touch)':'')+'. Hold the flower for Threads, Names and the door to Lenses (ruling 85); Yumi’s reading and offers live on the Lenses page, Home keeps one quiet door line (ruling 86); the Yumi row is off Home (ruling 84).');
+    lines.push(' Night = the Pool (eighth r17) on #1C120A; day = the lamp on #2B1E12; every Garden mark measures ≥3:1 on both (Inheritance clamps to #A15273).');
+    $('note').innerHTML=lines.join(''); }
+  document.querySelector('.ctrls').addEventListener('click',function(e){ var b=e.target.closest('button[data-v]'); if(!b){return;} var k=b.parentNode.getAttribute('data-ctl'); Q[k]=b.getAttribute('data-v'); if(k==='mode'){ Q.s='you'; } if(k==='st'&&(Q.st==='seed0'||Q.st==='under'||Q.st==='reading'||Q.st==='nothing')){ Q.n='0'; } if(k==='st'&&Q.st==='offer'&&Q.n==='0'){ Q.n='5'; } render(); });
+  /* long-press on the flower (500 ms) opens the sky sheet; Enter/Space on it does too */
+  var HOLD=null, HELD=false;
+  function holdStart(e){ var c=e.target.closest('[data-core]'); if(!c){return;} HELD=false; c.className='core held'; HOLD=window.setTimeout(function(){ HELD=true; c.className='core'; openSkySheet((Q.s==='home')?'hm':'yo'); },500); }
+  function holdEnd(e){ var c=e.target.closest('[data-core]'); if(HOLD){ window.clearTimeout(HOLD); HOLD=null; } if(c){ c.className='core'; } }
+  var frame=document.getElementById('frame');
+  frame.addEventListener('pointerdown',holdStart); frame.addEventListener('pointerup',holdEnd); frame.addEventListener('pointercancel',holdEnd); frame.addEventListener('pointerleave',holdEnd);
+  frame.addEventListener('contextmenu',function(e){ if(e.target.closest('[data-core]')){ e.preventDefault(); } });
+  frame.addEventListener('keydown',function(e){ if((e.key==='Enter'||e.key===' ')&&e.target.closest('[data-core]')){ e.preventDefault(); openSkySheet((Q.s==='home')?'hm':'yo'); } });
+  frame.addEventListener('click',function(e){
+    var orb=e.target.closest('.orb'), pfx=(Q.s==='home')?'hm':'yo', tab=e.target.closest('[data-tab]'), S=(Q.s==='home')?skyHome:skyYou, go=e.target.closest('[data-go]'), md=e.target.closest('[data-mode]');
+    if(e.target.closest('[data-core]')){ if(HELD){ HELD=false; } return; }
+    if(e.target.closest('.sheet')){ return; }
+    if(md){ Q.mode=md.getAttribute('data-mode'); render(false); return; }
+    if(orb){ openLens(pfx,S.items[+orb.getAttribute('data-orb')]); return; }
+    if(go){ openLensesPage(pfx); return; }
+    if(e.target.closest('.scrim')){ closeSheet(pfx); return; }
+    if(e.target.id===pfx+'-toast-b'){ LIVE.offer=OFFER; Q.st='offer'; $(pfx+'-toast').hidden=true; render(false); return; }
+    if(tab){ var t=tab.getAttribute('data-tab'); if(t==='home'||t==='you'){ Q.s=t; render(false); } return; }
+  });
+  window.addEventListener('resize',function(){ var S=(Q.s==='home')?skyHome:skyYou; if(S){ S.sig=''; S.build(); } });
+  window.addEventListener('hashchange',function(){ readHash(); render(); });
+  readHash(); render();
+  window.__sky=function(){ return (Q.s==='home')?skyHome:skyYou; };
+  window.__Q=Q; window.__LIVE=LIVE; window.__openSky=function(){ openSkySheet((Q.s==='home')?'hm':'yo'); };
+})();
+</script>
+
+</body>
+</html>

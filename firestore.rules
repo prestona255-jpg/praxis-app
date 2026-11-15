@@ -94,6 +94,12 @@ service cloud.firestore {
                                   && request.auth.uid == uid;
       allow delete: if request.auth != null && request.auth.uid == uid;   // L3.2 ruling: never list-gated
     }
+    // L4.2: Yumi's lens offers (lens-contract §2) -- the /userThemes mirror.
+    match /userLensOffers/{uid} {
+      allow read, create, update: if onList()
+                                  && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;   // L3.2 ruling: never list-gated
+    }
     match /userReaderModel/{uid} {
       allow read, create, update: if onList()
                                   && request.auth.uid == uid;

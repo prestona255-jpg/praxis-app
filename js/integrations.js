@@ -55,6 +55,10 @@ var arcsLoaded         = false;
 var notebookLoaded     = false;
 var subTheoriesLoaded  = false;
 var themesLoaded       = false;
+// L4.2 (lens-contract rule 4): the lens-offers latch opens ONLY on a found or
+// absent load -- never on an error -- so a failed read can never let a .set() of
+// a partial local copy overwrite the cloud doc (the themes latch opens on error).
+var lensOffersLoaded   = false;
 var artifactsLoaded    = false;
 var booksLoaded        = false;   // F-DL2: books' outgoing latch (beside pendingBookSync).
 // F-DL3: profile + readerModel are single-doc writes fired DIRECTLY (no dirty flag), so
@@ -89,6 +93,7 @@ function resetSyncLatches() {
   notebookLoaded          = false;
   subTheoriesLoaded       = false;
   themesLoaded            = false;
+  lensOffersLoaded        = false;   // L4.2
   artifactsLoaded         = false;
   booksLoaded             = false;
   profileLoaded           = false;
@@ -471,6 +476,14 @@ firebase.auth().onAuthStateChanged(function (u) {
         console.warn('loadThemesFromFirestore: fetch failed, keeping cache', themeResult.error);
         saveState();   // F-DL1 (R2): errored load; latch open; flush deferred write.
       }
+    });
+
+    // L4.2: Yumi's lens offers, /userLensOffers/{uid}, beside the themes. REPLACE
+    // the uid's bucket with the remote offers, keeping local offers still pending
+    // sync (FX-1) and skipping pending deletes (FX-1c). Rule 4: the latch opens
+    // only on found/absent; on error it stays shut and the local copy waits.
+    loadLensOffersFromFirestore(u.uid, function (loResult) {
+      applyLensOffersLoad(u.uid, loResult);
     });
 
     // 2.0 hardening (batch 2b): fetch this user's artifact-doc from
@@ -1318,9 +1331,9 @@ function saveReaderModelToFirestore(uid, model, callback) {
 //      provider). Abort cleanly on any refusal: data intact, session live,
 //      { status:'error', phase:'reauth' };
 //   2. capture the uid to a LOCAL var (never re-read praxis_user mid-flow);
-//   3. ONE ATOMIC BATCH over everything under the uid — the 8 private docs
+//   3. ONE ATOMIC BATCH over everything under the uid — the 9 private docs
 //      (userBooks, userArcs, userNotebook, userSubTheories, userProfiles,
-//      userThemes, userReaderModel, userArtifacts), aiUsage/{uid} (the AI
+//      userThemes, userReaderModel, userArtifacts, userLensOffers [L4.2]), aiUsage/{uid} (the AI
 //      ceiling counter, owner-DELETE only by rule), publicProfiles/{uid},
 //      publishedArcs where authorUid == uid, follows where followerUid == uid
 //      AND where targetUid == uid, buildOns where fromUid == uid. Firestore
@@ -1413,7 +1426,8 @@ function deleteAccountCloudData(uid) {
   var db = firebase.firestore();
   var refs = [];
   var privateCollections = ['userBooks', 'userArcs', 'userNotebook', 'userSubTheories',
-                            'userProfiles', 'userThemes', 'userReaderModel', 'userArtifacts'];
+                            'userProfiles', 'userThemes', 'userReaderModel', 'userArtifacts',
+                            'userLensOffers'];   // L4.2 (lens-contract §5)
   var i;
   for (i = 0; i < privateCollections.length; i++) { refs.push(db.collection(privateCollections[i]).doc(uid)); }
   refs.push(db.collection('aiUsage').doc(uid));
@@ -1476,6 +1490,7 @@ function restoreCloudFromLocal(uid) {
   job(typeof saveNotebookToFirestore === 'function' ? saveNotebookToFirestore : null,       function () { return buildUserNotebookDoc(uid); });
   job(typeof saveSubTheoriesToFirestore === 'function' ? saveSubTheoriesToFirestore : null, function () { return buildUserSubTheoriesDoc(uid); });
   job(typeof saveThemesToFirestore === 'function' ? saveThemesToFirestore : null,           function () { return buildUserThemesDoc(uid); });
+  job(typeof saveLensOffersToFirestore === 'function' ? saveLensOffersToFirestore : null,   function () { return buildUserLensOffersDoc(uid); });   // L4.2
   job(typeof saveArtifactsToFirestore === 'function' ? saveArtifactsToFirestore : null,     function () { return buildUserArtifactsDoc(uid); });
   job(typeof saveProfileToFirestore === 'function' ? saveProfileToFirestore : null,         function () { return getProfile(uid); });
   job(typeof saveReaderModelToFirestore === 'function' ? saveReaderModelToFirestore : null, function () { return (typeof getReaderModel === 'function') ? getReaderModel(uid) : null; });
@@ -1492,7 +1507,9 @@ var ACCOUNT_GLOBAL_KEYS = [
   'praxis_yumi_web_cache', 'praxis_yumi_web_cooldown', 'praxis_yumi_scan_cooldown',
   'praxis_yumi_profile_cooldown', 'praxis_yumi_last_greeting_idx', 'praxis_yumi_open',
   'praxis_publish_identity', 'praxis_sanitized_arcs', 'praxis_arc_tidy', 'praxis_commons_exits',
-  'praxis_lens_ai_suggestions', 'praxis_constellation_palette', 'praxis_shelf_view',
+  'praxis_constellation_palette', 'praxis_shelf_view',
+  // L4.4: the sky's per-device keys (the switch, its two toggles, the gate readout)
+  'praxis_sky', 'praxis_sky_threads', 'praxis_sky_names', 'praxis_sky_stats',
   'praxis_shelf_grouping', 'praxis_arcs_sort', 'praxis_arc_view_mode', 'praxis_st_marginalia_on',
   'praxis_st_faint_on', 'praxis_state',
   // red-team-found globals with no uid in their name: account-linked dismissals,
@@ -1925,6 +1942,120 @@ function saveThemesToFirestore(uid, payload, callback) {
   } catch (e) {
     finish({ status: 'error', error: e });
   }
+}
+
+// L4.2: /userLensOffers/{uid} -- the same typed-callback contract as the theme
+// loader (found / absent / error, fire-once).
+function loadLensOffersFromFirestore(uid, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; callback(result); }
+  if (!uid) { finish({ status: 'error', error: new Error('loadLensOffersFromFirestore: missing uid') }); return; }
+  try {
+    firebase.firestore().collection('userLensOffers').doc(uid).get()
+      .then(function (doc) {
+        if (doc && doc.exists) { finish({ status: 'found', data: doc.data() }); }
+        else { finish({ status: 'absent' }); }
+      }, function (err) { finish({ status: 'error', error: err }); });
+  } catch (e) { finish({ status: 'error', error: e }); }
+}
+
+// L4.2: settle a /userLensOffers load into the uid's bucket (the ONE merge, called
+// from the sign-in loader only). found: REPLACE with the remote offers, keeping
+// local offers still pending sync (FX-1) and skipping pending deletes (FX-1c);
+// lastReadAt takes the later of the two. Rule 4: the latch opens on found or
+// absent ONLY -- on error it stays shut and the local copy waits.
+function applyLensOffersLoad(uid, loResult) {
+  if (!uid || !loResult || (loResult.status !== 'found' && loResult.status !== 'absent')) {
+    console.warn('loadLensOffersFromFirestore: fetch failed; offers stay local, writes held (rule 4)', loResult ? loResult.error : null);
+    return false;
+  }
+  // A stale in-flight read for a PREVIOUS account (the F-DL5 family) must never open this
+  // account's latch: settle only for the uid that is signed in now.
+  var loCur = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  if (!loCur || loCur.uid !== uid) {
+    console.warn('loadLensOffersFromFirestore: stale result for a different uid -- ignored');
+    return false;
+  }
+  var loDoc = lensOffersDoc(uid), loKeptLocal = 0;
+  if (loResult.status === 'absent') {
+    for (var la in loDoc.offers) { if (loDoc.offers.hasOwnProperty(la)) { loKeptLocal++; } }   // seeded locally before the cloud doc existed
+  }
+  if (loResult.status === 'found') {
+    var loData = loResult.data || {};
+    var loRemote = (loData.offers && typeof loData.offers === 'object') ? loData.offers : {};
+    var loDelPend = getPendingDeletes('lensOffers', uid), loDelSet = {}, loConfirmed = [], loMerged = {}, lk;
+    for (lk = 0; lk < loDelPend.length; lk++) {
+      loDelSet[loDelPend[lk]] = true;
+      if (!loRemote.hasOwnProperty(loDelPend[lk])) { loConfirmed.push(loDelPend[lk]); }
+    }
+    for (lk in loRemote) {
+      if (loRemote.hasOwnProperty(lk) && !loDelSet[lk] && loRemote[lk] && typeof loRemote[lk] === 'object') {
+        ensureLensOfferFields(loRemote[lk]);
+        loMerged[lk] = loRemote[lk];
+      }
+    }
+    // FX-1: a local offer still pending sync survives the REPLACE -- a new offer the cloud has
+    // never seen (unless the cloud already holds THE SAME LENS, which stands with its colour),
+    // or a local decision (Later / Not this / a kept exchange) whose write never landed, which
+    // outranks the stale cloud copy of the same id.
+    var loSame = (window.YumiBrain && typeof window.YumiBrain.sameLens === 'function') ? window.YumiBrain.sameLens : null;
+    var loDropped = [];
+    for (lk in loDoc.offers) {
+      if (!loDoc.offers.hasOwnProperty(lk) || !isPendingSync('lensOffers', uid, lk)) { continue; }
+      // only an untouched OPEN local offer gives way to its cloud twin; a local decision
+      // (Later / Not this) is never dropped -- it is the reader's.
+      if (!loRemote.hasOwnProperty(lk) && loSame && loDoc.offers[lk] && loDoc.offers[lk].state === 'open') {
+        var twin = false, rk;
+        for (rk in loMerged) { if (loMerged.hasOwnProperty(rk) && loSame(loDoc.offers[lk], loMerged[rk])) { twin = true; break; } }
+        if (twin) { loDropped.push(lk); continue; }
+      }
+      loMerged[lk] = loDoc.offers[lk];
+      loKeptLocal++;
+    }
+    if (loDropped.length) { clearPendingSync('lensOffers', uid, loDropped); }
+    clearPendingDelete('lensOffers', uid, loConfirmed);
+    loDoc.offers = loMerged;
+    if (typeof loData.lastReadAt === 'number' && loData.lastReadAt > loDoc.lastReadAt) {
+      loDoc.lastReadAt = loData.lastReadAt;
+      loDoc.lastReadBookCount = (typeof loData.lastReadBookCount === 'number') ? loData.lastReadBookCount : 0;
+    }
+  }
+  lensOffersLoaded = true;
+  if (loKeptLocal) { markLensOffersDirty(); }   // push what the cloud has not got yet (now the latch is open)
+  pruneDeclinedOffers(uid);
+  saveState();
+  if (loResult.status === 'found' && window.views && window.views.renderRoute) { window.views.renderRoute(); }
+  console.log('loadLensOffersFromFirestore: ' + loResult.status);
+  return true;
+}
+
+// L4.2: the per-user offers payload { schemaVersion, offers, lastReadAt,
+// lastReadBookCount, updatedAt }. The bucket is per-uid, so it is A's alone.
+function buildUserLensOffersDoc(uid) {
+  var d = (typeof lensOffersDoc === 'function') ? lensOffersDoc(uid) : null;
+  return {
+    schemaVersion:     state.SCHEMA_VERSION,
+    offers:            d ? d.offers : {},
+    lastReadAt:        d ? d.lastReadAt : 0,
+    lastReadBookCount: d ? d.lastReadBookCount : 0,
+    updatedAt:         firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+
+// L4.2: full-doc .set(), held behind the rule-4 latch (re-dirty + return).
+function saveLensOffersToFirestore(uid, payload, callback) {
+  var done = false;
+  function finish(result) { if (done) return; done = true; if (typeof callback === 'function') callback(result); }
+  if (!uid) { finish({ status: 'error', error: new Error('saveLensOffersToFirestore: missing uid') }); return; }
+  if (!lensOffersLoaded) {
+    if (typeof markLensOffersDirty === 'function') { markLensOffersDirty(); }
+    finish({ status: 'deferred' });   // fires the callback so an awaiting caller never stalls
+    return;
+  }
+  try {
+    firebase.firestore().collection('userLensOffers').doc(uid).set(payload)
+      .then(function () { finish({ status: 'ok' }); }, function (err) { finish({ status: 'error', error: err }); });
+  } catch (e) { finish({ status: 'error', error: e }); }
 }
 
 // 2.0 hardening (batch 2b): per-user artifact-doc read from /userArtifacts/{uid}.
@@ -3039,6 +3170,9 @@ function buildUserReaderModelDoc(uid, model, stampFn) {
       source:    (prof.source === 'edited') ? 'edited' : 'auto'
     },
     updatedAt: (typeof m.updatedAt === 'number') ? m.updatedAt : 0,
+    // L4.2 (lens-contract §3): the reader's words to a lens let go -- a separate
+    // array beside threads (the thread schema is untouched).
+    lensWords: (typeof sanitizeLensWords === 'function') ? sanitizeLensWords(m.lensWords) : [],
     syncedAt:  stampFn()
   };
 }
@@ -3074,6 +3208,7 @@ function buildExportBundle(uid, email, published, publicProfile, exportedAt) {
       userNotebook:    _exportStampDoc(buildUserNotebookDoc(uid), exportedAt),
       userSubTheories: _exportStampDoc(buildUserSubTheoriesDoc(uid), exportedAt),
       userThemes:      _exportStampDoc(buildUserThemesDoc(uid), exportedAt),
+      userLensOffers:  _exportStampDoc(buildUserLensOffersDoc(uid), exportedAt),   // L4.2 (lens-contract §5)
       userArtifacts:   _exportStampDoc(buildUserArtifactsDoc(uid), exportedAt),
       userProfiles:    buildUserProfileDoc(uid, getProfile(uid), stamp),
       userReaderModel: buildUserReaderModelDoc(uid, rm, stamp)

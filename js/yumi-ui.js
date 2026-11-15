@@ -24,6 +24,9 @@ var YUMI_INPUT_ID  = 'yumi-input';
 var YUMI_BODY_ID   = 'yumi-panel-body';
 
 var yumiPanelEl    = null;
+var yumiLensViewEl = null;   // L4.3: the say-back overlay inside the panel
+var yumiInputRowEl = null;   // L4.3: the chat input row (hidden while a lens is pinned)
+var yumiSayBack    = null;   // L4.3: the pinned say-back, in memory until Keep it
 var yumiBloomEl    = null;
 var yumiPanelBloomEl = null;
 var yumiInputEl    = null;
@@ -1042,8 +1045,11 @@ function refreshYumiPanelForAuthChange(force) {
   // on BOTH directions -- sign-in (integrations.js:124) and sign-out
   // (integrations.js:626, force) -- and sits ABOVE both early returns below, so
   // an onboarding-active session or a never-yet-built panel cannot skip it.
-  lensSuggestStatus = 'idle';
-  lensSuggestLenses = [];
+  // L4.3: the module-scoped proposal cache is retired. Offers now live per uid
+  // (state.userLensOffers[uid]) and the Lenses page's generation state is keyed
+  // by uid (views.js lxGenFor), so nothing of A's can reach B. A say-back still
+  // pinned to A's lens closes here.
+  if (typeof closeLensSayBack === 'function') { closeLensSayBack(); }
   if (typeof closeLensPanel === 'function' && lensPanelEl &&
       lensPanelEl.classList.contains('lens-panel-open')) {
     closeLensPanel();   // never leave a panel of the previous user's proposals on screen
@@ -1251,6 +1257,14 @@ function buildYumiPanel() {
   sightView.className = 'yumi-panel-sight-view';
   sightView.style.display = 'none';
   panel.appendChild(sightView);
+
+  // L4.3 (eleventh r4): the say-back lives in HER panel with the lens pinned -- an
+  // overlay like the sight view, so the conversation underneath is preserved.
+  var lensView = document.createElement('div');
+  lensView.className = 'yumi-panel-lens-view lx';
+  lensView.style.display = 'none';
+  panel.appendChild(lensView);
+  yumiLensViewEl = lensView;
   function closeSightView() {
     sightView.style.display = 'none';
     sightView.innerHTML = '';
@@ -1276,6 +1290,7 @@ function buildYumiPanel() {
 
   var row = document.createElement('div');
   row.className = 'yumi-panel-input';
+  yumiInputRowEl = row;   // L4.3: hidden while a lens is pinned
 
   var label = document.createElement('label');
   label.setAttribute('for', YUMI_INPUT_ID);
@@ -1564,6 +1579,7 @@ function openYumiPanel() {
 }
 
 function closeYumiPanel() {
+  if (yumiSayBack) { closeLensSayBack(); }   // L4.3: closing the panel ends a pinned say-back (nothing kept)
   sv('praxis_yumi_open', false);
   if (yumiPanelEl) {
     yumiPanelEl.classList.remove('yumi-panel-open');
@@ -1736,6 +1752,225 @@ function isHandRaised() {
             yumiBloomEl.classList.contains('yumi-bloom--raised'));
 }
 
+// =====================================================================
+// L4.3 -- THE SAY-BACK (eleventh r4; tenth r1-r2; S16). Her panel with the lens
+// PINNED: her first reading stays at the head as it stood; she asks what the
+// books are for; the reader writes ONE line (140); she re-reads the SAME books
+// through it (one call; the eval runs first), quoting it once as "You told me:
+// ..."; ONE chip "Call it <name>" beside "Name it yourself", on the last reading
+// only; after her first reading and two re-readings the name line opens empty.
+// Nothing is written until Keep it or a name: then said[] (<=4) keeps the
+// exchange (state.js lensKeepExchange) and the reader returns to the sheet.
+// =====================================================================
+function sbEl(tag, cls, text) {
+  var e = document.createElement(tag);
+  if (cls) { e.className = cls; }
+  if (typeof text === 'string') { e.textContent = text; }
+  return e;
+}
+function sbBtn(cls, text, fn) { var b = sbEl('button', cls, text); b.type = 'button'; b.addEventListener('click', fn); return b; }
+function sbSeedTurn(text) {
+  var t = sbEl('div', 'lx-turn y');
+  var s = sbEl('span', 'seedbox');
+  s.setAttribute('aria-hidden', 'true');
+  if (window.PraxisHand && PraxisHand.yumiSeed) { s.innerHTML = PraxisHand.yumiSeed(); }
+  t.appendChild(s);
+  var p = sbEl('p');
+  if (typeof text === 'string') { p.textContent = text; }
+  t.appendChild(p);
+  return { turn: t, p: p };
+}
+function sbRec(S) {
+  return (S.target.kind === 'theme') ? lensThemeById(S.target.id) : lensOfferById(S.target.uid, S.target.id);
+}
+function closeLensSayBack() {
+  yumiSayBack = null;
+  if (yumiLensViewEl) { yumiLensViewEl.style.display = 'none'; yumiLensViewEl.innerHTML = ''; }
+  var body = document.getElementById(YUMI_BODY_ID);
+  if (body) { body.style.display = ''; }
+  if (yumiInputRowEl) { yumiInputRowEl.style.display = ''; }
+}
+function openLensSayBack(target) {
+  if (!target || !target.uid || !target.id) { return; }
+  var rec = (target.kind === 'theme') ? lensThemeById(target.id) : lensOfferById(target.uid, target.id);
+  if (!rec) { return; }
+  if (!yumiYesOk()) { openYumiYesFromChrome(); return; }
+  // The floor (engine contract §9 proof 9): no lens call of any kind under five books.
+  if (typeof lensShelfCount === 'function' && lensShelfCount(target.uid) < LENS_OFFER_FLOOR) { return; }
+  if (!yumiPanelEl) { renderYumiPanel(); }
+  if (!yumiPanelEl || !yumiLensViewEl) { return; }
+  // Opened directly, NOT via openYumiPanel: a pinned say-back must not spend a
+  // held raised-hand move (that is delivered only by opening the Bloom).
+  sv('praxis_yumi_open', true);
+  yumiPanelEl.classList.add('yumi-panel-open');
+  yumiSayBack = {
+    target: target,
+    first: { name: rec.name, lead: rec.lead, close: rec.close, q: rec.q, look: rec.look, n: rec.bookIds.length },
+    prior: Math.max(0, (typeof rec.round === 'number' ? rec.round : 1) - 1),   // re-readings already kept
+    rounds: [], busy: false, err: '', naming: false
+  };
+  var body = document.getElementById(YUMI_BODY_ID);
+  if (body) { body.style.display = 'none'; }
+  if (yumiInputRowEl) { yumiInputRowEl.style.display = 'none'; }
+  var sight = yumiPanelEl.querySelector('.yumi-panel-sight-view');
+  if (sight) { sight.style.display = 'none'; }
+  yumiLensViewEl.style.display = '';
+  renderLensSayBack();
+}
+function sayBackDone(name) {
+  var S = yumiSayBack;
+  if (!S) { return; }
+  var nm = (typeof name === 'string') ? name.replace(/^\s+|\s+$/g, '').substring(0, 60) : '';
+  var t = S.target, rec = sbRec(S);
+  if (rec && S.rounds.length) {
+    lensKeepExchange(t.kind, t.uid, t.id, S.rounds, nm);
+  } else if (rec && nm) {
+    if (t.kind === 'theme') { renameUserTheme(t.id, nm); }
+    else { rec.name = nm; markPendingSync('lensOffers', t.uid, t.id); markLensOffersDirty(); saveState(); }   // FX-1
+  }
+  var said = (S.rounds.length || nm);
+  closeYumiPanel();
+  if (said && window.views && window.views.lxToast) {
+    window.views.lxToast(nm ? ('Kept as ' + nm + '. What you said back stays with the lens.') : 'Kept. What you said back stays with the lens.');
+  }
+  if (typeof t.onDone === 'function') { t.onDone(); }
+}
+function sayBackBack() {
+  var S = yumiSayBack;
+  if (!S) { return; }
+  var t = S.target;
+  closeYumiPanel();
+  if (typeof t.onDone === 'function') { t.onDone(); }
+}
+function sayBackSend(line) {
+  var S = yumiSayBack;
+  var v = (typeof line === 'string') ? line.replace(/^\s+|\s+$/g, '').substring(0, 140) : '';
+  if (!S || !v || S.busy) { return; }
+  var rec = sbRec(S);
+  if (!rec || !(window.YumiBrain && YumiBrain.generateLensReReading)) { return; }
+  if (typeof lensShelfCount === 'function' && lensShelfCount(S.target.uid) < LENS_OFFER_FLOOR) {   // the floor, re-checked at the call
+    S.err = 'Lenses come once your shelf holds five books. It holds ' + lensShelfCount(S.target.uid) + '.';
+    renderLensSayBack();
+    return;
+  }
+  var cur = S.rounds.length ? S.rounds[S.rounds.length - 1] : S.first;
+  S.busy = true; S.err = '';
+  renderLensSayBack();
+  YumiBrain.generateLensReReading({ themeLensNames: [cur.name] },
+    { name: cur.name, lead: cur.lead, close: cur.close, q: cur.q, bookIds: rec.bookIds }, v).then(function (res) {
+    if (yumiSayBack !== S) { return; }   // closed meanwhile
+    var titles = [], i;
+    for (i = 0; i < res.bookMeta.books.length; i++) { titles.push(res.bookMeta.books[i].title); }
+    var s = YumiBrain.evalLensResponse(res.text, titles, null, { reReading: true, titleToId: res.bookMeta.titleToId, against: [] });
+    S.busy = false;
+    if (!s.length) { S.err = 'Yumi couldn’t reach for lenses just now.'; }
+    else { S.rounds.push({ t: v, at: Date.now(), name: s[0].name, lead: s[0].lead, close: s[0].close, q: s[0].q }); }
+    renderLensSayBack();
+  }, function (err) {
+    if (yumiSayBack !== S) { return; }
+    S.busy = false;
+    S.err = (err && err.code === 'daily_limit' && typeof aiLimitMessage === 'function') ? aiLimitMessage(err) : 'Yumi couldn’t reach for lenses just now.';
+    renderLensSayBack();
+  });
+}
+function renderLensSayBack() {
+  var S = yumiSayBack, v = yumiLensViewEl;
+  if (!S || !v) { return; }
+  v.innerHTML = '';
+  var total = S.prior + S.rounds.length, i, r, t, focusEl = null;
+  // the pinned head: her FIRST reading, as it stood
+  var head = sbEl('div', 'lx-phead');
+  var pin = sbEl('div', 'lx-pin');
+  var mk = sbEl('span', 'mark still');
+  mk.setAttribute('aria-hidden', 'true');
+  if (S.first.look && window.PraxisHand && PraxisHand.formSvg) { mk.innerHTML = PraxisHand.formSvg(S.first.look, PraxisHand.hash(S.first.name), '-38 -38 76 76'); }
+  pin.appendChild(mk);
+  var pw = sbEl('div');
+  pw.appendChild(sbEl('em', '', S.first.name));
+  pw.appendChild(sbEl('small', '', S.first.n + (S.first.n === 1 ? ' BOOK' : ' BOOKS') + ' · HER FIRST READING, AS IT STOOD'));
+  pin.appendChild(pw);
+  head.appendChild(pin);
+  head.appendChild(sbEl('p', 'lx-first', (S.first.lead || '') + (S.first.close ? ' ' + S.first.close : '')));
+  v.appendChild(head);
+  var conv = sbEl('div', 'lx-conv');
+  conv.appendChild(sbSeedTurn('What are these books for, to you?').turn);
+  for (i = 0; i < S.rounds.length; i++) {
+    r = S.rounds[i];
+    var me = sbEl('div', 'lx-turn');
+    var bub = sbEl('div', 'lx-me');
+    bub.appendChild(sbEl('p', '', '“' + r.t + '”'));
+    me.appendChild(bub);
+    conv.appendChild(me);
+    t = sbSeedTurn();
+    t.p.appendChild(document.createTextNode(r.lead + ' ' + r.close));
+    t.p.appendChild(sbEl('em', 'lx-yq2', r.q));
+    if (i === S.rounds.length - 1 && total < 2 && !S.naming) {
+      var chips = sbEl('div', 'lx-chips');
+      var call = sbBtn('lx-chip gold', 'Call it ', (function (nm) { return function () { sayBackDone(nm); }; })(r.name));
+      call.appendChild(sbEl('em', '', r.name));
+      chips.appendChild(call);
+      chips.appendChild(sbBtn('lx-chip', 'Name it yourself', function () { S.naming = true; renderLensSayBack(); }));
+      var wrapT = sbEl('div');
+      wrapT.appendChild(t.p);
+      wrapT.appendChild(chips);
+      t.turn.appendChild(wrapT);
+    }
+    conv.appendChild(t.turn);
+  }
+  if (total >= 2 || S.naming) {
+    if (total >= 2) {
+      conv.appendChild(sbSeedTurn('Three readings is enough from me. The name is yours.' + (total === 2 ? ' Her last question is held with the lens.' : '')).turn);
+    }
+    var nl = sbEl('div', 'lx-line');
+    var ni = sbEl('input');
+    ni.type = 'text'; ni.maxLength = 60;
+    ni.setAttribute('placeholder', 'Name it…');
+    ni.setAttribute('aria-label', 'Name this lens');
+    ni.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); sayBackDone(ni.value); }
+      if (e.key === 'Escape') { e.preventDefault(); sayBackBack(); }
+    });
+    nl.appendChild(ni);
+    var nb = sbBtn('', '', function () { sayBackDone(ni.value); });
+    nb.setAttribute('aria-label', 'Keep this name');
+    nb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
+    nl.appendChild(nb);
+    conv.appendChild(nl);
+    focusEl = ni;
+  } else {
+    if (S.busy) { conv.appendChild(sbSeedTurn('Reading across these books…').turn); }
+    if (S.err) { conv.appendChild(sbSeedTurn(S.err).turn); }
+    var ln = sbEl('div', 'lx-line');
+    var inp = sbEl('input');
+    inp.type = 'text'; inp.maxLength = 140;
+    inp.setAttribute('placeholder', total ? 'Say more…' : 'Write back, one line…');
+    inp.setAttribute('aria-label', 'Write back to Yumi');
+    if (S.busy) { inp.disabled = true; }
+    var cnt = sbEl('span', 'lx-n', '0/140');
+    inp.addEventListener('input', function () { cnt.textContent = inp.value.length + '/140'; });
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); sayBackSend(inp.value); }
+      if (e.key === 'Escape') { e.preventDefault(); sayBackBack(); }
+    });
+    ln.appendChild(inp);
+    ln.appendChild(cnt);
+    var send = sbBtn('', '', function () { sayBackSend(inp.value); });
+    send.setAttribute('aria-label', 'Say it back');
+    send.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+    if (S.busy) { send.disabled = true; }
+    ln.appendChild(send);
+    conv.appendChild(ln);
+    focusEl = inp;
+  }
+  conv.appendChild(sbEl('p', 'lx-fine', 'Her claims stay about the books. What you write is kept with the lens; you can forget it on What Yumi Sees.'));
+  v.appendChild(conv);
+  var foot = sbEl('div', 'lx-pfoot');
+  foot.appendChild(sbBtn('pill', 'Keep it', function () { sayBackDone(''); }));
+  foot.appendChild(sbBtn('ghost', 'Back to the lens', sayBackBack));
+  v.appendChild(foot);
+  if (focusEl && !S.busy) { focusEl.focus(); }
+}
+
 window.YumiUI = {
   render:               renderYumiPanel,
   open:                 openYumiPanel,
@@ -1756,7 +1991,10 @@ window.YumiUI = {
   refreshPanelForAuth:  refreshYumiPanelForAuthChange,
   // L3.1: re-read the one yes into the chrome (Bloom / panel); views.renderRoute
   // and the yes sheet call it.
-  syncYes:              syncYumiYes
+  syncYes:              syncYumiYes,
+  // L4.3: the say-back -- her panel with a lens pinned (eleventh r4)
+  openLensSayBack:      openLensSayBack,
+  closeLensSayBack:     closeLensSayBack
 };
 
 // =====================================================================
@@ -1772,177 +2010,9 @@ var lensPanelEl      = null;
 var lensPanelBodyEl  = null;
 var lensPanelLastFocus = null;
 
-// Feature flag for Yumi's AI lens suggestions. Default OFF -- the live
-// model proposing lenses is the gated follow-on (needs Stage SEC + authored
-// prompts + an eval rubric), out of scope here.
-// S3 lens-gen suggestion state machine. status drives the suggested-lens
-// area; lenses are the surviving proposals (each tagged _pid for dispose/
-// adopt); meta carries titleToId for matching adopted titles to book ids.
-var lensSuggestStatus = 'idle';   // 'idle' | 'loading' | 'done' | 'error'
-var lensSuggestLenses = [];
-var lensSuggestMeta = null;
-
-function lensAiSuggestionsEnabled() {
-  // S3 (lens-gen ship): default ON. A user can still disable it by storing
-  // praxis_lens_ai_suggestions = false.
-  return ls('praxis_lens_ai_suggestions', true) === true;
-}
-
-// Fire the one-shot generation: gather metadata, call YumiBrain.generateLenses,
-// run survivors through YumiBrain.evalLensResponse, store them. Re-renders the
-// panel body on resolve. Never throws into the UI -- a proxy/parse failure
-// lands in the 'error' state, which renders a graceful retry.
-function startLensSuggest() {
-  if (!window.YumiBrain || typeof window.YumiBrain.generateLenses !== 'function' ||
-      typeof window.YumiBrain.evalLensResponse !== 'function') {
-    lensSuggestStatus = 'error';
-    return;
-  }
-  lensSuggestStatus = 'loading';
-  var meta = window.YumiBrain.gatherLensMetadata();
-  lensSuggestMeta = meta;
-  var titles = [];
-  var i;
-  for (i = 0; i < meta.books.length; i++) { titles.push(meta.books[i].title); }
-  window.YumiBrain.generateLenses(meta).then(function (raw) {
-    var lenses = window.YumiBrain.evalLensResponse(raw, titles);
-    var k;
-    for (k = 0; k < lenses.length; k++) { lenses[k]._pid = 'plens_' + k; }
-    lensSuggestLenses = lenses;
-    lensSuggestStatus = 'done';
-    renderLensPanelBody();
-  }, function (err) {
-    lensSuggestStatus = 'error';
-    renderLensPanelBody();
-  });
-}
-
-function lensSuggestFindByPid(pid) {
-  var i;
-  for (i = 0; i < lensSuggestLenses.length; i++) {
-    if (lensSuggestLenses[i]._pid === pid) { return i; }
-  }
-  return -1;
-}
-
-// "Name it": adopt a proposal as a real lens via the existing write path --
-// createUserTheme(name) + assignBookToTheme for each gathered title that maps
-// to a real book id. Removes the proposal, refreshes panel + rail.
-function lensSuggestAdopt(pid) {
-  var ix = lensSuggestFindByPid(pid);
-  if (ix === -1) { return; }
-  var lens = lensSuggestLenses[ix];
-  if (typeof createUserTheme !== 'function') { return; }
-  var theme = createUserTheme(lens.name);
-  if (theme && typeof assignBookToTheme === 'function' &&
-      lensSuggestMeta && lensSuggestMeta.titleToId) {
-    var i;
-    for (i = 0; i < lens.books.length; i++) {
-      var norm = lens.books[i].toLowerCase().replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ');
-      var bid = lensSuggestMeta.titleToId[norm];
-      if (bid) { assignBookToTheme(theme.id, bid); }
-    }
-  }
-  lensSuggestLenses.splice(ix, 1);
-  lensPanelRefresh();
-}
-
-function lensSuggestDismiss(pid) {
-  var ix = lensSuggestFindByPid(pid);
-  if (ix === -1) { return; }
-  lensSuggestLenses.splice(ix, 1);
-  renderLensPanelBody();
-}
-
-// "Rename": inline-edit a proposal's name before adopting it.
-function lensSuggestRename(pid) {
-  if (!lensPanelBodyEl) { return; }
-  var ix = lensSuggestFindByPid(pid);
-  if (ix === -1) { return; }
-  var card = lensPanelBodyEl.querySelector('[data-pid="' + pid + '"]');
-  if (!card) { return; }
-  var nameEl = card.querySelector('.lens-card-name');
-  if (!nameEl) { return; }
-  nameEl.innerHTML = '';
-  var inp = document.createElement('input');
-  inp.type = 'text';
-  inp.className = 'lens-card-rename-input';
-  inp.value = lensSuggestLenses[ix].name;
-  inp.setAttribute('autocomplete', 'off');
-  nameEl.appendChild(inp);
-  function commit() {
-    var v = inp.value.replace(/^\s+|\s+$/g, '');
-    if (v !== '') { lensSuggestLenses[ix].name = v; }
-    renderLensPanelBody();
-  }
-  inp.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); commit(); }
-    else if (e.key === 'Escape') { e.stopPropagation(); renderLensPanelBody(); }
-  });
-  inp.addEventListener('blur', commit);
-  inp.focus();
-  inp.select();
-}
-
-function buildLensSuggestRetry() {
-  var btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'shelf-lens-ask lens-suggest-retry';
-  btn.textContent = 'Ask Yumi again';
-  btn.addEventListener('click', function () {
-    lensSuggestStatus = 'idle';
-    lensSuggestLenses = [];
-    renderLensPanelBody();
-  });
-  return btn;
-}
-
-function buildProposedLensCard(lens) {
-  var card = document.createElement('div');
-  card.className = 'lens-card lens-card-proposed';
-  card.setAttribute('data-pid', lens._pid);
-
-  var main = document.createElement('div');
-  main.className = 'lens-card-main';
-  var name = document.createElement('span');
-  name.className = 'lens-card-name';
-  // S4: the shared crest marks this card as proposed by Yumi (one source).
-  name.appendChild(yumiGlyphNode(16, 'yumi-glyph-lead'));
-  name.appendChild(document.createTextNode(lens.name));
-  main.appendChild(name);
-  var why = document.createElement('span');
-  why.className = 'lens-card-why';
-  why.textContent = lens.why;
-  main.appendChild(why);
-  var books = document.createElement('span');
-  books.className = 'lens-card-books';
-  books.textContent = lens.books.join(' · ');
-  main.appendChild(books);
-  card.appendChild(main);
-
-  var actions = document.createElement('div');
-  actions.className = 'lens-card-actions lens-card-actions-proposed';
-  var nameIt = document.createElement('button');
-  nameIt.type = 'button';
-  nameIt.className = 'lens-card-action lens-card-action-adopt';
-  nameIt.textContent = 'Name it';
-  nameIt.addEventListener('click', function () { lensSuggestAdopt(lens._pid); });
-  actions.appendChild(nameIt);
-  var renameIt = document.createElement('button');
-  renameIt.type = 'button';
-  renameIt.className = 'lens-card-action';
-  renameIt.textContent = 'Rename';
-  renameIt.addEventListener('click', function () { lensSuggestRename(lens._pid); });
-  actions.appendChild(renameIt);
-  var notThis = document.createElement('button');
-  notThis.type = 'button';
-  notThis.className = 'lens-card-action lens-card-action-drop';
-  notThis.textContent = 'Not this';
-  notThis.addEventListener('click', function () { lensSuggestDismiss(lens._pid); });
-  actions.appendChild(notThis);
-  card.appendChild(actions);
-  return card;
-}
+// L4.3: the S3 suggestion machinery (the flag, the generator call, adopt/dismiss/
+// rename, the retry, the proposed card) is retired -- the Lenses page (views.js)
+// owns Yumi's reading now, through the one generation path (lensRunGeneration).
 
 // The signed-in user's hand-made lenses (userThemes), name-sorted.
 function lensPanelUserThemes() {
@@ -2049,65 +2119,22 @@ function renderLensPanelBody() {
   if (!lensPanelBodyEl) { return; }
   lensPanelBodyEl.innerHTML = '';
 
-  // Suggested (AI) lenses -- live when the flag is on (default on, S3). The
-  // first render of an open kicks off the one-shot generation; the body
-  // re-renders on resolve. Adopt/rename/dismiss operate on the survivors.
+  // L4.3 (engine contract §4, §7): Yumi's lens suggestions have left this panel --
+  // her reading and her offers live on the Lenses page (ruling 86), and the one
+  // yes is the only switch (the old per-device suggestions flag is retired). One row goes there.
   var sug = document.createElement('div');
   sug.className = 'lens-panel-section';
-  var sugLabel = document.createElement('div');
-  sugLabel.className = 'lens-panel-section-label';
-  sugLabel.textContent = 'Yumi’s suggestions';
-  sug.appendChild(sugLabel);
-  if (!lensAiSuggestionsEnabled()) {
-    var off = document.createElement('p');
-    off.className = 'lens-panel-stub';
-    off.textContent = 'Yumi’s lens suggestions are off. Name your own below.';
-    sug.appendChild(off);
-  } else {
-    if (lensSuggestStatus === 'idle') { startLensSuggest(); }
-    if (lensSuggestStatus === 'loading') {
-      var loading = document.createElement('p');
-      loading.className = 'lens-panel-stub lens-suggest-loading';
-      // S3: the shared crest pulses (reduced-motion-safe) beside the line
-      // while generateLenses is in flight; the resolve re-render drops it.
-      loading.appendChild(yumiGlyphNode(20, 'yumi-glyph-lead yumi-glyph-pulse'));
-      loading.appendChild(document.createTextNode('Reading across your shelf…'));
-      sug.appendChild(loading);
-    } else if (lensSuggestStatus === 'error') {
-      var errp = document.createElement('p');
-      errp.className = 'lens-panel-stub';
-      errp.textContent = 'Yumi couldn’t reach for lenses just now.';
-      sug.appendChild(errp);
-      sug.appendChild(buildLensSuggestRetry());
-    } else if (lensSuggestStatus === 'done') {
-      if (lensSuggestLenses.length === 0) {
-        var emptyp = document.createElement('p');
-        emptyp.className = 'lens-panel-stub';
-        emptyp.textContent = 'Yumi didn’t find clear lenses this time — your shelf may be small or wide-ranging. Name your own below.';
-        sug.appendChild(emptyp);
-        sug.appendChild(buildLensSuggestRetry());
-      } else {
-        // R5 (R-FIRSTSHELF 3d): a sparse result (1–2 lenses) is a DESIGNED honest
-        // state, never a failure — frame it as "so far, more as the shelf grows".
-        if (lensSuggestLenses.length <= 2) {
-          var sparse = document.createElement('p');
-          sparse.className = 'lens-panel-stub lens-suggest-sparse';
-          sparse.textContent = (lensSuggestLenses.length === 1)
-            ? 'One clear thread so far — more will surface as your shelf grows.'
-            : 'A couple of threads so far — more will surface as your shelf grows.';
-          sug.appendChild(sparse);
-        }
-        var si;
-        for (si = 0; si < lensSuggestLenses.length; si++) {
-          sug.appendChild(buildProposedLensCard(lensSuggestLenses[si]));
-        }
-      }
-    }
-    var sugCov = document.createElement('p');
-    sugCov.className = 'lens-panel-covenant lens-suggest-covenant';
-    sugCov.textContent = 'Yumi proposes these from your titles, authors, and genres only — never from inside your books.';
-    sug.appendChild(sugCov);
-  }
+  var toLenses = document.createElement('button');
+  toLenses.type = 'button';
+  toLenses.className = 'lens-panel-lenses-row';
+  toLenses.appendChild(document.createTextNode('Lenses'));
+  var toChev = document.createElement('span');
+  toChev.className = 'chev';
+  toChev.setAttribute('aria-hidden', 'true');
+  toChev.textContent = '›';
+  toLenses.appendChild(toChev);
+  toLenses.addEventListener('click', function () { closeLensPanel(); location.hash = '#lenses'; });
+  sug.appendChild(toLenses);
   lensPanelBodyEl.appendChild(sug);
 
   // Your hand-made lenses.
@@ -2251,16 +2278,8 @@ function openLensPanel() {
     document.body.appendChild(lensPanelEl);
   }
   lensPanelLastFocus = document.activeElement;
-  // R-POLISH B1 · CO-1 (THE STORED-ONCE LAW) -- the open-time reset to 'idle'
-  // is RETIRED. It made every re-open silently re-bill a fresh generateLenses()
-  // call against claude-proxy AND discard proposals the reader had not finished
-  // reviewing. The status now persists across opens, so renderLensPanelBody's
-  // `if (status === 'idle') startLensSuggest()` fires exactly ONCE per session:
-  //   done  -> the stored proposals re-render, no network call
-  //   error -> the error branch renders WITH buildLensSuggestRetry()
-  //   done+empty -> the empty branch renders WITH buildLensSuggestRetry()
-  // Re-asking stays available, but it is now an explicit, user-paid act -- the
-  // same cache + explicit-refresh shape as shelf classification's "Re-classify".
+  // L4.3: opening the panel never calls Yumi (CO-1's stored-once law, kept). Her
+  // reading moved to the Lenses page, where it runs only by the bound or a tap.
   renderLensPanelBody();
   lensPanelEl.classList.add('lens-panel-open');
   document.addEventListener('keydown', onLensPanelKeydown);

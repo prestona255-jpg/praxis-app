@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Praxis Lens Sheet</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* ---------- the review chrome (not Praxis): a plain desk around the frame ---------- */
+:root{--pg:#F8F5EC;--pg-ink:#2B2216;--pg-ink-2:#6F6552;--pg-line:#E1DCCB;--serif:"Fraunces",Georgia,serif;--sans:"DM Sans",-apple-system,system-ui,sans-serif;--mono:"DM Mono",ui-monospace,monospace;--ease:cubic-bezier(.2,.7,.2,1);--dur:280ms;--dur-half:140ms}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pg:#17150F;--pg-ink:#EDE6D6;--pg-ink-2:#A39B88;--pg-line:#2E2A20;color-scheme:dark}}
+:root[data-theme="dark"]{--pg:#17150F;--pg-ink:#EDE6D6;--pg-ink-2:#A39B88;--pg-line:#2E2A20;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--pg);color:var(--pg-ink);font-family:var(--sans)}
+body{padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1420px;margin:0 auto}
+header h1{font-family:var(--serif);font-weight:500;font-size:28px;margin:0;letter-spacing:-.01em}
+header p{margin:6px 0 12px;color:var(--pg-ink-2);font-size:14px;max-width:70ch;line-height:1.5}
+.ctrls{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-bottom:12px}
+.ctrls .lbl{font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--pg-ink-2)}
+.seg{display:inline-flex;border:1px solid var(--pg-line);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;color:var(--pg-ink-2);font:500 13px var(--sans);padding:8px 13px;border-radius:999px;cursor:pointer;white-space:nowrap;min-height:36px}
+.seg button[aria-pressed="true"]{background:var(--pg-ink);color:var(--pg)}
+.seg button:focus-visible{outline:2px solid #D9931A;outline-offset:2px}
+.note{font-size:13px;color:var(--pg-ink-2);line-height:1.5;max-width:76ch;margin:10px 0 0}
+.note b{color:var(--pg-ink);font-weight:500}
+.stage{display:flex;justify-content:flex-start;margin-top:8px;overflow-x:auto;padding-bottom:8px}
+.stage > .frame{margin:0 auto}
+body[data-bare="1"]{padding:0;background:#000}
+body[data-bare="1"] header,body[data-bare="1"] .ctrls,body[data-bare="1"] .note{display:none}
+body[data-bare="1"] .stage{margin:0}
+
+/* ---------- the frame: a phone at 390, a desk at 1360 ---------- */
+.frame{width:390px;height:844px;border-radius:38px;padding:10px;background:#111;box-shadow:0 20px 50px rgba(0,0,0,.22);flex:none}
+.frame[data-w="1360"]{width:1360px;height:860px;border-radius:18px;padding:8px}
+body[data-bare="1"] .frame{border-radius:0;padding:0;box-shadow:none;width:100vw;height:100vh;height:100dvh}
+.frame[data-w="1360"] .screen{border-radius:12px}
+body[data-bare="1"] .screen{border-radius:0}
+
+/* ---------- the screen: Sunflower tokens, night in :root's place (ruling 41), day under [data-mood="day"] ---------- */
+.screen{border-radius:30px;overflow:hidden;font-size:15px;line-height:1.45;height:100%;display:none;flex-direction:column;position:relative;
+  --page:#24180C;--card:#4A2E18;--card2:#63401F;--ink:#F5E8C4;--ink2:#CDB894;--ink3:#BAA48C;
+  --gold:#E8B23A;--on-gold:#1C120A;--gold-ink:#E8B23A;--star:#E8B23A;
+  --sky:#1C120A;--umber:#4A2E18;--on-n:#F5E8C4;--on-n2:#CDB894;--on-n3:#BAA48C;
+  --yumi:#C8552E;--stem:#8DB08A;--line:rgba(255,255,255,.14);
+  --lamp:radial-gradient(120% 70% at 50% -10%, rgba(92,59,33,.55), rgba(92,59,33,0) 60%);
+  --lamp-foot:radial-gradient(80% 40% at 50% 100%, rgba(232,178,58,.10), rgba(232,178,58,0) 70%);
+  --pool:radial-gradient(82% 46% at 50% 56%, rgba(92,59,33,.58), rgba(92,59,33,0) 72%);
+  --sky-a:var(--pool);--sky-b:none;
+  --spill:linear-gradient(180deg, rgba(232,178,58,.10), rgba(232,178,58,0) 140px);
+  --card-hi:inset 0 1px 0 rgba(255,255,255,.07);
+  --bl-core:#FDFAF3;--bl-gold:#C79A3A;--bl-light:#DFB759;--bl-wisdom:#F8E078;--bl-theory:#F0A88A;--bl-emp:#F8C8AA;--bl-edge:rgba(255,241,210,0);
+  background:var(--page);color:var(--ink)}
+.screen[data-mood="day"]{
+  --page:#EDD79E;--card:#FBF3D9;--card2:#E2C98C;--ink:#2A1E10;--ink2:#6F5A34;--ink3:#6B5936;
+  --gold:#D9931A;--on-gold:#2A1E10;--gold-ink:#835508;--star:#E8B23A;
+  --sky:#2B1E12;--stem:#45704F;--line:rgba(42,30,16,.16);
+  --sky-a:var(--lamp-foot);--sky-b:var(--lamp);
+  --spill:linear-gradient(180deg, rgba(92,59,33,.16), rgba(92,59,33,0) 140px);
+  --card-hi:inset 0 1px 0 rgba(255,255,255,.55), 0 1px 0 rgba(42,30,16,.05);
+  --bl-core:#FFF8E6;--bl-gold:#B06F12;--bl-light:#E0A030;--bl-wisdom:#F8DF86;--bl-theory:#E8845E;--bl-emp:#F0B48C;--bl-edge:rgba(42,30,16,.38)}
+.screen.on{display:flex;container-type:inline-size}
+:where(.screen) button{appearance:none;border:0;background:none;padding:0;margin:0;font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;text-align:left}
+.screen button:focus-visible{outline:2px solid var(--gold-ink);outline-offset:2px}
+.sky button:focus-visible{outline-color:var(--star)}
+.k{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-ink)}
+.sky .k{color:var(--star)}
+.p{margin:0;color:var(--ink2)}
+.sky .p{color:var(--on-n2)}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;padding:12px 20px;min-height:44px;font:500 15px var(--sans);background:var(--gold);color:var(--on-gold)}
+.ghost{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:999px;padding:11px 18px;font:500 14px var(--sans);border:1px solid var(--line);color:var(--ink)}
+.sky .ghost{border-color:rgba(245,232,196,.28);color:var(--on-n)}
+.quiet{display:inline-flex;align-items:center;min-height:44px;font:500 13px var(--sans);color:var(--ink3);text-decoration:underline;text-underline-offset:3px;padding:12px 8px}
+.sky .quiet{color:var(--on-n2)}
+.card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--card-hi);display:flex;flex-direction:column;gap:12px;width:100%}
+.fine2{margin:0;font-size:12.5px;color:var(--ink3);line-height:1.45}
+.wm{font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:-.01em}
+.eyebrow{font-family:var(--mono);font-size:12px;color:var(--ink3);letter-spacing:.04em}
+
+/* ---------- THE SKY (lifted by L4 as is): night ground, the pool, a current, painted forms. Never still; reduced motion stills it. ---------- */
+.sky{background-color:var(--sky);background-image:var(--sky-a),var(--sky-b);color:var(--on-n);position:relative;overflow:hidden;z-index:1;display:flex;flex-direction:column;flex:none}
+.sky > canvas.paint{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.sky > *:not(canvas){position:relative}
+.rail{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 0 22px;min-height:44px}
+.rail .wm{color:var(--on-n)}
+.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(245,232,196,.35);overflow:hidden;background:#1C120A;flex:none}
+.av svg{width:100%;height:100%;display:block}
+.sky .eyebrow{color:var(--on-n3)}
+.greet{font-family:var(--serif);font-weight:500;letter-spacing:-.015em;line-height:1.06;text-wrap:balance;margin:6px 22px 0;color:var(--on-n);font-size:min(40px,calc((100cqw - 44px) / 7.4))}
+.srchpill{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 14px 0 11px;border-radius:999px;border:1px solid rgba(245,232,196,.28);font:500 13.5px var(--sans);color:var(--on-n);background:rgba(28,18,10,.35);flex:none}
+.srchpill svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.field{position:relative;margin-top:10px;height:300px}
+.field.many{height:360px}
+.field.tight{height:340px}
+.field > svg.bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none}
+.core svg{display:block;overflow:visible}
+.hint{margin:2px 22px 6px;text-align:center;font-size:12.5px;line-height:1.4;color:var(--on-n3)}
+.hint .yline{display:inline-flex;align-items:center;gap:8px;color:var(--on-n2);font-size:14px}
+.hint .yline .seedbox{width:28px;height:28px;background:none}
+.hint small{display:block;font:11px var(--mono);letter-spacing:.08em;color:var(--on-n3);margin-top:4px}
+.honest{display:flex;flex-direction:column;align-items:center;gap:2px;margin:0 22px 4px;text-align:center}
+.honest p{margin:0;font:italic 400 17px/1.35 var(--serif);color:var(--on-n);text-wrap:balance;letter-spacing:-.01em}
+.honest .row{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.thread{fill:none;stroke-linecap:butt}
+.orb{position:absolute;left:0;top:0;border:0;background:transparent;padding:0;cursor:pointer;border-radius:16px;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;width:140px;transition:opacity var(--dur) var(--ease)}
+.orb.up{flex-direction:column-reverse}
+.orb.lft,.orb.rgt{flex-direction:row;width:auto;gap:6px}
+.orb.lft{flex-direction:row-reverse}
+.orb.lft .l,.orb.rgt .l{max-width:104px;text-align:left}
+.orb.lft .l{text-align:right}
+.orb:focus-visible{outline:2px solid #FFD873;outline-offset:-1px}
+.orb .art{display:block;flex:none}
+.orb .br{display:block;width:100%;height:100%;--sw:0deg;--sc:1.09}
+.orb .art svg{display:block;width:100%;height:100%;overflow:visible}
+.orb .l{font-family:var(--serif);font-style:italic;font-size:12.5px;line-height:15px;color:var(--on-n);text-align:center;max-width:150px;text-wrap:balance;padding:0 4px}
+.orb.offer .body,.orb.later .body,.orb.deciding .body{opacity:.55}
+.orb.later{opacity:.55}
+.orb.offer .l,.orb.later .l,.orb.deciding .l{color:var(--on-n2)}
+.field.deciding .orb:not(.deciding){opacity:.38}
+.field.deciding .orb.deciding .body{opacity:1}
+.orb.deciding .l{font-size:13.5px;font-weight:500}
+.orb.cat .l,.orb.book .l{color:var(--on-n)}
+.field.many .orb .l,.field.tight .orb .l{display:none}
+.field.many .orb.named .l,.field.tight .orb.named .l{display:block}
+.field.many .orb:focus-visible .l,.field.many .orb:hover .l,.field.tight .orb:focus-visible .l,.field.tight .orb:hover .l{display:block}
+.field.nonames .orb .l,.field.nonames .orb.named .l{display:none}
+.field.nonames .orb:focus-visible .l,.field.nonames .orb:hover .l{display:block}
+.orb .l{transition:opacity var(--dur) var(--ease)}
+.orb .l.hid{opacity:0;pointer-events:none}
+.orb:focus-visible .l.hid,.orb:hover .l.hid{opacity:1}
+.homecnt{display:flex;gap:18px;font:12px var(--mono);letter-spacing:.04em;color:var(--on-n3);padding:0 22px}
+.homecnt b{color:var(--on-n);font-weight:500}
+.core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:0;background:none;padding:0;border-radius:50%;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;touch-action:manipulation}
+.core:focus-visible{outline:2px solid #FFD873;outline-offset:6px}
+.core.held{filter:brightness(1.12)}
+.core svg{display:block;overflow:visible;pointer-events:none}
+.door{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 22px 8px;min-height:44px;padding:0 2px;font:500 13.5px var(--sans);color:var(--on-n2);border-top:1px solid rgba(245,232,196,.14);width:calc(100% - 44px);text-align:left}
+.door b{color:var(--on-n);font-weight:500}
+.door .chev{color:var(--on-n3);font-size:18px}
+.door:focus-visible{outline:2px solid var(--star);outline-offset:2px}
+.modes{display:inline-flex;gap:2px;margin:12px 22px 0;padding:3px;border-radius:999px;border:1px solid rgba(245,232,196,.22);align-self:flex-start}
+.modes button{min-height:36px;padding:0 14px;border-radius:999px;font:500 13px var(--sans);color:var(--on-n2)}
+.modes button[aria-pressed="true"]{background:rgba(245,232,196,.14);color:var(--on-n)}
+.togrow{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:52px;padding:6px 0;border-bottom:1px solid var(--line)}
+.togrow:last-child{border-bottom:0}
+.togrow > span:first-child{display:flex;flex-direction:column;font:500 15px var(--sans);color:var(--ink)}
+.togrow small{font:12.5px var(--sans);color:var(--ink3);margin-top:2px}
+.knob{flex:none;width:44px;height:26px;border-radius:13px;background:var(--line);position:relative;transition:background var(--dur) var(--ease)}
+.knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--card);box-shadow:0 1px 0 rgba(0,0,0,.2);transition:transform var(--dur) var(--ease)}
+.togrow[aria-pressed="true"] .knob{background:var(--gold)}
+.togrow[aria-pressed="true"] .knob::after{transform:translateX(18px)}
+.sheet .yrow{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:56px;border-bottom:1px solid var(--line)}
+.sheet .yrow:last-child{border-bottom:0}
+.sheet .yrow > span:first-child{display:flex;align-items:center;gap:10px;font:500 15px var(--sans);color:var(--ink);min-width:0}
+.sheet .yrow small{display:block;font:12.5px var(--sans);color:var(--ink3);margin-top:2px}
+.sheet .yrow .chev{color:var(--ink3);font-size:18px}
+.sheet .mark.sm{width:30px;height:30px}
+@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(var(--ax),var(--ay))}}
+@keyframes turn{to{transform:rotate(360deg)}}
+@keyframes sway{0%,100%{transform:rotate(calc(var(--sw) * -1)) scale(1)}50%{transform:rotate(var(--sw)) scale(var(--sc))}}
+@keyframes ripple{0%{transform:scale(.2);opacity:0}20%{opacity:var(--ro)}100%{transform:scale(1.22);opacity:0}}
+@keyframes grain{to{transform:translateY(7px)}}
+@keyframes pulse{0%,100%{transform:scale(.93);opacity:.74}50%{transform:scale(1.07);opacity:1}}
+@keyframes morph{0%,14%,100%{transform:var(--tf)}50%,64%{transform:var(--tg)}}
+@keyframes tilt{0%,14%,100%{transform:rotate(0deg) scale(1,1)}50%,64%{transform:rotate(var(--tl)) scale(1,.6)}}
+.orb .art{animation:drift var(--dur) ease-in-out var(--del) infinite}
+.orb .br{animation:sway var(--bd) ease-in-out var(--bdl) infinite}
+.sw{animation:sway var(--d) ease-in-out var(--dl,0s) infinite}
+.rp{animation:ripple var(--d) linear var(--dl,0s) infinite;opacity:0}
+.gr{animation:grain var(--d) linear infinite}
+.pu{animation:pulse var(--d) ease-in-out var(--dl,0s) infinite}
+.tn{animation:turn var(--d) linear infinite}
+.tn.rev{animation-direction:reverse}
+.fb{transform-box:fill-box;transform-origin:center}
+.pt{transform:var(--tf);animation:morph 64s ease-in-out infinite}
+.tiltg{animation:tilt 64s ease-in-out infinite}
+.sping{animation:turn 300s linear infinite}
+.sping.rev{animation-direction:reverse}
+.still *{animation:none!important}
+.still .rp{opacity:0}
+.mark{display:inline-block;width:30px;height:30px;flex:none;vertical-align:middle}
+.mark svg{display:block;width:100%;height:100%;overflow:hidden}
+.mark.xl{width:52px;height:52px}
+.seedbox{display:block;width:44px;height:44px;border-radius:50%;background:var(--sky);flex:none;overflow:hidden}
+.seedbox svg{display:block;width:100%;height:100%;overflow:visible}
+
+/* ---------- paper under the sky (Day Three's Home / You, carried) ---------- */
+.body2{padding:14px 16px 96px;display:flex;flex-direction:column;gap:12px;background:var(--page)}
+.spill{background-image:var(--spill)}
+.leftoff{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;text-align:left}
+.leftoff .nt{width:44px;height:64px;border-radius:8px;background:var(--card2);display:grid;place-items:center;color:var(--gold-ink);font:500 11px var(--mono)}
+.leftoff b{display:block;font:500 15px/1.25 var(--serif)}
+.leftoff small{display:block;font:12.5px var(--sans);color:var(--ink3);margin-top:2px}
+.leftoff .chev{color:var(--ink3);font-size:18px}
+.cvcol{display:flex;gap:8px;flex-wrap:wrap}
+.cvcol i{display:block;width:44px;height:64px;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.yumi{display:flex;align-items:center;gap:12px;background:var(--umber);color:var(--on-n);border-radius:999px;padding:8px 16px 8px 8px;position:relative;overflow:hidden;width:100%;text-align:left}
+.yumi em{font:italic 400 15px/1.3 var(--serif);color:var(--on-n);letter-spacing:-.005em;display:block}
+.yumi small{display:block;font:11px var(--mono);color:var(--on-n3);margin-top:2px;letter-spacing:.04em}
+.yumi > div{min-width:0}
+.next{display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--ink2);padding:2px 6px}
+.next div{display:grid;grid-template-columns:16px 1fr;gap:6px}
+.next div::before{content:"→";color:var(--ink3)}
+.tabs{margin-top:auto;display:flex;justify-content:space-around;padding:10px 6px 14px;border-top:1px solid var(--line);background:var(--page);position:relative;z-index:2}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:4px;font:500 11px var(--sans);color:var(--ink3);letter-spacing:.02em;min-width:44px;min-height:44px;justify-content:flex-end;text-align:center}
+.tabs .on2{color:var(--gold-ink)}
+.tabs svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.you-name{display:flex;align-items:center;gap:14px;margin:12px 22px 0}
+.you-name .av{width:56px;height:56px}
+.you-name h2{font:500 34px/1 var(--serif);letter-spacing:-.015em;margin:0;color:var(--on-n)}
+.you-name small{display:block;font:12px var(--mono);color:var(--on-n3);letter-spacing:.04em;margin-top:6px}
+.stat{display:flex;gap:18px;flex-wrap:wrap}
+.stat div{display:flex;flex-direction:column}
+.stat b{font-family:var(--serif);font-weight:500;font-size:34px;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink)}
+.stat span{font-size:12px;color:var(--ink3)}
+.yrows{padding:4px 18px}
+.yrows button{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:56px;padding:10px 0;border-bottom:1px solid var(--line)}
+.yrows button:last-child{border-bottom:0}
+.yrows button > span:first-child{display:flex;flex-direction:column;font:500 15px var(--sans);color:var(--ink)}
+.yrows small{font:12.5px var(--sans);color:var(--ink3);margin-top:2px}
+.yrows .chev{color:var(--ink3);font-size:18px}
+.scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.screen[data-id="you"] .sky{border-radius:0 0 28px 28px;padding-bottom:10px}
+.screen[data-id="home"] .sky{padding-bottom:4px}
+
+/* ---------- the desk at 1360 (seventh r8): the sky is the sticky left column, the paper on the right unchanged ---------- */
+.screen[data-w="1360"]{flex-direction:row}
+.screen[data-w="1360"] .scroll{flex-direction:row;overflow:hidden}
+.screen[data-w="1360"] .sky{width:600px;flex:none;height:100%;border-radius:0;justify-content:center;padding-bottom:0}
+.screen[data-w="1360"] .field{height:440px;margin-top:16px}
+.screen[data-w="1360"] .field.many{height:480px}
+.screen[data-w="1360"] .greet{font-size:44px}
+.screen[data-w="1360"] .paperside{flex:1;min-width:0;overflow-y:auto;display:flex;flex-direction:column}
+.screen[data-w="1360"] .body2{max-width:640px;width:100%;margin:0 auto;padding:28px 28px 40px}
+.screen[data-w="1360"] .tabs{display:none}
+.screen[data-w="1360"] .rail{padding-top:16px}
+.screen[data-w="1360"] .hint{font-size:13.5px}
+
+/* ---------- a lens sheet stub (deliverable 2 draws the real one), the scrim, the toast ---------- */
+.scrim{position:absolute;inset:0;background:rgba(28,18,10,.55);z-index:4}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:92%;overflow-y:auto;background:var(--card);color:var(--ink);border-radius:24px 24px 0 0;padding:8px 18px 22px;display:flex;flex-direction:column;gap:14px;z-index:5}
+.screen[data-w="1360"] .sheet{left:auto;right:40px;bottom:40px;width:420px;border-radius:24px}
+.sheet .handle{align-self:center;width:38px;height:4px;border-radius:2px;background:var(--line)}
+.sheet .ln{display:flex;align-items:center;gap:12px;min-width:0}
+.sheet .ln em{font:italic 500 20px/1.2 var(--serif);overflow-wrap:anywhere;min-width:0;color:var(--ink)}
+.sheet .cnt{font:12px var(--mono);color:var(--ink3);letter-spacing:.02em}
+.sheet .yq{margin:0;font-size:15px;color:var(--ink2)}
+.sheet .yq em{font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.4;display:block;color:var(--ink)}
+.sheet .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sheet .grid2 .pill,.sheet .grid2 .ghost{width:100%}
+.sheet .later{font-size:12.5px;color:var(--ink3);margin:0}
+.toast{position:absolute;left:16px;right:16px;top:14px;z-index:7;background:var(--umber);color:var(--on-n);border-radius:999px;padding:10px 10px 10px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.screen[data-w="1360"] .toast{left:auto;right:40px;width:460px}
+.toast button{color:var(--star);font:500 14px var(--sans);min-height:36px;padding:0 10px;border-radius:999px;flex:none}
+.toast span{min-width:0;line-height:1.3}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.bloom{position:absolute;right:14px;bottom:86px;width:44px;height:44px;z-index:3}
+.bloom svg{width:100%;height:100%;display:block}
+.screen[data-w="1360"] .bloom{bottom:24px;right:24px}
+
+@media (prefers-reduced-motion:reduce){
+  .orb .art,.orb .br,.sw,.rp,.gr,.pu,.tn,.pt,.tiltg,.sping{animation:none!important}
+  .rp{opacity:0}
+  .orb{transition:none!important}
+}
+</style>
+<style>
+/* ---------- deliverable 2: the lens sheet, Yumi's panel pinned (the say-back), the Lenses page, the offer card ---------- */
+.sheet{gap:14px;padding-bottom:max(22px,env(safe-area-inset-bottom,0px))}
+.sheet .top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.sheet .top .ln{flex:1}
+.sheet .x{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--ink3);flex:none;margin:-6px -8px 0 0}
+.sheet .x svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+:is(.sheet,.offer-card) .ql{display:block;font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--gold-ink);margin-bottom:4px}
+:is(.sheet,.offer-card) .read{margin:0;font:400 15.5px/1.5 var(--sans);color:var(--ink)}
+:is(.sheet,.offer-card) .read b{font-weight:600;color:var(--ink)}
+:is(.sheet,.offer-card) .read .cl{color:var(--ink2)}
+:is(.sheet,.offer-card) .themes{display:flex;gap:6px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+:is(.sheet,.offer-card) .themes li{font:500 12.5px var(--sans);color:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:6px 10px}
+:is(.sheet,.offer-card) .themes li b{color:var(--ink);font-weight:600}
+.covers{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none;margin:0 -2px}
+.covers::-webkit-scrollbar{display:none}
+.cover{flex:none;width:58px;height:84px;border-radius:5px;padding:6px;display:flex;flex-direction:column;justify-content:flex-end;color:#FFF6E4;text-align:left;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);position:relative;transition:opacity var(--dur) var(--ease)}
+.cover b{display:block;font:500 9.5px/1.15 var(--serif);letter-spacing:-.01em;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+.cover small{display:block;font:8.5px/1.2 var(--sans);opacity:.85;margin-top:2px}
+.cover.out{opacity:.35}
+.cover.out::after{content:"";position:absolute;inset:0;border-radius:5px;border:1px dashed rgba(255,255,255,.7)}
+.cover[aria-pressed="true"]{outline:2px solid var(--gold);outline-offset:2px}
+.cover:focus-visible{outline:2px solid var(--gold-ink);outline-offset:2px}
+.clause{background:var(--card2);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.clause p{margin:0;font:italic 400 15.5px/1.45 var(--serif);color:var(--ink)}
+.clause .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.clause small{font:12.5px var(--sans);color:var(--ink3)}
+.txtbtn{display:inline-flex;align-items:center;min-height:44px;padding:0 10px;font:500 14px var(--sans);color:var(--ink2);text-decoration:underline;text-underline-offset:3px}
+.txtbtn:disabled{opacity:.5;text-decoration:none;cursor:default}
+.said{display:flex;flex-direction:column;gap:6px}
+.said em{display:block;font:italic 400 16px/1.4 var(--serif);color:var(--ink);padding-left:12px;border-left:2px solid var(--gold)}
+.said .row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.acts .pill{flex:1 1 auto;min-width:140px}
+.qc{background:var(--card2);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.qc b{font:500 16px var(--serif);color:var(--ink)}
+.qc p{margin:0;font-size:14px;color:var(--ink2)}
+/* Yumi's panel, pinned (eleventh r4): a tall sheet, terracotta is hers alone */
+.panel{max-height:94%;gap:0;padding:8px 0 0}
+.panel .phead{position:sticky;top:0;background:var(--card);padding:6px 18px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px;z-index:1}
+.panel .pin{display:flex;align-items:center;gap:10px}
+.panel .pin em{font:italic 500 17px/1.25 var(--serif);color:var(--ink)}
+.panel .pin small{display:block;font:12px var(--mono);color:var(--ink3);letter-spacing:.02em;margin-top:2px}
+.panel .first{margin:0;font:400 13.5px/1.45 var(--sans);color:var(--ink2)}
+.panel .conv{padding:14px 18px 18px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.turn{display:flex;gap:10px;align-items:flex-start}
+.turn .seedbox{width:32px;height:32px;margin-top:2px}
+.turn .me{margin-left:auto;max-width:86%}
+.turn p{margin:0;font:400 15.5px/1.5 var(--sans);color:var(--ink)}
+.turn.y p{font-family:var(--sans)}
+.turn.y p em{font-family:var(--serif);font-style:italic}
+.turn .me p{background:var(--card2);border-radius:16px 16px 4px 16px;padding:10px 14px;font:italic 400 15.5px/1.45 var(--serif)}
+.turn .yq2{font:italic 400 17px/1.4 var(--serif);color:var(--ink);display:block;margin-top:6px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:999px;font:500 14px var(--sans);border:1px solid var(--line);color:var(--ink)}
+.chip.gold{background:var(--gold);color:var(--on-gold);border-color:transparent}
+.chip em{font-family:var(--serif);font-style:italic;margin-left:4px}
+.line{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 4px 4px 16px;background:var(--card2)}
+.line input{flex:1;min-width:0;border:0;background:none;font:italic 400 15.5px var(--serif);color:var(--ink);outline:none;min-height:40px}
+.line input::placeholder{color:var(--ink3);font-style:italic}
+.line button{min-width:44px;height:44px;border-radius:50%;background:var(--gold);color:var(--on-gold);display:grid;place-items:center}
+.line button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.line .n{font:11px var(--mono);color:var(--ink);opacity:.9;flex:none}
+.pfoot{display:flex;gap:8px;padding:10px 18px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.pfoot .pill{flex:1 1 auto}
+/* the Lenses page (ruling 86) */
+.page{display:flex;flex-direction:column;flex:1;min-height:0;background:var(--page);color:var(--ink)}
+.phd{display:flex;align-items:center;gap:10px;padding:12px 16px 0;min-height:52px}
+.phd .back{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--ink2);margin-left:-10px}
+.phd .back svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.phd h1{margin:0;font:500 30px/1 var(--serif);letter-spacing:-.015em}
+.pbody{padding:14px 16px 96px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.sect{display:flex;flex-direction:column;gap:8px}
+.sect .k{display:flex;justify-content:space-between;align-items:baseline}
+.sect .k span{font:12px var(--mono);letter-spacing:.02em;color:var(--ink3);text-transform:none}
+.lrow{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 0;border-bottom:1px solid var(--line);text-align:left}
+.lrow:last-child{border-bottom:0}
+.lrow .mark{width:36px;height:36px}
+.lrow .tx{display:flex;flex-direction:column;min-width:0;flex:1}
+.lrow em{font:italic 500 16px/1.25 var(--serif);color:var(--ink)}
+.lrow small{font:12.5px var(--sans);color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .chev{color:var(--ink3);font-size:18px}
+.offer-card{background:var(--card);border-radius:20px;padding:16px;box-shadow:var(--card-hi);display:flex;flex-direction:column;gap:12px}
+.offer-card .ln{display:flex;align-items:center;gap:12px}
+.offer-card .ln em{font:italic 500 20px/1.2 var(--serif);color:var(--ink)}
+.offer-card .cnt,.offer-card .yq,.offer-card .later{margin:0}
+.offer-card .cnt{font:12px var(--mono);color:var(--ink3);letter-spacing:.02em}
+.offer-card .yq em{font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.4;display:block;color:var(--ink)}
+.offer-card .said em{display:block;font:italic 400 16px/1.4 var(--serif);color:var(--ink);padding-left:12px;border-left:2px solid var(--gold)}
+.ystate{display:flex;align-items:center;gap:12px;background:var(--umber);color:var(--on-n);border-radius:18px;padding:12px 16px 12px 12px}
+.ystate .seedbox{width:40px;height:40px;background:none}
+.ystate p{margin:0;font:italic 400 16px/1.35 var(--serif);color:var(--on-n)}
+.ystate small{display:block;font:11px var(--mono);letter-spacing:.08em;color:var(--on-n3);margin-top:3px}
+.fold{display:flex;flex-direction:column;gap:6px}
+.fold > button{display:flex;justify-content:space-between;align-items:center;min-height:44px;font:500 14px var(--sans);color:var(--ink2);width:100%}
+.fold .in{display:flex;flex-direction:column;gap:6px;padding:4px 0 0}
+.fold .in .row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--ink2)}
+.fold .in .row em{font-family:var(--serif);color:var(--ink)}
+.pbody .next{padding:2px 2px}
+.consent{background:var(--card);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--card-hi)}
+.consent h3{margin:0;font:500 22px/1.15 var(--serif);letter-spacing:-.01em}
+.consent p{margin:0;font-size:14.5px;color:var(--ink2);line-height:1.45}
+.screen[data-w="1360"] .page{flex-direction:row;align-items:flex-start}
+.screen[data-w="1360"] .pcol{max-width:680px;width:100%;margin:0 auto;display:flex;flex-direction:column}
+.screen[data-w="1360"] .panel{left:auto;right:40px;bottom:40px;top:40px;max-height:none;width:460px;border-radius:24px}
+.screen[data-w="1360"] .sheet.lens-sheet{left:auto;right:40px;bottom:40px;width:440px;border-radius:24px}
+.gridcard{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gridcard .pill,.gridcard .ghost{width:100%}
+</style>
+<div class="wrap">
+  <header>
+    <h1>Praxis Lens Sheet</h1>
+    <p>L4 design, deliverable 2 (9 Nov 2026, Fable 5.1). The short lens sheet a tap on a lens opens, with its depth: Yumi’s question pinned, her reading (sure about the shelf, asking about you), every cover with her clause on tap and leave-out, what you said back, the door to Open Lens. The say-back in her panel with the lens pinned (eleventh r4). And the Lenses page, where her reading and her offers live (ruling 86).</p>
+  </header>
+  <div class="ctrls">
+    <span class="lbl">Surface</span><span class="seg" data-ctl="s"><button type="button" data-v="sheet">Lens sheet</button><button type="button" data-v="say">Say-back</button><button type="button" data-v="page">Lenses page</button><button type="button" data-v="offer">Offer card</button></span>
+    <span class="lbl">Mood</span><span class="seg" data-ctl="m"><button type="button" data-v="night">Night</button><button type="button" data-v="day">Day</button></span>
+    <span class="lbl">Width</span><span class="seg" data-ctl="w"><button type="button" data-v="390">390</button><button type="button" data-v="1360">1360</button></span>
+    <span class="lbl">Lens</span><span class="seg" data-ctl="l"><button type="button" data-v="0">Who gets to deposit · hers</button><button type="button" data-v="1">The machine as teacher · hers</button><button type="button" data-v="2">Books I teach from · yours</button></span>
+    <span class="lbl">Page state</span><span class="seg" data-ctl="ps"><button type="button" data-v="offers">An offer · 2 in Later</button><button type="button" data-v="quiet">All quiet</button><button type="button" data-v="reading">Reading</button><button type="button" data-v="nothing">Nothing clear</button><button type="button" data-v="under">Under the floor</button><button type="button" data-v="noyes">No yes yet</button></span>
+    <span class="lbl">Say-back</span><span class="seg" data-ctl="sb"><button type="button" data-v="0">Her question</button><button type="button" data-v="1">Second reading</button><button type="button" data-v="2">The name is yours</button></span>
+  </div>
+  <div class="stage">
+    <div class="frame" id="frame" data-w="390">
+      <div class="screen on" data-id="main" id="scr">
+        <div class="scroll" id="scroll"></div>
+        <div class="tabs" id="tabs"></div>
+        <div class="scrim" id="scrim" hidden></div>
+        <div class="sheet lens-sheet" id="sheet" role="dialog" aria-label="Lens" hidden></div>
+        <div class="sheet panel" id="panel" role="dialog" aria-label="Yumi" hidden></div>
+        <span class="bloom" id="bloombtn" role="img" aria-label="Yumi"></span>
+        <div class="toast" id="toast" hidden><span id="toast-t"></span><button type="button" id="toast-b" hidden>Undo</button></div>
+      </div>
+    </div>
+  </div>
+  <p class="note" id="note"></p>
+</div>
+<script src="hand.js"></script>
+<script>
+(function(){
+  var H=PraxisHand, $=function(id){return document.getElementById(id);};
+  function esc(s){ return H.esc(s); }
+  function plural(n,w){ return n+' '+w+(n===1?'':(w==='lens'?'es':'s')); }
+  /* ---------- the fixture: books on the 148-book shelf that these lenses rest on ---------- */
+  var BOOKS={
+    b1:['Pedagogy of the Oppressed','Paulo Freire','#5B7A8C',1], b2:['Power, Crisis, and Education for Liberation','Noah De Lissovoy','#9C4A6E',1], b3:['Teaching to Transgress','bell hooks','#B84A2E',1],
+    b6:['Braiding Sweetgrass','Robin Wall Kimmerer','#3D6446',1], b7:['For White Folks Who Teach in the Hood','Christopher Emdin','#C9A66B',1], b27:['The Fire Next Time','James Baldwin','#2F7F9E',1], b39:['Beloved','Toni Morrison','#7A5C3A',1],
+    b49:['All About Love','bell hooks','#D9931A',1], b34:['The Undercommons','Moten & Harney','#6F5A34',0],
+    b8:['Weapons of Math Destruction','Cathy O’Neil','#8A6A2E',1], b9:['Atlas of AI','Kate Crawford','#5B7A8C',1], b10:['Race After Technology','Ruha Benjamin','#9C4A6E',1], b11:['Automating Inequality','Virginia Eubanks','#3D6446',0], b12:['Algorithms of Oppression','Safiya Noble','#B84A2E',1], b54:['Failure to Disrupt','Justin Reich','#2F7F9E',0], b53:['The Age of Surveillance Capitalism','Shoshana Zuboff','#7A5C3A',0],
+    b28:['Deep Work','Cal Newport','#6F5A34',1], b29:['Rest','Alex Soojung-Kim Pang','#3D6446',0], b47:['Laziness Does Not Exist','Devon Price','#D9931A',1]
+  };
+  var LENSES=[
+   {name:'Who gets to deposit',origin:'hers',books:['b1','b3','b7','b2','b49','b34'],q:'When you say a classroom banks, who is counting?',
+    lead:'Across Freire, hooks and Emdin the question keeps turning on the direction of the deposit: who fills whom, and who audits.',
+    clauses:{b1:'Freire names the depositor in the second chapter and never lets him off.',b3:'hooks asks who may speak in the room before anyone can deposit.',b7:'Emdin’s cogens hand the deposit slip to the students.',b2:'De Lissovoy reads the deposit as an act of power, not a mistake of method.',b49:'hooks again, with love as the thing a banking classroom cannot hold.',b34:'Moten and Harney refuse the ledger entirely.'},
+    close:'Read together they ask whether the bank can be closed, or only renamed.',themes:[['banking','as a metaphor about who is allowed to deposit'],['power','named, not implied'],['refusal','of the ledger itself']],
+    why:'Because it is the question I ask every Monday.',said:['Banking is a metaphor about who is allowed to deposit.'],notes:5,
+    rounds:[
+      {me:'It’s about who gets to decide what counts as knowledge.',lead:'You told me: “It’s about who gets to decide what counts as knowledge.” Through that, Freire’s depositor is a judge of what counts, hooks’s speaker the one asking to be counted, and Moten and Harney the ones who stopped counting.',close:'Read that way the bank is a court.',q:'Who sits on the bench?',name:'Who counts as knowing'},
+      {me:'The students, if the room is set up right.',lead:'You told me: “The students, if the room is set up right.” Then Emdin’s cogens are the setup, hooks’s room the condition, and De Lissovoy the reason it is rarely set that way.',close:'Three books on the setup; three on why it is missing.',q:'What is in your room on Monday?',name:'Setting up the room'}
+    ]},
+   {name:'The machine as teacher',origin:'hers',books:['b8','b9','b10','b11','b12','b54','b53'],q:'What does a predictive system assume a student already is?',
+    lead:'Seven books that watch a model arrive in a classroom and ask what it decided before the bell rang.',
+    clauses:{b8:'O’Neil shows the score arriving before the student does.',b9:'Crawford traces the model back to the mine and the warehouse.',b10:'Benjamin names the default settings as a politics.',b11:'Eubanks follows the algorithm into the welfare office, where it has already been.',b12:'Noble reads the search box as a teacher nobody hired.',b54:'Reich counts the reforms that promised to disrupt and taught the same lesson.',b53:'Zuboff names the business the prediction serves.'},
+    close:'None of them trusts the score; all of them want to know who set it.',themes:[['prediction','as a decision already made'],['the score','and who set it'],['default settings','as a politics']],
+    why:'',said:[],notes:9,
+    rounds:[
+      {me:'They’re all about being judged before you show up.',lead:'You told me: “They’re all about being judged before you show up.” Through that, O’Neil’s score is the sentence, Eubanks’s office the courtroom, and Benjamin’s defaults the law nobody voted on.',close:'Seven books about arriving already decided.',q:'Who is allowed to appeal?',name:'Decided before the bell'},
+      {me:'Nobody appeals. That’s the design.',lead:'You told me: “Nobody appeals.” Then Zuboff names who profits from the silence, Crawford what it costs to build, and Reich why the fixes fail.',close:'A system with no appeals is a system with an owner.',q:'Who owns yours?',name:'No appeals'}
+    ]},
+   {name:'Books I teach from',origin:'yours',books:['b1','b2','b7','b6','b27','b39'],q:'',lead:'',clauses:{},close:'',themes:[],why:'The six I open in front of students.',said:[],notes:4}
+  ];
+  var OFFER={name:'Hustle and its discontents',books:['b28','b29','b47'],q:'What does the grind promise, and to whom?',
+    lead:'Three books that sell the grind and count its cost sit on the same shelf.',
+    clauses:{b28:'Newport sells the grind as craft.',b29:'Pang counts what the grind costs in hours of rest.',b47:'Price names the grind a lie told to the tired.'},
+    close:'Read together they ask what the hustle is for.',themes:[['the grind','sold as craft'],['rest','as what it costs'],['worth','measured in hours']],
+    /* the say-back, scripted per round (tenth sitting: the mockup's re-readings are scripted; the engine re-reads for real) */
+    rounds:[
+      {me:'They’re about what I’m allowed to stop doing.',lead:'You told me: “They’re about what I’m allowed to stop doing.” Through that, Newport’s craft becomes a permission slip, Pang’s rest the thing stopping protects, and Price’s refusal the stop itself.',close:'Read that way they are one argument about permission.',q:'Who gives the permission?',name:'Permission to stop'},
+      {me:'Nobody gives it. That’s the point.',lead:'You told me: “Nobody gives it.” Then Newport is asking for it anyway, Pang is taking it, and Price is saying it was never anyone’s to give.',close:'Three books, three ways of not waiting.',q:'Which of the three are you reading now?',name:'Not waiting'}
+    ]};
+  var LATER=[{name:'Surveillance before the screen',books:['b53','b8','b11'],lead:'Three books on watching, written before the screens that do it now.'},{name:'The sacred in the ordinary',books:['b39','b6','b27'],lead:'Morrison, Kimmerer and Baldwin, each finding the holy in a kitchen.'}];
+  var DECLINED=[{name:'Cruel, everywhere',said:'The hustle books are all the same book.',when:'2 weeks ago'}];
+  var looks=[],i; for(i=0;i<LENSES.length;i++){ LENSES[i].look=H.makeLook(LENSES[i].name,looks); looks.push(LENSES[i].look); } OFFER.look=H.makeLook(OFFER.name,looks); looks.push(OFFER.look);
+  for(i=0;i<LATER.length;i++){ LATER[i].look=H.makeLook(LATER[i].name,looks); looks.push(LATER[i].look); }
+
+  var Q={s:'sheet',m:'night',w:'390',l:'0',ps:'offers',sb:'0'};
+  function readHash(){ var h=location.hash.replace(/^#/,''),parts=h.split('&'),i,kv; for(i=0;i<parts.length;i++){ kv=parts[i].split('='); if(kv[0]&&kv.length>1&&Q.hasOwnProperty(kv[0])){ Q[kv[0]]=decodeURIComponent(kv[1]); } } if(/[?&]bare=1/.test(location.search)){ document.body.setAttribute('data-bare','1'); } }
+  function writeHash(){ var k,o=[]; for(k in Q){ if(Q.hasOwnProperty(k)){ o.push(k+'='+Q[k]); } } var nh='#'+o.join('&'); if(location.hash!==nh){ try{ history.replaceState(null,'',nh); }catch(e){} } }
+  var LIVE={out:{},pick:null,letgo:false,later:LATER.slice(0),offer:OFFER,declined:DECLINED.slice(0),fold:false,saidMap:{},saidLens:[]};
+  function resetLive(){ var T=sayTarget(); LIVE.out={}; LIVE.pick=null; LIVE.letgo=false; LIVE.later=LATER.slice(0); LIVE.offer=(Q.ps==='offers')?OFFER:null; LIVE.declined=DECLINED.slice(0); LIVE.fold=false; LIVE.saidMap={}; LIVE.saidMap[T.name]=T.rounds.slice(0,+Q.sb).map(function(r){return r.me;}); LIVE.saidLens=LENSES[0].said.slice(0); }
+  /* the say-back's pinned lens: the offer on the page/offer surfaces, the chosen lens (if hers) on the sheet */
+  function sayTarget(){ if(Q.s==='page'||Q.s==='offer'){ return OFFER; } var L=LENSES[+Q.l]; return (L.rounds)?L:OFFER; }
+  function saidOf(T){ return LIVE.saidMap[T.name]||(LIVE.saidMap[T.name]=[]); }
+  function cur(){ return LENSES[+Q.l]; }
+  function markSvg(look,name,cls){ return '<span class="mark '+(cls||'xl')+' still">'+H.formSvg(look,H.hash(name),'-38 -38 76 76')+'</span>'; }
+  function coverHtml(id,outMap,clauses){ var b=BOOKS[id],o=outMap&&outMap[id]; return '<button type="button" class="cover'+(o?' out':'')+'" style="background:'+b[2]+'" data-cover="'+id+'" aria-pressed="'+(LIVE.pick===id)+'" aria-label="'+esc(b[0])+', '+esc(b[1])+(o?'. Left out of this lens.':'')+(clauses&&clauses[id]?'. Tap for her clause.':'')+'"><b>'+esc(b[0])+'</b><small>'+esc(b[1])+'</small></button>'; }
+  function readingHtml(L,round){
+    var h='',i,r=(round&&L.rounds)?L.rounds[round-1]:null,lead=r?r.lead:L.lead,close=r?r.close:L.close,q=r?r.q:L.q,ids=L.books,k;
+    h+='<p class="read">'+esc(lead)+' ';
+    for(i=0;i<ids.length;i++){ k=ids[i]; if(LIVE.out[k]||!L.clauses[k]){continue;} h+='<span class="cl">'+esc(L.clauses[k])+'</span> '; }
+    h+=esc(close)+'</p>';
+    return {h:h,q:q};
+  }
+  function themesHtml(L){ var h='<ul class="themes">',i; for(i=0;i<L.themes.length;i++){ h+='<li><b>'+esc(L.themes[i][0])+'</b> '+esc(L.themes[i][1])+'</li>'; } return h+'</ul>'; }
+
+  /* ---------- THE LENS SHEET (seventh r18 + its depth: ninth §A, tenth r3, fifteenth r46 for the door) ---------- */
+  function sheetHtml(){
+    var L=cur(),h='',i,read=0,inLens=0,k,R,hers=L.origin==='hers',pickB=LIVE.pick?BOOKS[LIVE.pick]:null,canOut;
+    for(i=0;i<L.books.length;i++){ k=L.books[i]; if(!LIVE.out[k]){ inLens++; if(BOOKS[k][3]){read++;} } }
+    h+='<div class="top"><span class="ln">'+markSvg(L.look,L.name)+'<em>'+esc(L.name)+'</em></span><button type="button" class="x" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
+    h+='<span class="cnt">'+(hers?'FROM YUMI':'YOURS')+' · '+plural(inLens,'BOOK').toUpperCase()+' · '+read+' READ · '+plural(L.notes,'NOTE').toUpperCase()+'</span>';
+    if(L.q){ h+='<div><span class="ql">Yumi’s question · pinned to this lens</span><p class="yq"><em>'+esc(L.q)+'</em></p></div>'; }
+    if(hers){ R=readingHtml(L,0); h+='<div><span class="ql">Her reading</span>'+R.h+'</div>'; }
+    else { h+='<div><span class="ql">Her reading</span><p class="read" style="color:var(--ink2)">She hasn’t read this one. It is yours as you named it.</p><div class="acts" style="margin-top:6px"><button type="button" class="ghost" data-ask>Ask Yumi to read it</button></div></div>'; }
+    h+='<div><span class="ql">The books in it · tap one'+(hers?' for her clause':'')+'</span><div class="covers">'; for(i=0;i<L.books.length;i++){ h+=coverHtml(L.books[i],LIVE.out,L.clauses); } h+='</div>';
+    if(pickB){ canOut=inLens>2||LIVE.out[LIVE.pick]; h+='<div class="clause"><p>'+(L.clauses[LIVE.pick]?esc(L.clauses[LIVE.pick]):('<span style="font-style:normal;color:var(--ink2)">'+esc(pickB[0])+' — in this lens because you put it there.</span>'))+'</p><div class="row"><small>'+esc(pickB[0])+' · '+(BOOKS[LIVE.pick][3]?'read':'unread')+(LIVE.out[LIVE.pick]?' · left out':'')+'</small>'+(LIVE.out[LIVE.pick]?'<button type="button" class="txtbtn" data-back="'+LIVE.pick+'">Put it back</button>':'<button type="button" class="txtbtn" data-out="'+LIVE.pick+'"'+(canOut?'':' disabled')+'>Leave out of this lens</button>')+'</div>'+(canOut?'':'<small>A lens rests on at least two books.</small>')+'</div>'; }
+    h+='</div>';
+    if(L.why){ h+='<div><span class="ql">Why you keep returning to it</span><p class="yq"><em>'+esc(L.why)+'</em></p></div>'; }
+    if(+Q.l===0&&LIVE.saidLens.length){ h+='<div class="said"><span class="ql">What you said back · kept with the lens</span>'; for(i=0;i<LIVE.saidLens.length;i++){ h+='<em>“'+esc(LIVE.saidLens[i])+'”</em>'; } h+='<div class="row"><small style="font:12.5px var(--sans);color:var(--ink3)">Yumi quotes these when she reads this lens.</small><button type="button" class="txtbtn" data-forget>Let her forget this</button></div></div>'; }
+    h+='<div class="acts"><button type="button" class="pill" data-openlens>Open lens</button>'+(L.rounds?'<button type="button" class="ghost" data-say>Not quite — talk it through</button>':'')+'</div>';
+    h+='<div class="acts"><button type="button" class="ghost" data-rename>Rename</button><button type="button" class="txtbtn" data-letgo>Let it go</button></div>';
+    if(LIVE.letgo){ h+='<div class="qc"><b>Let this lens go?</b><p>Its '+plural(inLens,'book')+' stay on your shelf.'+(LIVE.saidLens.length&&+Q.l===0?' Your words to this lens stay in Yumi’s memory; you can forget them on What Yumi Sees.':'')+'</p><div class="acts"><button type="button" class="pill" data-gone>Let it go</button><button type="button" class="quiet" data-keep>Keep it</button></div></div>'; }
+    return h;
+  }
+
+  /* ---------- YUMI'S PANEL, PINNED: the say-back (tenth voice law, eleventh r4 placement, three readings then the name is yours) ---------- */
+  function panelHtml(L,rounds,said){
+    var h='',i,r,R,n=said.length,last;
+    h+='<div class="phead"><div class="pin">'+markSvg(L.look,L.name,'sm')+'<div><em>'+esc(L.name)+'</em><small>'+plural(L.books.length,'BOOK').toUpperCase()+' · HER FIRST READING, AS IT STOOD</small></div></div><p class="first">'+esc(L.lead)+' '+esc(L.close)+'</p></div>';
+    h+='<div class="conv">';
+    h+='<div class="turn y"><span class="seedbox" data-yseed></span><p>What are these books for, to you?</p></div>';
+    for(i=0;i<n;i++){ r=rounds[i]; last=(i===n-1);
+      h+='<div class="turn"><div class="me"><p>“'+esc(said[i])+'”</p></div></div>';
+      if(r){ h+='<div class="turn y"><span class="seedbox" data-yseed></span><div><p>'+esc(r.lead)+' '+esc(r.close)+'<em class="yq2">'+esc(r.q)+'</em></p>'+(last&&n<2?'<div class="chips" style="margin-top:10px"><button type="button" class="chip gold" data-callit="'+esc(r.name)+'">Call it <em>'+esc(r.name)+'</em></button><button type="button" class="chip" data-nameit>Name it yourself</button></div>':'')+'</div></div>'; }
+    }
+    if(n>=2){ h+='<div class="turn y"><span class="seedbox" data-yseed></span><p>Three readings is enough from me. The name is yours.'+(n>=3?'':' Her last question is held with the lens.')+'</p></div>'; h+='<div class="line"><input type="text" id="nameline" maxlength="60" placeholder="Name it…" aria-label="Name this lens"><button type="button" data-named aria-label="Keep this name"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></button></div>'; }
+    if(n<2){ h+='<div class="line"><input type="text" id="sayline" maxlength="140" placeholder="'+(n?'Say more…':'Write back, one line…')+'" aria-label="Write back to Yumi"><span class="n" id="saycount">0/140</span><button type="button" data-send aria-label="Say it back"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>'; }
+    h+='<p class="later" style="margin:0;font-size:12.5px;color:var(--ink3)">Her claims stay about the books. What you write is kept with the lens; you can forget it on What Yumi Sees.</p>';
+    h+='</div>';
+    h+='<div class="pfoot"><button type="button" class="pill" data-keepit>Keep it</button><button type="button" class="ghost" data-backto>Back to the lens</button></div>';
+    return h;
+  }
+
+  /* ---------- THE OFFER CARD (ninth §A3, on the Lenses page now) ---------- */
+  function offerHtml(){
+    var O=LIVE.offer||OFFER,R=readingHtml(O,0),h='',i,sd=saidOf(OFFER),n=sd.length,rr=n?O.rounds[Math.min(n,O.rounds.length)-1]:null,name=rr?rr.name:O.name;
+    h+='<span class="k">Yumi’s offer · 1 of 1</span>';
+    h+='<div class="ln">'+markSvg(O.look,O.name)+'<em>'+esc(name)+'</em></div>';
+    h+='<span class="cnt">RESTS ON '+plural(O.books.length,'BOOK').toUpperCase()+' · TAP A COVER FOR HER CLAUSE</span>';
+    h+='<div class="covers">'; for(i=0;i<O.books.length;i++){ h+=coverHtml(O.books[i],{},O.clauses); } h+='</div>';
+    if(LIVE.pick&&O.clauses[LIVE.pick]){ h+='<div class="clause"><p>'+esc(O.clauses[LIVE.pick])+'</p><div class="row"><small>'+esc(BOOKS[LIVE.pick][0])+'</small></div></div>'; }
+    h+='<div><span class="ql">Her reading</span>'+(rr?'<p class="read">'+esc(rr.lead)+' '+esc(rr.close)+'</p>':R.h)+'</div>';
+    h+='<div><span class="ql">The question she would hold for it · not for answering here</span><p class="yq"><em>'+esc(rr?rr.q:O.q)+'</em></p></div>';
+    h+=themesHtml(O);
+    if(n){ h+='<div class="said"><span class="ql">What you said back</span>'; for(i=0;i<n;i++){ h+='<em>“'+esc(sd[i])+'”</em>'; } h+='</div>'; }
+    h+='<div class="gridcard"><button type="button" class="pill" data-ans="take">Take it up</button><button type="button" class="ghost" data-ans="later">Later</button><button type="button" class="ghost" data-ans="not">Not this</button><button type="button" class="ghost" data-ans="tell">Not quite — talk it through</button></div>';
+    h+='<p class="later" style="margin:0;font-size:12.5px;color:var(--ink3)">Not this is remembered: she won’t offer it again while these books are on your shelf. Later never expires.</p>';
+    return h;
+  }
+
+  /* ---------- THE LENSES PAGE (ruling 86): her reading state · her offers · Later · your lenses · remembered · name your own ---------- */
+  function pageHtml(){
+    var ps=Q.ps,h='',i,L,O=LIVE.offer;
+    h+='<div class="pcol"><div class="phd"><button type="button" class="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><h1>Lenses</h1></div><div class="pbody">';
+    if(ps==='noyes'){ h+='<div class="consent"><span class="k">Before she reads</span><h3>Yumi hasn’t read your shelf.</h3><p>One yes lets her read your titles — never what’s inside a book — and offer lenses. You can read the full list any time on What Yumi Sees.</p><div class="acts"><button type="button" class="pill" data-toast="The one-yes card (“What leaves your phone.”) opens here — the consent copy is a contract (L3).">Yes, bring my books</button><button type="button" class="quiet" data-toast="Not now — lenses by your own name only.">Not now</button></div></div>'; }
+    else if(ps==='under'){ h+='<div class="ystate"><span class="seedbox" data-yseed></span><div><p>Lenses come once your shelf holds five books. It holds 3.</p><small>NAME YOUR OWN ANY TIME</small></div></div>'; }
+    else if(ps==='reading'){ h+='<div class="ystate"><span class="seedbox" data-yseed></span><div><p>Reading across your shelf…</p><small>USUALLY A FEW SECONDS · 148 BOOKS</small></div></div>'; }
+    else if(ps==='nothing'){ h+='<div class="ystate"><span class="seedbox" data-yseed></span><div><p>Yumi didn’t find clear lenses this time — your shelf may be small or wide-ranging.</p><small>NAME YOUR OWN BELOW · OR ASK HER AGAIN AS IT GROWS</small></div></div><div class="acts"><button type="button" class="ghost" data-toast="She reads again. Costs one call against the day’s ceiling (contract §4).">Ask Yumi again</button></div>'; }
+    else if(O){ h+='<div class="sect"><div class="k"><span style="color:var(--gold-ink);font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase">From Yumi</span><span>1 offer</span></div><div class="offer-card" id="offercard">'+offerHtml()+'</div></div>'; }
+    else { h+='<div class="ystate"><span class="seedbox" data-yseed></span><div><p>Nothing new from me. Every thread I found is taken up, waiting, or remembered as not this.</p><small>SHE READS AGAIN WHEN YOUR SHELF CHANGES</small></div></div>'; }
+    if(LIVE.later.length&&ps!=='noyes'&&ps!=='under'){ h+='<div class="sect"><div class="k"><span style="color:var(--gold-ink);font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase">Later</span><span>'+LIVE.later.length+' set aside · never expires</span></div><div class="card" style="gap:0;padding:4px 16px">'; for(i=0;i<LIVE.later.length;i++){ L=LIVE.later[i]; h+='<button type="button" class="lrow" data-laterrow="'+i+'">'+markSvg(L.look,L.name,'sm')+'<span class="tx"><em>'+esc(L.name)+'</em><small>'+esc(L.lead)+' '+plural(L.books.length,'book')+'.</small></span><span class="chev">›</span></button>'; } h+='</div></div>'; }
+    h+='<div class="sect"><div class="k"><span style="color:var(--gold-ink);font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase">Your lenses</span><span>'+(ps==='noyes'||ps==='under'?'0':LENSES.length)+' kept</span></div><div class="card" style="gap:0;padding:4px 16px">';
+    if(ps==='noyes'||ps==='under'){ h+='<p class="fine2" style="padding:12px 0">None yet. Name your own below.</p>'; }
+    else { for(i=0;i<LENSES.length;i++){ L=LENSES[i]; h+='<button type="button" class="lrow" data-lensrow="'+i+'">'+markSvg(L.look,L.name,'sm')+'<span class="tx"><em>'+esc(L.name)+'</em><small>'+(L.origin==='hers'?'From Yumi · ':'Yours · ')+plural(L.books.length,'book')+(L.q?' · '+esc(L.q):'')+'</small></span><span class="chev">›</span></button>'; } }
+    h+='</div></div>';
+    if(LIVE.declined.length&&ps!=='noyes'&&ps!=='under'){ h+='<div class="fold"><button type="button" data-fold aria-expanded="'+LIVE.fold+'"><span>Remembered as not this · '+LIVE.declined.length+'</span><span class="chev">'+(LIVE.fold?'⌃':'⌄')+'</span></button>'+(LIVE.fold?'<div class="in">'+LIVE.declined.map(function(d){ return '<div class="row"><span><em>'+esc(d.name)+'</em> · '+esc(d.when)+(d.said?' · you said “'+esc(d.said)+'”':'')+'</span><button type="button" class="txtbtn" data-forgetd="'+esc(d.name)+'">Let her forget this</button></div>'; }).join('')+'<small class="fine2">She won’t offer these again while their books are on your shelf. Forgetting lets her.</small></div>':'')+'</div>'; }
+    h+='<div class="acts"><button type="button" class="ghost" data-toast="Name your own: a name, then the books you choose. Yumi reads it only if you ask.">Name your own</button></div>';
+    h+='<div class="next"><div>Open Lens — one page per lens — opens with the Day Three rooms (L4b).</div></div>';
+    h+='</div></div>';
+    return h;
+  }
+
+  /* ---------- the Home backdrop for the sheet (compact sky) ---------- */
+  var sky=null;
+  function homeHtml(){
+    return '<div class="sky" id="sky-home"><canvas class="paint" aria-hidden="true"></canvas><div class="rail"><span class="wm">praxis</span><span class="av still" id="av" role="img" aria-label="Your avatar"></span></div><div class="field" data-field="home" style="height:250px"><svg class="bg" aria-hidden="true"><g data-stars></g><g data-threads></g></svg><button type="button" class="core" data-core aria-label="Your centre. Hold it for your sky’s settings."><svg data-bloom viewBox="-90 -90 180 180" aria-hidden="true"></svg></button></div><p class="hint">'+plural(LENSES.length,'lens')+' around your flower · tap one</p></div><div class="paperside"><div class="body2 spill"><button type="button" class="card leftoff"><span class="nt">NOTE</span><span><b>Where you left off</b><small>Yesterday, in <i>Power, Crisis, and Education for Liberation</i>.</small></span><span class="chev">›</span></button></div></div>';
+  }
+  var TABS=[['home','Home','<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>'],['shelf','Shelf','<path d="M4 4h4v16H4zM10 4h4v16h-4zM16 5l4-1 1 15-4 1z"/>'],['notebook','Notebook','<path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2zM9 7h6M9 11h6"/>'],['capture','Capture','<path d="M12 5v14M5 12h14"/>'],['you','You','<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>']];
+  function paintTabs(on){ var h='',j; for(j=0;j<TABS.length;j++){ h+='<button type="button" class="'+(TABS[j][0]===on?'on2':'')+'" aria-current="'+(TABS[j][0]===on?'page':'false')+'"><svg viewBox="0 0 24 24">'+TABS[j][2]+'</svg>'+TABS[j][1]+'</button>'; } $('tabs').innerHTML=h; }
+  function seeds(root){ var els=root.querySelectorAll('[data-yseed]'),i; for(i=0;i<els.length;i++){ if(!els[i].innerHTML){ els[i].innerHTML=H.yumiSeed(); } } var b=root.querySelector('.bloom'); if(b&&!b.innerHTML){ b.innerHTML=H.bloomSvg(); } }
+  function toast(text,undo,onUndo){ var el=$('toast'),b=$('toast-b'); $('toast-t').innerHTML=text; b.hidden=!undo; b.onclick=onUndo||null; el.hidden=false; window.clearTimeout(toast.t); toast.t=window.setTimeout(function(){ el.hidden=true; },undo?6000:2600); }
+
+  /* ---------- render ---------- */
+  function render(reset){
+    var scr=$('scr'),sc=$('scroll'),items=[],i,L;
+    if(reset!==false){ resetLive(); $('toast').hidden=true; }
+    $('frame').setAttribute('data-w',Q.w); scr.setAttribute('data-mood',Q.m); scr.setAttribute('data-w',Q.w); document.body.setAttribute('data-mood',Q.m);
+    $('sheet').hidden=true; $('panel').hidden=true; $('scrim').hidden=true;
+    if(Q.s==='page'||Q.s==='offer'){
+      sc.innerHTML='<div class="page">'+pageHtml()+'</div>'; sky=null; paintTabs('home');
+      if(Q.s==='offer'&&LIVE.offer){ /* the card alone, as a sheet over the page, so it can be read at 390 in one piece */ $('sheet').innerHTML='<div class="handle"></div>'+offerHtml(); $('sheet').setAttribute('aria-label','Yumi’s offer'); $('sheet').hidden=false; $('scrim').hidden=false; }
+    } else {
+      sc.innerHTML=homeHtml(); paintTabs('home');
+      $('av').innerHTML=H.svgEl(H.bloom(LENSES.map(function(l){return l.look;}),11),'-90 -90 180 180');
+      for(i=0;i<LENSES.length;i++){ L=LENSES[i]; items.push({name:L.name,look:L.look,books:L.books.length,state:(L.origin==='yours'?'own':'kept'),src:L}); }
+      sky=H.Sky($('sky-home'),{compact:true}); sky.set(items,[[0,2,3],[0,1,1]],LENSES.map(function(l){return l.look;})); sky.build(); H.startSkies();
+      if(Q.s==='sheet'){ openSheet(); } else { var T=sayTarget(); openPanel(T,T.rounds,saidOf(T)); }
+    }
+    seeds(scr); paintCtrls(); writeHash(); note();
+  }
+  function openSheet(){ $('sheet').innerHTML='<div class="handle"></div>'+sheetHtml(); $('sheet').setAttribute('aria-label','Lens: '+cur().name); $('sheet').hidden=false; $('scrim').hidden=false; $('panel').hidden=true; seeds($('sheet')); }
+  function openPanel(L,rounds,said){ PINNED=L; $('panel').innerHTML=panelHtml(L,rounds,said); $('panel').hidden=false; $('scrim').hidden=false; $('sheet').hidden=true; seeds($('panel')); var inp=$('sayline'); if(inp){ inp.oninput=function(){ $('saycount').textContent=inp.value.length+'/140'; }; inp.onkeydown=function(e){ if(e.key==='Enter'){ sendLine(); } if(e.key==='Escape'){ openSheet(); } }; } var nl=$('nameline'); if(nl){ nl.onkeydown=function(e){ if(e.key==='Enter'){ nameIt(nl.value); } }; } }
+  var PINNED=null;
+  function sendLine(){ var inp=$('sayline'),v=inp?inp.value.replace(/^\s+|\s+$/g,''):'',T=PINNED||sayTarget(),sd=saidOf(T); if(!v){ return; } sd.push(v); Q.sb=String(Math.min(2,sd.length)); openPanel(T,T.rounds,sd); paintCtrls(); writeHash(); }
+  function nameIt(v){ v=(v||'').replace(/^\s+|\s+$/g,''); if(!v){ return; } $('panel').hidden=true; $('scrim').hidden=true; toast('Kept as <em>'+esc(v)+'</em>. What you said back stays with the lens.',false); }
+  function paintCtrls(){ var segs=document.querySelectorAll('.seg'),i,j,bs,k; for(i=0;i<segs.length;i++){ k=segs[i].getAttribute('data-ctl'); bs=segs[i].querySelectorAll('button'); for(j=0;j<bs.length;j++){ bs[j].setAttribute('aria-pressed',String(bs[j].getAttribute('data-v')===Q[k])); } } }
+  function note(){ var m={sheet:'The lens sheet: a tap on a lens in the sky opens it (seventh r18) with its depth — her question pinned, her reading in the voice law (sure about the shelf, one clause per book, a close, one question; nothing about your inner life), every cover with her clause on tap and leave-out (a lens rests on at least two books), why you keep returning, what you said back with Let her forget this, and the doors: Open lens (the page is L4b’s), Not quite — talk it through (her panel, eleventh r4), Rename, Let it go.',say:'The say-back in Yumi’s panel with the lens pinned: her first reading stays at the head as it stood; she asks what the books are for; you write one line (140); she re-reads through your words, quoted, with the same books and a new close and question, and proposes a name as one chip beside Name it yourself; after her first reading and two re-readings the name is yours. Keep it returns to the sky with the exchange kept as said[].',page:'The Lenses page (ruling 86): her reading state at the top in her own voice, then From Yumi (the offer card), Later, Your lenses, the Remembered-as-not-this fold with Let her forget this, Name your own. Back returns to origin.',offer:'The offer card (ninth §A3), now on the Lenses page: offer n of N, mark and name, the covers with her clause on tap, her reading, the question she would hold (not for answering here), three key themes, four answers with Take it up the only gold, the remembered/later note.'}; $('note').innerHTML='<b>'+Q.s+' · '+Q.m+' · '+Q.w+'</b> — '+m[Q.s]; }
+
+  document.querySelector('.ctrls').addEventListener('click',function(e){ var b=e.target.closest('button[data-v]'); if(!b){return;} var k=b.parentNode.getAttribute('data-ctl'); Q[k]=b.getAttribute('data-v'); if(k==='l'){ Q.s='sheet'; } if(k==='ps'){ Q.s='page'; Q.sb='0'; } if(k==='sb'){ Q.s='say'; } render(); });
+  $('frame').addEventListener('click',function(e){
+    var t=e.target, c;
+    if(t.closest('.scrim')||t.closest('[data-close]')||t.closest('[data-backto]')){ $('sheet').hidden=true; $('panel').hidden=true; $('scrim').hidden=true; if(Q.s==='say'||Q.s==='sheet'){ /* back to the sheet from the panel */ if(t.closest('[data-backto]')){ openSheet(); } } return; }
+    if((c=t.closest('[data-cover]'))){ var id=c.getAttribute('data-cover'); LIVE.pick=(LIVE.pick===id)?null:id; if(Q.s==='offer'||(Q.s==='page'&&t.closest('#offercard'))){ if(Q.s==='offer'){ $('sheet').innerHTML='<div class="handle"></div>'+offerHtml(); } else { $('offercard').innerHTML=offerHtml(); } } else { openSheet(); } return; }
+    if((c=t.closest('[data-out]'))){ var oid=c.getAttribute('data-out'); LIVE.out[oid]=true; openSheet(); toast('Left out. <em>'+esc(BOOKS[oid][0])+'</em> stays on your shelf; the lens rests on the rest.',true,function(){ delete LIVE.out[oid]; openSheet(); $('toast').hidden=true; }); return; }
+    if((c=t.closest('[data-back]'))){ delete LIVE.out[c.getAttribute('data-back')]; openSheet(); return; }
+    if(t.closest('[data-forget]')){ var kept=LIVE.saidLens.slice(0); LIVE.saidLens=[]; openSheet(); toast('Forgotten. She no longer quotes what you said to this lens.',true,function(){ LIVE.saidLens=kept; openSheet(); $('toast').hidden=true; }); return; }
+    if(t.closest('[data-openlens]')){ toast('Open Lens — one page for this lens — is drawn with the Day Three rooms (L4b). This is its door.',false); return; }
+    if(t.closest('[data-say]')){ var TL=cur(); Q.s='say'; openPanel(TL,TL.rounds,saidOf(TL)); paintCtrls(); writeHash(); note(); return; }
+    if(t.closest('[data-ask]')){ toast('She reads it: one call, scored by the eval before it reaches you.',false); return; }
+    if(t.closest('[data-rename]')){ toast('Rename: her words stay in the line until you type. Drawn in the walk.',false); return; }
+    if(t.closest('[data-letgo]')){ LIVE.letgo=true; openSheet(); return; }
+    if(t.closest('[data-keep]')){ LIVE.letgo=false; openSheet(); return; }
+    if(t.closest('[data-gone]')){ $('sheet').hidden=true; $('scrim').hidden=true; toast('Let go. Its books stay on your shelf.',true,function(){ LIVE.letgo=false; openSheet(); $('toast').hidden=true; }); return; }
+    if(t.closest('[data-send]')){ sendLine(); return; }
+    if((c=t.closest('[data-callit]'))){ nameIt(c.getAttribute('data-callit')); return; }
+    if(t.closest('[data-nameit]')){ var nl=document.createElement('div'); nl.className='line'; nl.innerHTML='<input type="text" id="nameline" maxlength="60" placeholder="Name it…" aria-label="Name this lens"><button type="button" data-named aria-label="Keep this name"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></button>'; t.closest('.chips').replaceWith(nl); nl.querySelector('input').focus(); nl.querySelector('input').onkeydown=function(ev){ if(ev.key==='Enter'){ nameIt(ev.target.value); } }; return; }
+    if(t.closest('[data-named]')){ nameIt(($('nameline')||{}).value); return; }
+    if(t.closest('[data-keepit]')){ if(PINNED===LENSES[0]){ LIVE.saidLens=LENSES[0].said.concat(saidOf(LENSES[0])); } $('panel').hidden=true; $('scrim').hidden=true; toast('Kept. What you said back stays with the lens.',false); return; }
+    if((c=t.closest('[data-ans]'))){ var a=c.getAttribute('data-ans'); if(a==='tell'){ Q.s='say'; openPanel(OFFER,OFFER.rounds,saidOf(OFFER)); paintCtrls(); writeHash(); note(); return; } $('sheet').hidden=true; $('scrim').hidden=true;
+      if(a==='take'){ LIVE.offer=null; Q.s='page'; Q.ps='quiet'; render(false); toast('Kept. <em>'+esc(OFFER.name)+'</em> is yours now; her question stays pinned to it.',false); }
+      if(a==='later'){ LIVE.later.push({name:OFFER.name,books:OFFER.books,lead:OFFER.lead,look:OFFER.look}); LIVE.offer=null; Q.s='page'; Q.ps='quiet'; render(false); toast('Set aside. It waits in Later, as long as you like.',false); }
+      if(a==='not'){ LIVE.declined.unshift({name:OFFER.name,said:saidOf(OFFER)[0]||'',when:'just now'}); LIVE.offer=null; Q.s='page'; Q.ps='quiet'; render(false); toast('Not this — remembered. She won’t offer <em>'+esc(OFFER.name)+'</em> again while these books are on your shelf.',true,function(){ LIVE.declined.shift(); LIVE.offer=OFFER; Q.ps='offers'; render(false); }); }
+      return; }
+    if(t.closest('[data-fold]')){ LIVE.fold=!LIVE.fold; render(false); return; }
+    if((c=t.closest('[data-forgetd]'))){ var nm=c.getAttribute('data-forgetd'),keptD=LIVE.declined.slice(0); LIVE.declined=LIVE.declined.filter(function(d){return d.name!==nm;}); render(false); toast('Forgotten. She may offer <em>'+esc(nm)+'</em> again.',true,function(){ LIVE.declined=keptD; render(false); $('toast').hidden=true; }); return; }
+    if((c=t.closest('[data-lensrow]'))){ Q.l=c.getAttribute('data-lensrow'); Q.s='sheet'; render(false); return; }
+    if((c=t.closest('[data-laterrow]'))){ var Lr=LIVE.later[+c.getAttribute('data-laterrow')]; $('sheet').innerHTML='<div class="handle"></div><span class="k">Set aside for later</span><div class="ln">'+markSvg(Lr.look,Lr.name)+'<em>'+esc(Lr.name)+'</em></div><span class="cnt">'+plural(Lr.books.length,'BOOK').toUpperCase()+' · WAITING AS LONG AS YOU LIKE</span><p class="read">'+esc(Lr.lead)+'</p><div class="gridcard"><button type="button" class="pill" data-toast="Taken up: it joins your lenses with her name, her question and her reading.">Take it up</button><button type="button" class="ghost" data-toast="Not this: remembered, never re-offered while these books are on the shelf.">Not this</button></div>'; $('sheet').hidden=false; $('scrim').hidden=false; return; }
+    if((c=t.closest('[data-toast]'))){ toast(esc(c.getAttribute('data-toast')),false); return; }
+    if(t.closest('.orb')){ var ix=+t.closest('.orb').getAttribute('data-orb'); Q.l=String(ix); Q.s='sheet'; render(false); return; }
+    if(t.closest('.back')){ toast('Back returns to where you came from (Home or the sky sheet).',false); return; }
+  });
+  window.addEventListener('resize',function(){ if(sky){ sky.sig=''; sky.build(); } });
+  window.addEventListener('hashchange',function(){ readHash(); render(); });
+  readHash(); render();
+  window.__Q=Q; window.__LIVE=LIVE; window.__render=render;
+})();
+</script>
+
+</body>
+</html>

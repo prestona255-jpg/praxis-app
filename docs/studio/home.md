@@ -112,6 +112,17 @@ defects-found: 0 in-scope. Self-caught + fixed mid-build: the field variant coll
 lessons: VISUAL GATE holds — every D-gate was green while a 188px dead band sat in plain sight; only the eye caught it (a full-height grid with a short first row needs `align-content:start`). A grid item with an aspect-ratio descendant does NOT default-stretch — set `width:100%`. The 0c 1024 h-scroll baseline (71px) was a port-8767 stale-SW read (pre-DW-1 CSS, body-margin 8); the true v3.204 1024 baseline is 80px — re-measure the baseline on a fresh port, never trust a first-port snapshot.
 evidence: docs/checkpoints/dw-2.md (Stage 1) · dw-2-recon.md · mockup docs/studio/mockups/dw2-home-desktop.html (felt-passed 2026-07-14). Chip stretched → composed (D1–D6 on evidence; native awaits the deployed felt pass).
 
+## Round record — L4 (2026-11-10/11, local, v3.317 at the push)
+
+commits: (one L4 commit, pending Preston's word)
+changed: the Yumi dock renders only BEFORE the yes (ruling 84 as amended; consent-copy.md:24 names it) — for everyone. Behind
+`praxis_sky` (dark-launched; `?sky=on`), the lens sky is Home's head: date · greeting · the field (hand.js) · the honest line or
+hint · counts · the door to #lenses; ≥1200 a sticky 600px left column; the view switch moves under it. The auto re-read bound
+may fire from Home, never the first read.
+gates: key-off DOM identical to HEAD but for the post-yes dock (same tab, 1360, fixture); sky sweep 29/29 at 390; visual 390 +
+1360, night + day; **felt pass PENDING** (the sky ships dark until the motion gate, Stage 6).
+evidence: docs/checkpoints/l4.md · mockup design/praxis-lens-sky.html.
+
 ## Next
 
 ## Mockup evaluation

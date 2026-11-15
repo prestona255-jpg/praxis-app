@@ -283,7 +283,8 @@ var state = {
   bookArtifacts:   {},
   arcs:            {},
   subTheories:     {},
-  userThemes:      {}
+  userThemes:      {},
+  userLensOffers:  {}   // L4.2: per-uid bucket mirroring /userLensOffers/{uid}
 };
 window.state = state;
 
@@ -898,6 +899,22 @@ function ensureThemeFields(theme) {
     theme.bookIds = [];
     changed = true;
   }
+  // L4.2 (lens-contract §1 + engine contract §2): the optional lens fields,
+  // additive only (r14) -- a missing or wrong-typed field gets its default; a
+  // present one is never touched. look stays as stored (an old {hue, L, ...}
+  // look still draws; hand.js derives only when look is null or has no pi).
+  var D = { origin: 'yours', hersName: '', q: '', reading: '', why: '', lead: '', close: '' }, dk;
+  for (dk in D) {
+    if (D.hasOwnProperty(dk) && typeof theme[dk] !== 'string') { theme[dk] = D[dk]; changed = true; }
+  }
+  if (theme.origin !== 'hers' && theme.origin !== 'yours') { theme.origin = 'yours'; changed = true; }
+  if (!Array.isArray(theme.leftOuts)) { theme.leftOuts = []; changed = true; }
+  if (!Array.isArray(theme.said)) { theme.said = []; changed = true; }
+  if (!Array.isArray(theme.themes)) { theme.themes = []; changed = true; }
+  if (!Array.isArray(theme.names)) { theme.names = []; changed = true; }
+  if (!theme.clauses || typeof theme.clauses !== 'object' || Array.isArray(theme.clauses)) { theme.clauses = {}; changed = true; }
+  if (theme.look === undefined || (theme.look !== null && typeof theme.look !== 'object')) { theme.look = null; changed = true; }
+  if (typeof theme.keptAt !== 'number') { theme.keptAt = (typeof theme.createdAt === 'number') ? theme.createdAt : 0; changed = true; }
   return changed;
 }
 
@@ -1291,6 +1308,14 @@ var themesDirty = false;
 
 function markThemesDirty() {
   themesDirty = true;
+}
+
+// L4.2: dirty flag for the per-user lens-offers doc (/userLensOffers/{uid}),
+// mirroring themesDirty. Every offer writer marks it; saveState() consumes it.
+var lensOffersDirty = false;
+
+function markLensOffersDirty() {
+  lensOffersDirty = true;
 }
 
 // 2.0 hardening (batch 2b): dirty flag for the per-user artifact doc,
@@ -1974,9 +1999,32 @@ function replaceReaderModel(uid, remote) {
       // one device is honored on another (default 'auto' on absence).
       source:    (prof.source === 'edited') ? 'edited' : 'auto'
     },
-    updatedAt: (typeof src.updatedAt === 'number') ? src.updatedAt : 0
+    updatedAt: (typeof src.updatedAt === 'number') ? src.updatedAt : 0,
+    // L4.2 (lens-contract §3): the reader's words to a lens they let go. A
+    // SEPARATE array -- the thread schema and its status machine are untouched.
+    lensWords: sanitizeLensWords(src.lensWords)
   };
   saveState();
+}
+
+// L4.2: lensWords = [{ id, lensName, lines:[{t, at}], at }] -- shape-checked, capped.
+function sanitizeLensWords(arr) {
+  var out = [], i, j, w, lines;
+  if (!(arr instanceof Array)) { return out; }
+  for (i = 0; i < arr.length; i++) {
+    w = arr[i];
+    if (!w || typeof w !== 'object' || typeof w.id !== 'string') { continue; }
+    lines = [];
+    if (w.lines instanceof Array) {
+      for (j = 0; j < w.lines.length && lines.length < LENS_SAID_MAX; j++) {
+        if (w.lines[j] && typeof w.lines[j].t === 'string') {
+          lines.push({ t: w.lines[j].t.substring(0, LENS_SAID_LEN), at: (typeof w.lines[j].at === 'number') ? w.lines[j].at : 0 });
+        }
+      }
+    }
+    out.push({ id: w.id, lensName: (typeof w.lensName === 'string') ? w.lensName : '', lines: lines, at: (typeof w.at === 'number') ? w.at : 0 });
+  }
+  return out;
 }
 
 // yumi-intelligence Stage II HARDENING: the SINGLE content-aware provenance
@@ -2746,6 +2794,449 @@ function deleteUserTheme(themeId) {
   return true;
 }
 
+// =====================================================================
+// L4.2 -- THE LENS OFFERS + THE LENS WRITERS (lens-contract §1-§3; engine
+// contract §2 + §5). Yumi's offers not yet kept live in ONE per-reader doc,
+// /userLensOffers/{uid} = { offers: { <id>: offer }, lastReadAt,
+// lastReadBookCount }, mirrored per uid in state.userLensOffers[uid] (a per-uid
+// bucket: an account switch can never show A's offers to B). Additive only
+// (lens-contract rule 1): every writer mutates in place and never drops a field
+// it does not know. sameLens (yumi-brain.js) is the single re-offer guard.
+// =====================================================================
+var LENS_SAID_MAX = 4;       // said[]: three readings + one "say more"
+var LENS_SAID_LEN = 500;
+var LENS_WHY_LEN  = 200;
+var LENS_OFFER_FLOOR = 5;    // no lens call under five books (seventh r4)
+
+function genLensOfferId() {
+  return 'loff_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1679616).toString(36);
+}
+
+function ensureLensOfferFields(o) {
+  if (!o || typeof o !== 'object') { return false; }
+  var changed = false, k;
+  var S = { name: '', lead: '', close: '', q: '', reading: '' };
+  for (k in S) { if (S.hasOwnProperty(k) && typeof o[k] !== 'string') { o[k] = S[k]; changed = true; } }
+  var A = ['bookIds', 'leftOuts', 'themes', 'said', 'names'];
+  for (k = 0; k < A.length; k++) { if (!Array.isArray(o[A[k]])) { o[A[k]] = []; changed = true; } }
+  if (!o.clauses || typeof o.clauses !== 'object' || Array.isArray(o.clauses)) { o.clauses = {}; changed = true; }
+  if (o.state !== 'open' && o.state !== 'later' && o.state !== 'declined') { o.state = 'open'; changed = true; }
+  if (typeof o.round !== 'number') { o.round = 1; changed = true; }
+  if (o.look === undefined || (o.look !== null && typeof o.look !== 'object')) { o.look = null; changed = true; }
+  if (typeof o.createdAt !== 'number') { o.createdAt = 0; changed = true; }
+  if (typeof o.decidedAt !== 'number') { o.decidedAt = 0; changed = true; }
+  return changed;
+}
+
+// The uid's offers bucket (created on first touch).
+function lensOffersDoc(uid) {
+  if (!uid) { return null; }
+  if (!state.userLensOffers || typeof state.userLensOffers !== 'object') { state.userLensOffers = {}; }
+  var d = state.userLensOffers[uid];
+  if (!d || typeof d !== 'object') { d = { offers: {}, lastReadAt: 0, lastReadBookCount: 0 }; state.userLensOffers[uid] = d; }
+  if (!d.offers || typeof d.offers !== 'object') { d.offers = {}; }
+  if (typeof d.lastReadAt !== 'number') { d.lastReadAt = 0; }
+  if (typeof d.lastReadBookCount !== 'number') { d.lastReadBookCount = 0; }
+  return d;
+}
+
+// Offers in the given state(s), oldest first.
+function lensOfferList(uid, which) {
+  var d = lensOffersDoc(uid), out = [], k, o;
+  if (!d) { return out; }
+  var want = (which instanceof Array) ? which : [which];
+  for (k in d.offers) {
+    if (!d.offers.hasOwnProperty(k)) { continue; }
+    o = d.offers[k];
+    if (!o) { continue; }
+    ensureLensOfferFields(o);
+    if (want.indexOf(o.state) !== -1) { out.push(o); }
+  }
+  out.sort(function (a, b) { return (a.createdAt || 0) - (b.createdAt || 0); });
+  return out;
+}
+
+// Contract §1 item 3: every open, Later and declined name rides the next call.
+function lensOfferNamesForPrompt(uid) {
+  var l = lensOfferList(uid, ['open', 'later', 'declined']), out = [], i;
+  for (i = 0; i < l.length; i++) { if (l[i].name) { out.push(l[i].name); } }
+  return out;
+}
+
+// The reader's kept lenses (userThemes they own), in kept order.
+function lensKeptThemes(uid) {
+  var out = [], k, t;
+  if (!uid || !state.userThemes) { return out; }
+  for (k in state.userThemes) {
+    if (!state.userThemes.hasOwnProperty(k)) { continue; }
+    t = state.userThemes[k];
+    if (t && t.userId === uid) { ensureThemeFields(t); out.push(t); }
+  }
+  out.sort(function (a, b) { return ((a.keptAt || a.createdAt || 0) - (b.keptAt || b.createdAt || 0)) || ((a.id < b.id) ? -1 : 1); });
+  return out;
+}
+
+// The sameLens set for the eval: kept lenses + every offer (excludeId skipped).
+function lensAgainstList(uid, excludeId) {
+  var out = [], kept = lensKeptThemes(uid), offers = lensOfferList(uid, ['open', 'later', 'declined']), i;
+  for (i = 0; i < kept.length; i++) { if (kept[i].id !== excludeId) { out.push({ name: kept[i].name, bookIds: kept[i].bookIds, kind: 'kept' }); } }
+  for (i = 0; i < offers.length; i++) { if (offers[i].id !== excludeId) { out.push({ name: offers[i].name, bookIds: offers[i].bookIds, kind: offers[i].state }); } }
+  return out;
+}
+
+// Engine contract §3 step 9: the looks already in the sky (kept + open + Later).
+function lensSkyLooks(uid) {
+  var out = [], kept = lensKeptThemes(uid), offers = lensOfferList(uid, ['open', 'later']), i;
+  for (i = 0; i < kept.length; i++) { if (kept[i].look && typeof kept[i].look.pi === 'number') { out.push(kept[i].look); } }
+  for (i = 0; i < offers.length; i++) { if (offers[i].look && typeof offers[i].look.pi === 'number') { out.push(offers[i].look); } }
+  return out;
+}
+function lensMakeLook(name, looks) {
+  return (window.PraxisHand && typeof window.PraxisHand.makeLook === 'function') ? window.PraxisHand.makeLook(name, looks) : null;
+}
+
+// A kept lens with NO look derives one ONCE and stores it (contract §2: stored,
+// never re-derived). An old {hue, L, ...} look is left exactly as it is -- it
+// still draws (lens-contract §1). Returns true if any changed.
+function ensureLensLooks(uid) {
+  var kept = lensKeptThemes(uid), looks = lensSkyLooks(uid), i, lk, changed = false;
+  for (i = 0; i < kept.length; i++) {
+    if (kept[i].look) { continue; }
+    lk = lensMakeLook(kept[i].name, looks);
+    if (!lk) { return false; }
+    kept[i].look = lk;
+    looks.push(lk);
+    changed = true;
+  }
+  if (changed) { markThemesDirty(); saveState(); }
+  return changed;
+}
+
+// The reading string (back-compat): lead + clauses in book order (left-outs
+// excluded) + close.
+function lensReadingOf(rec) {
+  var parts = [], i, ids = (rec && rec.bookIds instanceof Array) ? rec.bookIds : [];
+  for (i = 0; i < ids.length; i++) { if (rec.clauses && typeof rec.clauses[ids[i]] === 'string' && rec.clauses[ids[i]]) { parts.push(rec.clauses[ids[i]]); } }
+  return (rec.lead || '') + (parts.length ? ' ' + parts.join(' ') : '') + (rec.close ? ' ' + rec.close : '');
+}
+
+// Turn eval survivors into OPEN offers (contract §2). A survivor that is the
+// same lens as an open or Later offer is not re-created, so its colour stands.
+// Each new offer takes a Garden look distinct from the sky's (makeLook).
+function createLensOffers(uid, survivors) {
+  var d = lensOffersDoc(uid), made = [], i, j, s, o, id, looks, title, bid, dup, live;
+  if (!d || !(survivors instanceof Array)) { return made; }
+  looks = lensSkyLooks(uid);
+  live = lensOfferList(uid, ['open', 'later']);
+  for (i = 0; i < survivors.length; i++) {
+    s = survivors[i];
+    if (!s || !(s.bookIds instanceof Array) || s.bookIds.length !== s.books.length || s.bookIds.length < 2) { continue; }
+    dup = false;
+    for (j = 0; j < live.length; j++) {
+      if (window.YumiBrain && window.YumiBrain.sameLens && window.YumiBrain.sameLens({ name: s.name, bookIds: s.bookIds }, live[j])) { dup = true; break; }
+    }
+    if (dup) { continue; }
+    var clauses = {};
+    for (j = 0; j < s.books.length; j++) {
+      title = s.books[j]; bid = s.bookIds[j];
+      if (s.clauses && typeof s.clauses[title] === 'string') { clauses[bid] = s.clauses[title]; }
+    }
+    id = genLensOfferId();
+    o = {
+      id: id, userId: uid, name: s.name, bookIds: s.bookIds.slice(0), leftOuts: [],
+      lead: s.lead || '', clauses: clauses, close: s.close || '', q: s.q || '',
+      themes: (s.themes instanceof Array) ? s.themes.slice(0, 3) : [],
+      reading: s.reading || '', round: 1, said: [], names: [s.name],
+      look: lensMakeLook(s.name, looks), state: 'open', createdAt: Date.now() + i, decidedAt: 0
+    };
+    if (o.look) { looks.push(o.look); }
+    d.offers[id] = o;
+    live.push(o);
+    markPendingSync('lensOffers', uid, id);   // FX-1: survive the sign-in REPLACE until confirmed synced
+    made.push(o);
+  }
+  if (made.length) { markLensOffersDirty(); saveState(); }
+  return made;
+}
+
+function lensOfferById(uid, id) {
+  var d = lensOffersDoc(uid);
+  return (d && d.offers[id]) ? d.offers[id] : null;
+}
+
+// Later: never expires (Preston, 17 Oct).
+function setLensOfferLater(uid, id) {
+  var o = lensOfferById(uid, id);
+  if (!o) { return false; }
+  o.state = 'later'; o.decidedAt = Date.now();
+  markPendingSync('lensOffers', uid, id);   // FX-1: a decision survives a stale cloud copy until synced
+  markLensOffersDirty(); saveState();
+  return true;
+}
+
+// Not this: remembered, never re-offered while its books are on the shelf.
+// Returns the prior state for the 6-second Undo (held in memory by the caller).
+function lensOfferNotThis(uid, id) {
+  var o = lensOfferById(uid, id);
+  if (!o) { return null; }
+  var prev = { id: id, state: o.state, decidedAt: o.decidedAt };
+  o.state = 'declined'; o.decidedAt = Date.now();
+  markPendingSync('lensOffers', uid, id);   // FX-1
+  markLensOffersDirty(); saveState();
+  return prev;
+}
+function undoLensOfferNotThis(uid, prev) {
+  var o = prev ? lensOfferById(uid, prev.id) : null;
+  if (!o) { return false; }
+  o.state = prev.state; o.decidedAt = prev.decidedAt;
+  markPendingSync('lensOffers', uid, prev.id);   // FX-1
+  markLensOffersDirty(); saveState();
+  return true;
+}
+
+// Remove an offer (forget a declined one; or after it is taken up). Returns the
+// record for Undo.
+function removeLensOffer(uid, id) {
+  var d = lensOffersDoc(uid);
+  if (!d || !d.offers[id]) { return null; }
+  var snap = d.offers[id];
+  noteRecordDeleted('lensOffers', uid, id);   // FX-1c: a stale cloud copy cannot resurrect it
+  delete d.offers[id];
+  markLensOffersDirty(); saveState();
+  return snap;
+}
+function restoreLensOffer(uid, snap) {
+  var d = lensOffersDoc(uid);
+  if (!d || !snap || !snap.id) { return false; }
+  d.offers[snap.id] = snap;
+  clearPendingDelete('lensOffers', uid, [snap.id]);
+  markPendingSync('lensOffers', uid, snap.id);
+  markLensOffersDirty(); saveState();
+  return true;
+}
+
+// Take it up: the offer becomes a kept lens (origin 'hers') carrying every part
+// of her reading; the offer is removed.
+function takeUpLensOffer(uid, id) {
+  var o = lensOfferById(uid, id);
+  if (!o || typeof createUserTheme !== 'function') { return null; }
+  var t = createUserTheme(o.name);
+  if (!t) { return null; }
+  t.bookIds = o.bookIds.slice(0);
+  t.origin = 'hers'; t.hersName = o.name; t.q = o.q; t.reading = o.reading;
+  t.lead = o.lead; t.clauses = o.clauses; t.close = o.close;
+  t.themes = o.themes; t.leftOuts = o.leftOuts.slice(0); t.said = o.said.slice(0);
+  t.names = o.names.slice(0); t.look = o.look; t.why = '';
+  t.keptAt = Date.now(); t.updatedAt = t.keptAt;
+  markThemesDirty();
+  removeLensOffer(uid, id);   // saves
+  return t;
+}
+
+// Prune: a declined offer whose books have ALL left the shelf is forgotten
+// (lens-contract §2). Runs only once the shelf is known (books loaded, >0).
+function pruneDeclinedOffers(uid) {
+  var ids = (uid && state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds) ? state.userBooks[uid].bookIds : null;
+  if (!ids || !ids.length) { return 0; }
+  if (typeof booksLoaded !== 'undefined' && !booksLoaded) { return 0; }
+  var on = {}, i, j, n = 0, l = lensOfferList(uid, 'declined'), any;
+  for (i = 0; i < ids.length; i++) { on[ids[i]] = true; }
+  for (i = 0; i < l.length; i++) {
+    any = false;
+    for (j = 0; j < l[i].bookIds.length; j++) { if (on[l[i].bookIds[j]]) { any = true; break; } }
+    if (!any) { removeLensOffer(uid, l[i].id); n++; }
+  }
+  return n;
+}
+
+// The shelf count the floor and the re-read bound measure.
+function lensShelfCount(uid) {
+  var u = (uid && state.userBooks && state.userBooks[uid]) ? state.userBooks[uid] : null;
+  return (u && u.bookIds instanceof Array) ? u.bookIds.length : 0;
+}
+
+// Engine contract §5: the automatic re-read bound. Yes granted AND shelf >= 5
+// AND (never read, or the shelf moved by >=5 books or >=10%) AND >=24h since
+// the last read. Called only when the Lenses page or Home renders -- never on
+// a timer. fromHome: the FIRST read never fires from Home (it waits for the
+// Lenses page's first open).
+function mayAutoReRead(uid, fromHome) {
+  if (!uid || typeof isYumiYesGranted !== 'function' || !isYumiYesGranted(uid)) { return false; }
+  var n = lensShelfCount(uid);
+  if (n < LENS_OFFER_FLOOR) { return false; }
+  // Never before the offers doc has loaded: the first read would run against an empty local
+  // bucket (no sameLens memory) and could duplicate offers the cloud already holds.
+  if (typeof lensOffersLoaded !== 'undefined' && !lensOffersLoaded) { return false; }
+  var d = lensOffersDoc(uid);
+  if (d.lastReadAt === 0) { return !fromHome; }
+  if (Date.now() - d.lastReadAt < 86400000) { return false; }
+  var moved = Math.abs(n - d.lastReadBookCount);
+  return moved >= 5 || (d.lastReadBookCount > 0 && moved >= d.lastReadBookCount * 0.1);
+}
+function markLensRead(uid) {
+  var d = lensOffersDoc(uid);
+  if (!d) { return; }
+  d.lastReadAt = Date.now();
+  d.lastReadBookCount = lensShelfCount(uid);
+  markLensOffersDirty(); saveState();
+}
+
+// ---- the kept-lens writers (the lens sheet) --------------------------------
+function lensThemeById(themeId) {
+  var t = (typeof themeId === 'string' && state.userThemes) ? state.userThemes[themeId] : null;
+  if (t) { ensureThemeFields(t); }
+  return t || null;
+}
+
+// Leave out of this lens: the cover stays on the sheet (dimmed), the book leaves
+// bookIds for leftOuts. A lens rests on at least two books.
+function lensLeaveOut(themeId, bookId) {
+  var t = lensThemeById(themeId);
+  if (!t || t.bookIds.length <= 2) { return false; }
+  var ix = t.bookIds.indexOf(bookId);
+  if (ix === -1) { return false; }
+  t.bookIds.splice(ix, 1);
+  if (t.leftOuts.indexOf(bookId) === -1) { t.leftOuts.push(bookId); }
+  t.updatedAt = Date.now();
+  markThemesDirty(); saveState();
+  return true;
+}
+function lensPutBack(themeId, bookId) {
+  var t = lensThemeById(themeId);
+  if (!t) { return false; }
+  var ix = t.leftOuts.indexOf(bookId);
+  if (ix === -1) { return false; }
+  t.leftOuts.splice(ix, 1);
+  if (t.bookIds.indexOf(bookId) === -1) { t.bookIds.push(bookId); }
+  t.updatedAt = Date.now();
+  markThemesDirty(); saveState();
+  return true;
+}
+
+// "Let her forget this" (said lines on a kept lens). Returns the lines for Undo.
+function lensForgetSaid(themeId) {
+  var t = lensThemeById(themeId);
+  if (!t) { return null; }
+  var prev = t.said.slice(0);
+  t.said = []; t.updatedAt = Date.now();
+  markThemesDirty(); saveState();
+  return prev;
+}
+function lensRestoreSaid(themeId, prev) {
+  var t = lensThemeById(themeId);
+  if (!t || !(prev instanceof Array)) { return false; }
+  t.said = prev.slice(0); t.updatedAt = Date.now();
+  markThemesDirty(); saveState();
+  return true;
+}
+function lensSetWhy(themeId, text) {
+  var t = lensThemeById(themeId);
+  if (!t) { return false; }
+  t.why = (typeof text === 'string') ? text.replace(/^\s+|\s+$/g, '').substring(0, LENS_WHY_LEN) : '';
+  t.updatedAt = Date.now();
+  markThemesDirty(); saveState();
+  return true;
+}
+
+// The say-back, kept (eleventh r4; tenth r1): rounds = [{ t, at, name, lead,
+// close, q }] in order. Each line joins said[] (<=4, <=500 each); her name per
+// round joins names[]; the last round's lead/close/q become the lens's (q = the
+// round it was kept in). newName renames (the look stays). kind 'theme'|'offer'.
+function lensKeepExchange(kind, uid, id, rounds, newName) {
+  var rec = (kind === 'theme') ? lensThemeById(id) : lensOfferById(uid, id);
+  if (!rec || !(rounds instanceof Array) || !rounds.length) { return false; }
+  var i, r, base = (typeof rec.round === 'number') ? rec.round : 1;
+  for (i = 0; i < rounds.length; i++) {
+    r = rounds[i];
+    rec.said.push({ t: String(r.t || '').substring(0, LENS_SAID_LEN), at: r.at || Date.now(), round: base + i + 1 });
+    if (r.name) { rec.names.push(r.name); }
+  }
+  while (rec.said.length > LENS_SAID_MAX) { rec.said.shift(); }
+  r = rounds[rounds.length - 1];
+  if (r.lead) { rec.lead = r.lead; }
+  if (r.close) { rec.close = r.close; }
+  if (r.q) { rec.q = r.q; }
+  rec.round = base + rounds.length;
+  rec.reading = lensReadingOf(rec);
+  var nm = (typeof newName === 'string') ? newName.replace(/^\s+|\s+$/g, '') : '';
+  if (kind === 'theme') {
+    rec.updatedAt = Date.now();
+    markThemesDirty();
+    if (nm && nm !== rec.name && typeof renameUserTheme === 'function') { renameUserTheme(id, nm); }
+    saveState();
+  } else {
+    if (nm) { rec.name = nm; }
+    markPendingSync('lensOffers', uid, id);   // FX-1: the kept exchange survives a stale cloud copy
+    markLensOffersDirty(); saveState();
+  }
+  return true;
+}
+
+// Let it go (lens-contract §3): the lens leaves userThemes, its books stay. With
+// the yes granted its said lines move into readerModel.lensWords; without it
+// they are deleted with the lens. Returns an Undo token.
+function letGoLens(themeId) {
+  var t = lensThemeById(themeId);
+  if (!t) { return null; }
+  var uid = t.userId, wordsId = null;
+  if (uid && t.said.length && typeof isYumiYesGranted === 'function' && isYumiYesGranted(uid)) {
+    ensureUser(uid);
+    var rm = state.users[uid].readerModel;
+    if (!(rm.lensWords instanceof Array)) { rm.lensWords = []; }
+    var lines = [], i;
+    for (i = 0; i < t.said.length; i++) { lines.push({ t: t.said[i].t, at: t.said[i].at }); }
+    wordsId = 'lw_' + Date.now().toString(36);
+    rm.lensWords.push({ id: wordsId, lensName: t.name, lines: lines, at: Date.now() });
+    rm.updatedAt = Date.now();
+    lensSaveReaderModel(uid);
+  }
+  deleteUserTheme(themeId);
+  return { theme: t, uid: uid, wordsId: wordsId };
+}
+function undoLetGoLens(tok) {
+  if (!tok || !tok.theme || !tok.theme.id) { return false; }
+  var id = tok.theme.id;
+  state.userThemes[id] = tok.theme;
+  clearPendingDelete('themes', tok.uid, [id]);
+  markPendingSync('themes', tok.uid, id);
+  if (tok.wordsId) { forgetLensWords(tok.uid, tok.wordsId); }
+  markThemesDirty(); saveState();
+  return true;
+}
+function lensWordsOf(uid) {
+  var rm = (uid && state.users && state.users[uid]) ? state.users[uid].readerModel : null;
+  return (rm && rm.lensWords instanceof Array) ? rm.lensWords : [];
+}
+// What Yumi Sees: forget one lensWords entry. Returns it (with its index) for Undo.
+function forgetLensWords(uid, wordsId) {
+  var w = lensWordsOf(uid), i;
+  for (i = 0; i < w.length; i++) {
+    if (w[i].id === wordsId) {
+      var gone = w.splice(i, 1)[0];
+      state.users[uid].readerModel.updatedAt = Date.now();
+      lensSaveReaderModel(uid);
+      return { entry: gone, at: i };
+    }
+  }
+  return null;
+}
+function restoreLensWords(uid, tok) {
+  if (!tok || !tok.entry || !uid) { return false; }
+  ensureUser(uid);
+  var rm = state.users[uid].readerModel;
+  if (!(rm.lensWords instanceof Array)) { rm.lensWords = []; }
+  rm.lensWords.splice(Math.min(tok.at, rm.lensWords.length), 0, tok.entry);
+  rm.updatedAt = Date.now();
+  lensSaveReaderModel(uid);
+  return true;
+}
+function lensSaveReaderModel(uid) {
+  saveState();
+  if (typeof saveReaderModelToFirestore === 'function' && typeof getReaderModel === 'function') {
+    saveReaderModelToFirestore(uid, getReaderModel(uid), function () {});
+  }
+}
+
 // 9.5 Stage 1: resonance links between two sub-theories. linkSubTheories
 // records a symmetric edge — each id is added to the other's
 // linkedSubTheories array — and bumps updatedAt on both; unlinkSubTheories
@@ -3177,6 +3668,27 @@ function saveState() {
           // 2.0 hardening (batch 1): mirror the books failure handler -- re-dirty
           // so the next saveState retries instead of silently dropping the write.
           themesDirty = true;
+        }
+      });
+    }
+  }
+  // L4.2: the lens-offers doc, mirroring the themes block above.
+  if (lensOffersDirty) {
+    lensOffersDirty = false;
+    var loUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    if (loUser && loUser.uid &&
+        typeof saveLensOffersToFirestore === 'function' &&
+        typeof buildUserLensOffersDoc === 'function') {
+      var loPayload = buildUserLensOffersDoc(loUser.uid);
+      saveLensOffersToFirestore(loUser.uid, loPayload, function (result) {
+        if (result && result.status === 'ok') {
+          console.log('saveLensOffersToFirestore: ok');
+          clearPendingSync('lensOffers', loUser.uid, mapIdList(loPayload.offers));   // FX-1
+        } else if (result && result.status === 'deferred') {
+          // held behind the load latch (lens-contract rule 4); already re-dirtied
+        } else {
+          console.warn('saveLensOffersToFirestore: failed', result ? result.error : null);
+          lensOffersDirty = true;   // re-dirty: the next saveState retries
         }
       });
     }

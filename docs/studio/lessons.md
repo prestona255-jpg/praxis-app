@@ -225,6 +225,16 @@ at the generator seam.
 - Media loads into PRE-SIZED slots — zero CLS; a failed asset renders its
   fallback, never a hole (specimen: R-SHELF covers, 96×144 slots, spine on 404).
 
+- **PROPOSED (L4, awaiting ratification):** a harness cscript runs is read as ANSI — keep it ASCII-only (`String.fromCharCode`
+  for curly quotes and dashes); the tool layer turns `\uXXXX` escapes typed into a file into literal UTF-8 characters
+  (specimen: tools/lens-eval-test failed two assertions on a mangled "…" and "—", 10 Nov 2026).
+- **PROPOSED (L4):** compare two builds' DOM in the SAME tab at a PINNED viewport — a background tab reports `innerWidth` 0, and
+  width-branching renderers then differ for no code reason (specimen: You's `_profileBuildSky`, a phantom +594-char diff, 11 Nov 2026).
+- **PROPOSED (L4):** a mockup's host CSS assumes its review page's global button reset; the live app has none — every lifted
+  `<button>` needs its own `background:none; border…` (specimen: the sky's door line drew as a grey default button).
+- **PROPOSED (L4):** a carry's host CSS is lifted SCOPED, never bare: check every top-level class against live components.css
+  + views.js class strings first (specimen: sky.css's bare `.core` / `.pt` would have moved the scan shutter dot and animated
+  Profile titles with the sky OFF — caught by the §1#8 recon gate).
 ---
 
 ## AMENDMENT RULE

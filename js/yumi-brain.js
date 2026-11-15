@@ -880,40 +880,42 @@ function sendMessage(userText, opts) {
 // EDITABLE system prompt for lens generation.
 var LENS_GEN_SYSTEM =
   'You are Yumi, a reading companion inside Praxis. You are grounded in '
-  + 'critical pedagogy -- Freire, hooks, Lorde -- and you hold that a reader '
+  + 'critical pedagogy — Freire, hooks, Lorde — and you hold that a reader '
   + 'naming their own intellectual world is itself an act of freedom. You are '
-  + 'not a recommender engine, and you do not sort books into market genres.\n\n'
-  + 'You are given a reader\'s library as METADATA ONLY: a NUMBERED list of '
-  + 'books (each line begins with a 1-based number, then title, author, and the '
-  + 'reader\'s own genre tag), plus any lenses they have already made and any '
-  + 'VALUES they have declared. You are NOT given their private notes or '
-  + 'marginalia, and you never ask for them.\n\n'
-  + 'Your task: read across the whole library, notice the throughlines the '
-  + 'reader keeps returning to, and propose 3-5 LENSES -- ways of seeing their '
-  + 'shelf that are personal to them and named in the language of ideas, not '
-  + 'the language of bookstores. A lens is "Technologies of Liberation and '
-  + 'Oppression," not "Technology." It is "Selfhood," not "Self-Help." It names '
-  + 'a preoccupation -- a question the reader seems to be living inside.\n\n'
-  + 'For each lens give: name (a few words, evocative and precise, in the '
-  + 'spirit of critical pedagogy); why (one or two sentences, spoken to the '
-  + 'reader -- "you keep circling..." -- naming what you see WITHOUT '
-  + 'summarizing any single book); books (an ARRAY OF INTEGERS -- the 1-based '
-  + 'index NUMBERS from the numbered list of the books this lens gathers; cite '
-  + '2 to 6; use ONLY numbers that appear in the list; never a title string, '
-  + 'never a number outside the list).\n\n'
-  + 'A lens is an ANGLE on the shelf -- a way of SEEING it -- never a VALUE. A '
-  + 'value is a commitment the reader HOLDS (what they read toward); those are a '
-  + 'different instrument. Never propose a lens that duplicates or lightly '
-  + 'rephrases a value they have declared.\n\n'
-  + 'Rules: work only from titles, authors, genre tags -- never summarize, '
-  + 'review, or describe a book\'s contents. Propose, never impose -- these are '
-  + 'offerings the reader keeps, renames, or waves away. Invent nothing; every '
-  + 'index cited is a book already on their shelf. Don\'t diagnose, flatter, or '
-  + 'over-claim about the reader. A lens gathers at least two books; if the '
-  + 'library is too small or scattered to name honest lenses, propose fewer '
-  + 'rather than forcing them. Warmth over cleverness.\n\n'
+  + 'not a recommender and you do not sort books into market genres.\n\n'
+  + 'You are given a reader\'s shelf as METADATA ONLY: a numbered list of '
+  + 'books (a 1-based number, then title, author, and the shelf\'s category), '
+  + 'the names of lenses they already keep, lenses they have already set '
+  + 'aside or declined, and any values they have declared. You are not given '
+  + 'their notes, marginalia, journal or anything from inside a book, and you '
+  + 'never ask for them.\n\n'
+  + 'Read across the whole shelf and offer up to five LENSES: ways of seeing '
+  + 'it, named in the language of ideas, not bookstores ("Technologies of '
+  + 'liberation and oppression", not "Technology"). A lens rests on at least '
+  + 'two books and at most eight.\n\n'
+  + 'Speak about the BOOKS, never about the reader. You may be sure about the '
+  + 'shelf — what these titles do when set side by side — and you may ask the '
+  + 'reader a question. You may not claim anything about the reader\'s inner '
+  + 'life, habits, feelings or motives: never "you keep circling", "you seem '
+  + 'drawn to", "you love", "you tend to", "you have been". The one exception '
+  + 'is quoting their own words back when they are given to you under "The '
+  + 'reader said", marked "You told me: …".\n\n'
+  + 'For each lens return: name (a few words, precise, in the spirit of '
+  + 'critical pedagogy); lead (one sentence, sure about the shelf, about what '
+  + 'these books do together); clauses (one short clause per cited book, by '
+  + 'its number — what that book does in this lens, from its title and author '
+  + 'only, never its contents); close (one sentence that brings them '
+  + 'together); q (one question the lens would hold for the reader, ending in '
+  + 'a question mark); themes (three short key phrases, each a key word and a '
+  + 'few words after it); books (an array of the 1-based numbers cited, 2 to '
+  + '8, only numbers from the list).\n\n'
+  + 'Never propose a lens that duplicates or lightly rephrases a value they '
+  + 'have declared, a lens they keep, or one they set aside or declined. If '
+  + 'the shelf is too small or scattered for honest lenses, offer fewer, or '
+  + 'none. Warmth over cleverness.\n\n'
   + 'Return ONLY a JSON array, nothing around it:\n'
-  + '[{"name":"...","why":"...","books":[3,17]}]';
+  + '[{"name":"…","lead":"…","clauses":[{"i":3,"c":"…"}],"close":"…","q":"…?"'
+  + ',"themes":[{"k":"…","t":"…"}],"books":[3,17]}]';
 
 // Gather the deduped library as METADATA ONLY (title/author/genre per book)
 // plus the names of lenses the reader already has (distinct present genres +
@@ -931,9 +933,10 @@ function gatherLensLibraryMetadata() {
     var title = (typeof b.title === 'string') ? b.title : '';
     if (title === '') { return; }
     books.push({
-      title:  title,
-      author: (typeof b.author === 'string') ? b.author : '',
-      genre:  (typeof b.genre === 'string') ? b.genre : ''
+      title:    title,
+      author:   (typeof b.author === 'string') ? b.author : '',
+      genre:    (typeof b.genre === 'string') ? b.genre : '',
+      category: lensBookCategory(b)   // L4.1: the lens prompt sends the shelf's category, not genre
     });
     if (b.id) { titleToId[title.toLowerCase().replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ')] = b.id; }
   }
@@ -981,33 +984,80 @@ function gatherLensLibraryMetadata() {
   // does, engaged books (movedMe / valueMarks) are kept first. Capped HERE so
   // both lens callers number the same trimmed meta.books the eval indexes into.
   books = prioritizeValueBooks(books, titleToId, VALUE_RETROFIT_MAX);
-  return { books: books, lensNames: lensNames, themeLensNames: themeLensNames, valueNames: valueNames, titleToId: titleToId };
+  // L4.1 (contract §1 items 2-3): kept lens names, and the names of every open,
+  // Later and declined offer on /userLensOffers (state.js reader; [] until loaded).
+  var offeredNames = (u && u.uid && typeof lensOfferNamesForPrompt === 'function')
+    ? lensOfferNamesForPrompt(u.uid) : [];
+  return { books: books, lensNames: lensNames, themeLensNames: themeLensNames, keptNames: themeLensNames,
+           offeredNames: offeredNames, valueNames: valueNames, titleToId: titleToId };
+}
+
+// L4.1: a book's shelf category for the lens payload -- a valid manual override
+// wins, then the cached category; '' when neither (the bracket is then omitted).
+function lensBookCategory(b) {
+  if (!b) { return ''; }
+  var valid = (typeof isValidCategoryLabel === 'function') ? isValidCategoryLabel : function (s) { return !!s; };
+  if (typeof b.categoryOverride === 'string' && b.categoryOverride && valid(b.categoryOverride)) { return b.categoryOverride; }
+  if (typeof b.category === 'string' && b.category && valid(b.category)) { return b.category; }
+  return '';
+}
+
+// L4.1: one numbered metadata line -- N. "Title" by Author [Category].
+function lensBookLine(n, b) {
+  return n + '. "' + b.title + '"' + (b.author ? ' by ' + b.author : '')
+    + (b.category ? ' [' + b.category + ']' : '') + '\n';
+}
+
+// L4.1: metadata for ONE lens's books (the re-reading's numbered sub-list).
+// Reads state.books; ids are carried in titleToId, never serialized.
+function lensBookMeta(bookIds) {
+  var books = [], titleToId = {}, i, b;
+  var ids = (bookIds instanceof Array) ? bookIds : [];
+  for (i = 0; i < ids.length; i++) {
+    b = (state && state.books) ? state.books[ids[i]] : null;
+    if (!b || typeof b.title !== 'string' || b.title === '') { continue; }
+    books.push({ title: b.title, author: (typeof b.author === 'string') ? b.author : '', category: lensBookCategory(b) });
+    titleToId[normalizeLensTitle(b.title)] = ids[i];
+  }
+  return { books: books, titleToId: titleToId };
 }
 
 // Serialize ONLY title/author/genre + existing lens names into the user
 // message. titleToId and any other state are never touched here, so the
 // outgoing payload is provably metadata-only.
+// L4.1 (contract §1, the user message v2): in this order, nothing else -- the
+// shelf numbered with its CATEGORY; the kept lens names; every offered name
+// (open, Later, declined); the declared values. An empty item is left out.
 function buildLensGenUserMessage(meta) {
-  var s = 'Here is the reader\'s library (metadata only), numbered:\n\n';
+  var s = 'Here is the reader\'s shelf (metadata only), numbered:\n\n';
   var i;
-  for (i = 0; i < meta.books.length; i++) {
-    var b = meta.books[i];
-    s = s + (i + 1) + '. "' + b.title + '"'
-      + (b.author ? ' by ' + b.author : '')
-      + (b.genre ? ' [' + b.genre + ']' : '') + '\n';
-  }
-  if (meta.lensNames && meta.lensNames.length) {
-    s = s + '\nLenses they already have: ' + meta.lensNames.join(', ') + '\n';
-  }
-  // VL-1: the reader's declared VALUES are commitments, not lenses -- name new
-  // ANGLES, never echo or lightly rephrase one of these.
+  for (i = 0; i < meta.books.length; i++) { s = s + lensBookLine(i + 1, meta.books[i]); }
+  var kept = (meta.keptNames instanceof Array) ? meta.keptNames : [];
+  if (kept.length) { s = s + '\nLenses they keep: ' + kept.join(', ') + '\n'; }
+  var offered = (meta.offeredNames instanceof Array) ? meta.offeredNames : [];
+  if (offered.length) { s = s + '\nLenses already offered — do not offer these again: ' + offered.join(', ') + '\n'; }
+  // VL-1: the reader's declared VALUES are commitments, not lenses.
   if (meta.valueNames && meta.valueNames.length) {
-    s = s + '\nValues they have declared (these are COMMITMENTS, NOT lenses -- do '
-      + 'NOT propose a lens that duplicates or rephrases any of these): '
-      + meta.valueNames.join(', ') + '\n';
+    s = s + '\nValues they have declared (commitments, not lenses): ' + meta.valueNames.join(', ') + '\n';
   }
-  s = s + '\nPropose 3-5 lenses as specified. Cite books by their index numbers. '
-    + 'Return ONLY the JSON array.';
+  return s;
+}
+
+// L4.1 (contract §1 item 5, the say-back): ONE lens as a numbered sub-list of
+// its books, its current name, lead, close and question, then the reader's one
+// line (<=140) and the instruction. Nothing else from said[]; no id.
+function buildLensReReadMessage(lens, bookMeta, line) {
+  var s = 'Here is one lens on the reader\'s shelf (metadata only), its books numbered:\n\n';
+  var i, books = (bookMeta && bookMeta.books instanceof Array) ? bookMeta.books : [];
+  for (i = 0; i < books.length; i++) { s = s + lensBookLine(i + 1, books[i]); }
+  var said = (typeof line === 'string') ? line.replace(/^\s+|\s+$/g, '').substring(0, 140) : '';
+  s = s + '\nIts current name: ' + (lens.name || '') + '\n'
+    + 'Lead: ' + (lens.lead || '') + '\n'
+    + 'Close: ' + (lens.close || '') + '\n'
+    + 'Question: ' + (lens.q || '') + '\n\n'
+    + 'The reader said: "' + said + '"\n\n'
+    + 'Re-read these books through what the reader said. Keep the same books. Quote the reader\'s line once, '
+    + 'as "You told me: …". Return ONE lens object with a new name, lead, close and question.';
   return s;
 }
 
@@ -1022,42 +1072,75 @@ function yumiMarkLensNamesSent(meta) {
   if (!meta) { return; }
   var n = (meta.themeLensNames ? meta.themeLensNames.length : 0) +
           (meta.valueNames ? meta.valueNames.length : 0) +
-          (meta.existingValues ? meta.existingValues.length : 0);
+          (meta.existingValues ? meta.existingValues.length : 0) +
+          (meta.offeredNames ? meta.offeredNames.length : 0);   // L4.1: offered names now ride the lens call
   var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
   if (n > 0 && u && u.uid && typeof isYumiYesGranted === 'function' && isYumiYesGranted(u.uid)) {
     sv('praxis_yumi_lensnames_sent_' + u.uid, Date.now());
   }
 }
+// L4.1: the text of a proxy reply, plus the token counts from its usage (the
+// contract §5 rule: report usage, never estimates).
+function lensReplyText(data, label) {
+  var blocks = data && data.content;
+  var text = '';
+  var i;
+  if (blocks && blocks.length) {
+    for (i = 0; i < blocks.length; i++) {
+      var block = blocks[i];
+      if (block && block.type === 'text' && typeof block.text === 'string') {
+        text = text + block.text;
+      }
+    }
+  }
+  if (data && data.usage && typeof console !== 'undefined' && console.log) {
+    console.log('[L4] ' + label + ' usage: ' + data.usage.input_tokens + ' in / ' + data.usage.output_tokens + ' out');
+  }
+  return text;
+}
+
 function generateLenses(meta) {
   yumiMarkLensNamesSent(meta);
   var payload = {
     model:      'claude-sonnet-4-6',
-    max_tokens: 1024,
+    max_tokens: 1600,
     system:     LENS_GEN_SYSTEM,
     messages: [
       { role: 'user', content: buildLensGenUserMessage(meta) }
     ]
   };
   return aiProxyFetch(payload).then(function (data) {
-    var blocks = data && data.content;
-    var text = '';
-    var i;
-    if (blocks && blocks.length) {
-      for (i = 0; i < blocks.length; i++) {
-        var block = blocks[i];
-        if (block && block.type === 'text' && typeof block.text === 'string') {
-          text = text + block.text;
-        }
-      }
-    }
-    // LENS-1: reject an unreadable/truncated reply so BOTH lens callers (incl.
-    // the uneditable yumi-ui rail) route it to their existing ERROR state --
-    // silence is impossible. A parseable-but-empty reply resolves normally and
-    // shows the honest "no lenses yet" empty state.
-    if (parseValueRetrofitArray(text) === null) {
+    var text = lensReplyText(data, 'lens generation');
+    // LENS-1: reject an unreadable/truncated reply so the caller routes it to
+    // its ERROR state -- silence is impossible. A parseable-but-empty reply
+    // resolves normally and shows the honest "no lenses yet" state.
+    if (parseLensReply(text, false) === null) {
       throw new Error('lens response unreadable (truncated or non-JSON)');
     }
     return text;
+  });
+}
+
+// L4.1 (contract §1 item 5): the say-back re-reading -- ONE call, ONE lens back.
+// lens = { name, lead, close, q, bookIds }. Resolves to { text, bookMeta } so the
+// caller evaluates against the SAME numbered sub-list the model saw.
+function generateLensReReading(meta, lens, line) {
+  yumiMarkLensNamesSent(meta);
+  var bookMeta = lensBookMeta(lens && lens.bookIds);
+  var payload = {
+    model:      'claude-sonnet-4-6',
+    max_tokens: 600,
+    system:     LENS_GEN_SYSTEM,
+    messages: [
+      { role: 'user', content: buildLensReReadMessage(lens || {}, bookMeta, line) }
+    ]
+  };
+  return aiProxyFetch(payload).then(function (data) {
+    var text = lensReplyText(data, 'lens re-reading');
+    if (parseLensReply(text, true) === null) {
+      throw new Error('lens re-reading unreadable (truncated or non-JSON)');
+    }
+    return { text: text, bookMeta: bookMeta };
   });
 }
 
@@ -1127,49 +1210,214 @@ function readActiveValueNames() {
 // cap 5. NO display cap on the books array -- the adopt path assigns all of them. valueNames
 // optional -> falls back to readActiveValueNames() for callers that cannot pass it.
 // Fail-safe []; never throws.
-function evalLensResponse(rawText, libraryTitles, valueNames) {
+// ---- L4.1: evalLensResponse v2 (engine contract §3, the ten steps in order) --
+// Pure: no DOM, no writes. Step 1 (the floor of five books) is the CALLER's --
+// the eval never sees a shelf under five. Every drop logs ONE line:
+// "[L4-eval] <reason>: <name>". opts (all optional):
+//   titleToId -- normalized title -> bookId (the gather's map; never serialized)
+//   against   -- [{ name, bookIds, kind:'kept'|'open'|'later'|'declined' }], the
+//                lenses a new offer may not be the SAME LENS as (sameLens)
+//   reReading -- true for the say-back: ONE object back, clauses optional (the
+//                books stay), and a sentence beginning "You told me:" is exempt
+//                from the voice lint and from the lead's length.
+var LENS_EVAL_MAX_BOOKS = 8;
+var LENS_EVAL_CAP = 5;
+// EDITABLE (contract §3 step 7): the reader-claim list -- word-bounded,
+// case-insensitive. Her claims stay about the books.
+var LENS_VOICE_LINT = [
+  'you keep', 'you seem', 'you(?:\'re|’re| are) drawn', 'you love', 'you want',
+  'you feel', 'you tend', 'you(?:\'ve|’ve| have) been', 'you circle', 'you return',
+  'your heart', 'your (?:mind|soul|life|habit)', 'you need', 'you always', 'you never'
+];
+
+function lensTrim(s) { return (typeof s === 'string') ? s.replace(/^\s+|\s+$/g, '') : ''; }
+function lensIsArray(a) { return Object.prototype.toString.call(a) === '[object Array]'; }
+function lensEvalLog(reason, name) {
+  if (typeof console !== 'undefined' && console.log) { console.log('[L4-eval] ' + reason + ': ' + name); }
+}
+
+// Parse a lens reply: an array (the generation) or ONE object (the re-reading).
+// preferObject tries the object first so a {..} reply is never mis-read as its
+// own inner "books" array. null = unreadable.
+function parseLensReply(rawText, preferObject) {
+  if (typeof rawText !== 'string') { return null; }
+  function asObject() {
+    var obj = null, st, en;
+    try { obj = JSON.parse(rawText); }
+    catch (e) {
+      st = rawText.indexOf('{'); en = rawText.lastIndexOf('}');
+      if (st !== -1 && en > st) {
+        try { obj = JSON.parse(rawText.substring(st, en + 1)); } catch (e2) { obj = null; }
+      }
+    }
+    if (obj && typeof obj === 'object' && !lensIsArray(obj)) { return [obj]; }
+    if (lensIsArray(obj)) { return obj; }
+    return null;
+  }
+  if (preferObject) { return asObject() || parseValueRetrofitArray(rawText); }
+  return parseValueRetrofitArray(rawText) || asObject();
+}
+
+// The say-back exemption: drop every sentence that begins "You told me:" (the
+// reader's own words, quoted back) before the lint and the lead's length.
+function lensStripToldMe(s) {
+  return lensTrim(String(s)
+    .replace(/You told me:\s*[“"][^”"]*[”"][.!?]?/g, '')
+    .replace(/You told me:[^.!?]*[.!?]?/g, ''));
+}
+
+// The first reader-claim phrase in text, lower-cased, or ''.
+function lensVoiceHit(text, reReading) {
+  var t = reReading ? lensStripToldMe(text) : String(text);
+  var i, m;
+  for (i = 0; i < LENS_VOICE_LINT.length; i++) {
+    m = new RegExp('\\b' + LENS_VOICE_LINT[i] + '\\b', 'i').exec(t);
+    if (m) { return m[0].toLowerCase(); }
+  }
+  return '';
+}
+
+// THE SAME LENS (lens-contract §2; the single re-offer guard): the same name
+// ignoring case, OR at least two-thirds of the books shared -- measured against
+// the LARGER lens, so it is symmetric and a broader lens is never swallowed by
+// a small one it contains.
+function lensSharedCount(a, b) {
+  var set = {}, i, n = 0;
+  for (i = 0; i < a.length; i++) { set['k' + a[i]] = true; }
+  for (i = 0; i < b.length; i++) { if (set.hasOwnProperty('k' + b[i])) { n++; set['k' + b[i]] = false; } }
+  return n;
+}
+function sameLens(a, b) {
+  if (!a || !b) { return false; }
+  var na = normalizeLensTitle(a.name), nb = normalizeLensTitle(b.name);
+  if (na !== '' && na === nb) { return true; }
+  var A = lensIsArray(a.bookIds) ? a.bookIds : [], B = lensIsArray(b.bookIds) ? b.bookIds : [];
+  if (!A.length || !B.length) { return false; }
+  return lensSharedCount(A, B) * 3 >= Math.max(A.length, B.length) * 2;
+}
+function lensTwinOf(cand, against) {
+  var i;
+  for (i = 0; i < against.length; i++) { if (against[i] && sameLens(cand, against[i])) { return against[i]; } }
+  return null;
+}
+function lensTwinReason(tw) {
+  return (tw.kind === 'declined') ? 'declined-twin' : ('same-lens (' + (tw.kind || 'kept') + ')');
+}
+
+function evalLensResponse(rawText, libraryTitles, valueNames, opts) {
+  var o = (opts && typeof opts === 'object') ? opts : {};
   var titles = (libraryTitles instanceof Array) ? libraryTitles : [];
   var others = (valueNames instanceof Array) ? valueNames : readActiveValueNames();
-  var parsed = parseValueRetrofitArray(rawText);
-  if (!parsed) { return []; }
+  var t2id = (o.titleToId && typeof o.titleToId === 'object') ? o.titleToId : null;
+  var against = lensIsArray(o.against) ? o.against : [];
+  var reRead = (o.reReading === true);
+  // Step 2: parse. Unreadable -> [] (the caller's error state: LENS-1).
+  var parsed = parseLensReply(rawText, reRead);
+  if (!parsed) { lensEvalLog('unparseable', '(reply)'); return []; }
   var out = [];
-  var i;
+  var i, j, k, n, tw;
   for (i = 0; i < parsed.length; i++) {
-    var lens = parsed[i];
-    if (!lens || typeof lens.name !== 'string' || typeof lens.why !== 'string' ||
-        Object.prototype.toString.call(lens.books) !== '[object Array]') {
-      continue;
+    var L = parsed[i];
+    var nm = (L && typeof L === 'object') ? lensTrim(L.name) : '';
+    // Step 3: structure. The old {name, why, books} shape is read as thin (lead
+    // = why, no clauses) and never survives step 6.
+    if (nm === '' || !lensIsArray(L.books)) { lensEvalLog('structure', nm || '(no name)'); continue; }
+    var thin = (typeof L.lead !== 'string' && typeof L.why === 'string');
+    var lead = thin ? L.why : L.lead;
+    var close = thin ? '' : L.close;
+    var q = thin ? '' : L.q;
+    if (typeof lead !== 'string' || typeof close !== 'string' || typeof q !== 'string' ||
+        (L.clauses !== undefined && !lensIsArray(L.clauses)) ||
+        (L.themes !== undefined && !lensIsArray(L.themes))) {
+      lensEvalLog('structure', nm); continue;
     }
-    var name = lens.name.replace(/^\s+|\s+$/g, '');
-    if (name === '') { continue; }
-    if (isBlockedLensName(name)) { continue; }
-    if (nameCollidesWith(name, others)) {
-      if (typeof console !== 'undefined' && console.log) {
-        console.log('[VL-1] dropped lens "' + name + '" -- collides with a declared value');
-      }
-      continue;
-    }
-    var kept = [];
-    var seen = {};
-    var j;
-    for (j = 0; j < lens.books.length; j++) {
-      var n = lens.books[j];
+    // Step 4: the name -- blocklist, a declared value (VL-1), the same lens by name.
+    if (isBlockedLensName(nm)) { lensEvalLog('blocklist', nm); continue; }
+    if (nameCollidesWith(nm, others)) { lensEvalLog('value-collision', nm); continue; }
+    tw = lensTwinOf({ name: nm, bookIds: [] }, against);
+    if (tw) { lensEvalLog(lensTwinReason(tw), nm); continue; }
+    // Step 5: grounding -- 1-based, distinct, in bounds; <2 drops; >8 keeps the first 8.
+    var idx = [], seen = {};
+    for (j = 0; j < L.books.length; j++) {
+      n = L.books[j];
       if (typeof n === 'string' && /^\s*[0-9]+\s*$/.test(n)) { n = parseInt(n, 10); }
       if (typeof n !== 'number' || !isFinite(n)) { continue; }
-      var idx = Math.floor(n) - 1;
-      if (idx < 0 || idx >= titles.length) { continue; }
-      if (Object.prototype.hasOwnProperty.call(seen, idx)) { continue; }
-      seen[idx] = true;
-      kept.push(titles[idx]);
+      k = Math.floor(n) - 1;
+      if (k < 0 || k >= titles.length || seen.hasOwnProperty('k' + k)) { continue; }
+      seen['k' + k] = true;
+      idx.push(k);
     }
-    if (kept.length < 2) { continue; }
-    // LENS-1: NO display cap here -- the lens ADOPT path (yumi-ui lensSuggestAdopt)
-    // assigns EVERY book in the returned array to the new theme, so capping would
-    // silently link fewer books than the lens gathered (a shipped-feature regression).
-    // Values cap safely (accept adds a profile stone, never uses the books). The
-    // "cite 2 to 6" prompt keeps this list short in practice.
-    out.push({ name: name, why: lens.why.replace(/^\s+|\s+$/g, ''), books: kept });
-    if (out.length >= 5) { break; }
+    if (idx.length > LENS_EVAL_MAX_BOOKS) { idx = idx.slice(0, LENS_EVAL_MAX_BOOKS); }
+    if (idx.length < 2) { lensEvalLog('under-2', nm); continue; }
+    // Step 4, completed now the books are known: the same lens by two-thirds shared.
+    var keys = [];
+    for (j = 0; j < idx.length; j++) {
+      var nt = normalizeLensTitle(titles[idx[j]]);
+      keys.push((t2id && t2id[nt]) ? t2id[nt] : ('t:' + nt));
+    }
+    tw = lensTwinOf({ name: '', bookIds: keys }, against);
+    if (tw) { lensEvalLog(lensTwinReason(tw), nm); continue; }
+    // Step 6: clauses cover the books.
+    if (thin) { lensEvalLog('thin (old shape, no clauses)', nm); continue; }
+    var cin = lensIsArray(L.clauses) ? L.clauses : [];
+    var inLens = {}, cl = {};
+    for (j = 0; j < idx.length; j++) { inLens['k' + idx[j]] = true; }
+    for (j = 0; j < cin.length; j++) {
+      var c = cin[j];
+      if (!c || typeof c.c !== 'string') { continue; }
+      n = c.i;
+      if (typeof n === 'string' && /^\s*[0-9]+\s*$/.test(n)) { n = parseInt(n, 10); }
+      if (typeof n !== 'number' || !isFinite(n)) { continue; }
+      k = Math.floor(n) - 1;
+      if (!inLens['k' + k] || cl.hasOwnProperty('k' + k)) { continue; }   // a clause for an uncited book is discarded
+      cl['k' + k] = lensTrim(c.c);
+    }
+    var keep = [];
+    if (reRead && cin.length === 0) { keep = idx; }                        // the say-back keeps the same books
+    else { for (j = 0; j < idx.length; j++) { if (cl.hasOwnProperty('k' + idx[j])) { keep.push(idx[j]); } } }
+    if (keep.length < 2) { lensEvalLog('under-2 (clauses)', nm); continue; }
+    // Step 6 (cont.): length caps -- a truncated reading is never offered.
+    var bad = '';
+    var leadOwn = reRead ? lensStripToldMe(lead) : lensTrim(lead);
+    var qq = lensTrim(q);
+    if (lensTrim(lead) === '' || leadOwn.length > 220) { bad = 'length: lead'; }
+    for (j = 0; j < keep.length && !bad; j++) {
+      if (cl.hasOwnProperty('k' + keep[j]) && (cl['k' + keep[j]] === '' || cl['k' + keep[j]].length > 140)) { bad = 'length: clause'; }
+    }
+    if (!bad && (lensTrim(close) === '' || lensTrim(close).length > 160)) { bad = 'length: close'; }
+    if (!bad && (qq === '' || qq.length > 120 || qq.charAt(qq.length - 1) !== '?')) { bad = 'question'; }
+    var th = [], tin = lensIsArray(L.themes) ? L.themes : [];
+    for (j = 0; j < tin.length && th.length < 3 && !bad; j++) {
+      var tk = (tin[j] && typeof tin[j].k === 'string') ? lensTrim(tin[j].k) : '';
+      if (tk === '') { continue; }
+      if (tk.split(/\s+/).length > 3) { bad = 'length: theme'; break; }
+      th.push({ k: tk, t: (typeof tin[j].t === 'string') ? lensTrim(tin[j].t) : '' });
+    }
+    if (bad) { lensEvalLog(bad, nm); continue; }
+    // Step 7: the voice law, linted on lead, every clause, close and q.
+    var hit = lensVoiceHit(lead, reRead);
+    for (j = 0; j < keep.length && !hit; j++) { if (cl.hasOwnProperty('k' + keep[j])) { hit = lensVoiceHit(cl['k' + keep[j]], reRead); } }
+    if (!hit) { hit = lensVoiceHit(close, reRead) || lensVoiceHit(qq, reRead); }
+    if (hit) { lensEvalLog('voice: "' + hit + '"', nm); continue; }
+    // Survivor: clauses keyed by canonical title, reading = lead + clauses in book order + close.
+    var bookTitles = [], clauses = {}, parts = [], bookIds = [];
+    for (j = 0; j < keep.length; j++) {
+      var title = titles[keep[j]];
+      bookTitles.push(title);
+      if (cl.hasOwnProperty('k' + keep[j])) { clauses[title] = cl['k' + keep[j]]; parts.push(cl['k' + keep[j]]); }
+      if (t2id && t2id[normalizeLensTitle(title)]) { bookIds.push(t2id[normalizeLensTitle(title)]); }
+    }
+    var lead2 = lensTrim(lead), close2 = lensTrim(close);
+    out.push({
+      name: nm, lead: lead2, clauses: clauses, close: close2, q: qq, themes: th,
+      books: bookTitles, bookIds: bookIds,
+      reading: lead2 + (parts.length ? ' ' + parts.join(' ') : '') + ' ' + close2
+    });
+    // Step 8: cap at five.
+    if (out.length >= LENS_EVAL_CAP) {
+      for (j = i + 1; j < parsed.length; j++) { lensEvalLog('cap', (parsed[j] && lensTrim(parsed[j].name)) || '(no name)'); }
+      break;
+    }
   }
   return out;
 }
@@ -3173,6 +3421,9 @@ window.YumiBrain = {
   gatherLensMetadata: gatherLensLibraryMetadata,
   generateLenses:     generateLenses,
   evalLensResponse:   evalLensResponse,
+  generateLensReReading: generateLensReReading,   // L4.1: the say-back's one call
+  lensBookMeta:       lensBookMeta,
+  sameLens:           sameLens,
   gatherValueMetadata:   gatherValueMetadata,
   generateValueRetrofit: generateValueRetrofit,
   evalValueResponse:     evalValueResponse,

@@ -465,6 +465,9 @@ function renderRoute() {
 
   var rest = location.hash.replace(/^#/, '');
   var parts = rest.split('/');
+  // L4.3: the Lenses page's Back returns to wherever the reader came from.
+  if (parts[0] !== 'lenses') { lxLastRoute = rest || 'home'; }
+  if (lxSheetOpen && location.hash !== lxSheetRoute) { lxSheetOpen(true); }   // a route CHANGE closes an open L4 sheet
 
   // UMBER dual-ground: tag <body> with the active route's ground so the
   // theme.css [data-ground="dark"] override resolves. Keyed off the RAW
@@ -502,7 +505,7 @@ function renderRoute() {
   // walker, permission/failure) use the --ink family, which on a dark ground resolves
   // to LIGHT ink and renders ghost-faint on their light fill (the F3 title defect).
   // A bright ground gives those cards full dark ink; the camera chrome is unaffected.
-  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1, artifact: 1, 'yumi-sees': 1 };
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1, artifact: 1, 'yumi-sees': 1, lenses: 1 };   // L4.3: #lenses sits on Home's ground
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
@@ -524,7 +527,7 @@ function renderRoute() {
   } else if (parts[0] === 'book' || parts[0] === 'artifact' ||
       parts[0] === 'books') {
     activeRoute = 'books';
-  } else if (parts[0] === 'home') {
+  } else if (parts[0] === 'home' || parts[0] === 'lenses') {   // L4.3: the Lenses page keeps Home lit (it is reached from Home)
     // Batch 4A: Home is its own top-nav surface (landing route).
     activeRoute = 'home';
   } else if (parts[0] === 'account' || parts[0] === 'profile' ||
@@ -803,6 +806,17 @@ function renderRoute() {
     state.currentSubTheoryId = null;
     saveState();
     renderHome();
+    return;
+  }
+  // L4.3 (ruling 86): the Lenses page (#lenses) -- Yumi's reading and her offers,
+  // Later, your lenses, the remembered fold. Symmetric pointer clear; placed
+  // BEFORE the notebook fallthrough so #lenses is caught here.
+  if (parts[0] === 'lenses') {
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderLensesPage();
     return;
   }
   // 6.2c: 'What Yumi sees' transparency page (#yumi-sees). Reached from
@@ -1457,6 +1471,10 @@ function buildYumiYesCard(onAnswered) {
       var s2 = document.createElement('small');
       s2.textContent = 'Your lens names and the values you chose.';
       row.appendChild(s2);
+      // Ruled 14 Nov (consent-copy "Added 14 Nov" #1): the say-back's one line.
+      var s3 = document.createElement('small');
+      s3.textContent = 'What you say back to a lens. Your one line goes to Claude when you send it.';
+      row.appendChild(s3);
     }
     rows.appendChild(row);
   }
@@ -1991,8 +2009,22 @@ function renderHome() {
   altNote.textContent = 'Pick a view — it stays put until you flip it.';
   alt.appendChild(altNote);
   welcome.appendChild(alt);
-  wrap.appendChild(welcome);
-  wrap.appendChild(buildHomeYumiDock());   // L3.1: the quiet dock (before the yes) / Yumi's dock (after)
+  // L4.4: behind praxis_sky the sky is Home's head -- it replaces the kicker, the
+  // greeting and the rule; the view switch (the paper's own control) moves under
+  // it. Dark-launched: with the key off this branch never runs.
+  var lxHome = null;
+  if (lxSkyOn()) {
+    lxHome = lxHomeSky(homeUser.uid);
+    wrap.className = wrap.className + ' home-sky-on';
+    wrap.appendChild(lxHome.host);
+    wrap.appendChild(alt);
+  } else {
+    wrap.appendChild(welcome);
+  }
+  // Ruling 84 (as amended 10 Nov 2026): the Yumi row leaves Home AFTER the yes --
+  // the corner Bloom says it there (and carries the raised hand). BEFORE the yes it
+  // stays: it is the door to the yes that consent-copy.md:24 names.
+  if (!isYumiYesGranted(homeUser.uid)) { wrap.appendChild(buildHomeYumiDock()); }   // L3.1: the quiet dock
 
   // Variant A: the whole field (Option A, lights = arcs)
   var vField = document.createElement('div');
@@ -2114,6 +2146,7 @@ function renderHome() {
   wrap.appendChild(glimpses);
 
   host.appendChild(wrap);
+  if (lxHome) { lxSkyMounted(lxHome); }   // L4.4: lay the sky out now that it has a size
 
   // D3: the alternator no longer auto-flips per visit. The default view is
   // mechanical -- "Where you left off" when there IS progress (own arcs), else
@@ -5575,6 +5608,19 @@ function buildShelfBandHeader(container, label, count, groupKey, groupBooks, len
   var c = document.createElement('span');
   c.className = 'count';
   c.textContent = count + (count === 1 ? ' book' : ' books');
+  // L4.3: on a LENS band, the lens's own mark opens its lens sheet (a tap on a
+  // lens anywhere opens the sheet); the label keeps opening the focused view.
+  var lxTid = (typeof groupKey === 'string' && groupKey.indexOf('lens:') === 0) ? groupKey.substring(5) : '';
+  if (lxTid && !shelfSelecting && state.userThemes && state.userThemes[lxTid]) {
+    var lxMk = document.createElement('button');
+    lxMk.type = 'button';
+    lxMk.className = 'lx lx-band-lens';
+    lxMk.setAttribute('aria-label', 'Open the lens ' + label);
+    if (!state.userThemes[lxTid].look && typeof ensureLensLooks === 'function') { ensureLensLooks(state.userThemes[lxTid].userId); }   // derived once, stored
+    lxMk.appendChild(lxMark(state.userThemes[lxTid].look, label));
+    lxMk.addEventListener('click', function (e) { e.stopPropagation(); openLensSheet(lxTid); });
+    hd.appendChild(lxMk);
+  }
   hd.appendChild(labelEl);
   hd.appendChild(c);
   container.appendChild(hd);
@@ -5752,7 +5798,7 @@ function shelfBuildLensRow(bandCount) {
   ask.type = 'button';
   ask.textContent = 'Ask Yumi for more lenses';
   ask.addEventListener('click', function () {
-    if (window.PraxisLensPanel && typeof window.PraxisLensPanel.open === 'function') { window.PraxisLensPanel.open(); }
+    location.hash = '#lenses';   // L4.3: her reading and her offers live on the Lenses page (ruling 86)
   });
   yrow.appendChild(dot);
   yrow.appendChild(p);
@@ -5762,9 +5808,10 @@ function shelfBuildLensRow(bandCount) {
 
 // R-FIRSTSHELF (3b/R4/R5) · the one-time lens OFFER — a quiet beat on the Shelf
 // once the library has grown by scan. It AUTO-OFFERS (renders on its own) but
-// NEVER AUTO-FIRES: generateLenses runs only on tap, via the SAME lens-panel /
-// startLensSuggest path the "Ask Yumi" button uses (no second generation path,
-// zero network on render — R3c/R4). Gate = an ls flag armed by scanCommitBook;
+// NEVER AUTO-FIRES: generateLenses runs only on tap, via the SAME path the "Ask
+// Yumi" button uses -- since L4.3 the Lenses page (#lenses), whose first open
+// fires the first read (no second generation path, zero network on render of
+// THIS card — R3c/R4). Gate = an ls flag armed by scanCommitBook;
 // floor = 5 books (R5). Stored-once: tap → 'used', × → 'dismissed', never re-
 // offered. Resettable for felt-testing: sv('praxis_firstshelf_offer_'+uid,'armed').
 function shelfFirstOfferKey(uid) { return 'praxis_firstshelf_offer_' + uid; }
@@ -5794,8 +5841,8 @@ function buildFirstShelfOffer(user, bookCount) {
   go.textContent = 'Find my lenses';
   go.addEventListener('click', function () {
     sv(shelfFirstOfferKey(user.uid), 'used');
-    if (window.PraxisLensPanel && typeof window.PraxisLensPanel.open === 'function') { window.PraxisLensPanel.open(); }
     if (card.parentNode) { card.parentNode.removeChild(card); }
+    location.hash = '#lenses';   // L4.3: the Lenses page reads the shelf on its first open
   });
   body.appendChild(go);
   card.appendChild(body);
@@ -20336,6 +20383,11 @@ function buildTransparencyContent(snap, context) {
     lensBody.className = 'transparency-section-body transparency-empty';
   }
   panel.appendChild(lensSec);
+  // L4.3 (lens-contract §3; covenant rule 3): what the reader said back to a lens
+  // -- kept with it (said[]) or remembered after it was let go (lensWords) --
+  // readable here, and forgettable with Undo.
+  var lxSaidSec = (typeof lxYumiSeesSaidSection === 'function') ? lxYumiSeesSaidSection(luid, rerender) : null;
+  if (lxSaidSec) { panel.appendChild(offState(lxSaidSec[0])); panel.appendChild(offState(lxSaidSec[1])); }
 
   // Row: artifacts -- ruled 25 Oct (consent-copy "Added 25 Oct" #2). Only the
   // reader's own; the ones switched on are named in the order switched on,
@@ -21647,7 +21699,7 @@ function _portraitRenderGalaxy(galaxy, galaxyReadout, galaxyHelp, data, axis, re
 // becomes a lens via the EXISTING createUserTheme + assignBookToTheme path
 // (-> Firestore on the markThemesDirty chokepoint; same path the Shelf lens-gen
 // adopt uses). A rejected categories proposal is dismissed locally so it is not
-// re-proposed (ls-backed nag-suppression, like praxis_lens_ai_suggestions -- NOT
+// re-proposed (ls-backed nag-suppression, like the retired lens-suggestions flag -- NOT
 // core data, NOT a Firestore field, NO migrate). Lenses proposals come from the
 // reader's existing Yumi generateLenses, ON DEMAND. Raw RETURNS = factual
 // recurrence, counts only, no interpretation. Reviewable calls (smoke): proposer
@@ -23478,7 +23530,8 @@ function _pfWire(wrap, uid, vis) {
       var _ax = seg.getAttribute('data-axis');
       _pfSetAxis(wrap, _ax);
       // R9b Lane G S5: the SKY follows the Numbers axis (owner only) -- rebuild planets as lenses/categories.
-      if (!vis) { var _skh = wrap.querySelector('.pf-sky-host'); if (_skh) { _skh.innerHTML = _profileBuildSky(uid, vis, (typeof window !== 'undefined' && window.innerWidth ? window.innerWidth < 1200 : false), _ax === 'lenses'); _pfDockInvite(wrap); } }
+      if (!vis && !lxSkyOn()) { var _skh = wrap.querySelector('.pf-sky-host');   // L4.4: with the sky on, the Numbers axis never rebuilds the old sky over it
+      if (_skh) { _skh.innerHTML = _profileBuildSky(uid, vis, (typeof window !== 'undefined' && window.innerWidth ? window.innerWidth < 1200 : false), _ax === 'lenses'); _pfDockInvite(wrap); } }
       return;
     }
     var a = cl(t, '[data-act]');
@@ -23707,6 +23760,19 @@ function renderProfilePage() {
   wrap.setAttribute('data-mob', mob ? '1' : '0');
   wrap.innerHTML = _pfBuildPage(uid, vis, mob);
   host.appendChild(wrap);
+  // L4.4 (ruling 87): behind praxis_sky, the hand.js sky -- Lenses · Categories ·
+  // Marks -- replaces the old .pf-sky (and its axis toggle) under the name. Owner
+  // only; with the key off You is exactly as it was.
+  if (!vis && lxSkyOn()) {
+    var lxYHost = wrap.querySelector('.pf-sky-host');
+    if (lxYHost) {
+      var lxYou = lxYouSky(uid);
+      lxYHost.innerHTML = '';
+      lxYHost.className = 'pf-sky-host lx-you-host';
+      lxYHost.appendChild(lxYou.host);
+      lxSkyMounted(lxYou);
+    }
+  }
   _pfDockInviteSoon(wrap);   // L1.2 R74
   // DNA carry: mount the reader-model section as a live DOM node (owner-only). Its
   // re-render target is renderProfilePage (Condition-1 -- carried handlers re-render
@@ -26568,8 +26634,1051 @@ function capHandleShareTarget() {
   capScheduleDraftSave();
 }
 
+// =====================================================================
+// L4.3 -- THE LENSES PAGE (#lenses) · THE LENS SHEET · THE L4 TOAST
+// (rulings 85-87, design calls S10-S16; lens-contract; engine contract §3-§7).
+// Built to design/praxis-lens-sheet.html. Every L4 surface root carries .lx --
+// the ONE class the scoped sheet/marks/seed rules hang on (amended ruling 1).
+// Yumi's reading and her offers live HERE, never on Home (ruling 86).
+// =====================================================================
+var lxGen = { uid: null, status: 'idle', err: null, survived: -1, autoTried: false };
+var lxLastRoute = 'home';     // Back returns to origin (set by renderRoute)
+var lxPick = null;            // the offer card's picked cover (a bookId)
+var lxFoldOpen = false;
+var lxNotNow = false;         // "Not now" on the no-yes card, this visit only
+var lxToastTimer = null;
+var lxSheetOpen = null;       // the one open L4 sheet's close()
+var lxSheetRoute = '';        // the hash it was opened on
+
+function lxUid() {
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  return (u && u.uid) ? u.uid : null;
+}
+function lxEl(tag, cls, text) {
+  var e = document.createElement(tag);
+  if (cls) { e.className = cls; }
+  if (typeof text === 'string') { e.textContent = text; }
+  return e;
+}
+function lxBtn(cls, text, fn) {
+  var b = lxEl('button', cls, text);
+  b.type = 'button';
+  if (fn) { b.addEventListener('click', fn); }
+  return b;
+}
+function lxPlural(n, w) { return n + ' ' + w + (n === 1 ? '' : (w === 'lens' ? 'es' : 's')); }
+function lxMark(look, name, big) {
+  var s = lxEl('span', 'mark still' + (big ? ' xl' : ''));
+  s.setAttribute('aria-hidden', 'true');
+  if (look && window.PraxisHand && typeof window.PraxisHand.formSvg === 'function') {
+    s.innerHTML = window.PraxisHand.formSvg(look, window.PraxisHand.hash(name || ''), '-38 -38 76 76');
+  }
+  return s;
+}
+function lxSeed() {
+  var s = lxEl('span', 'seedbox');
+  s.setAttribute('aria-hidden', 'true');
+  if (window.PraxisHand && typeof window.PraxisHand.yumiSeed === 'function') { s.innerHTML = window.PraxisHand.yumiSeed(); }
+  return s;
+}
+function lxQl(text) { return lxEl('span', 'lx-ql', text); }
+function lxAgo(ms) {
+  var d = Date.now() - (ms || 0), day = 86400000;
+  if (!ms || d < 3600000) { return 'just now'; }
+  if (d < day) { return 'today'; }
+  if (d < 2 * day) { return 'yesterday'; }
+  if (d < 14 * day) { return Math.floor(d / day) + ' days ago'; }
+  if (d < 60 * day) { return Math.floor(d / (7 * day)) + ' weeks ago'; }
+  return Math.floor(d / (30 * day)) + ' months ago';
+}
+function lxErrLine(err) {
+  if (err && err.code === 'daily_limit' && typeof aiLimitMessage === 'function') { return aiLimitMessage(err); }
+  return 'Yumi couldn’t reach for lenses just now.';
+}
+
+// ---- the L4 toast (one line, optional Undo for 6 s) -------------------------
+function lxToast(msg, onUndo) {
+  var t = document.getElementById('lx-toast');
+  if (!t) {
+    t = lxEl('div', 'lx lx-toast');
+    t.id = 'lx-toast';
+    t.setAttribute('role', 'status');
+    t.setAttribute('aria-live', 'polite');
+    t.appendChild(lxEl('span', 'lx-toast-t'));
+    var u = lxBtn('lx-toast-b', 'Undo');
+    t.appendChild(u);
+    document.body.appendChild(t);
+  }
+  var undo = t.querySelector('.lx-toast-b');
+  t.querySelector('.lx-toast-t').textContent = msg;
+  undo.style.display = onUndo ? '' : 'none';
+  undo.onclick = function () {
+    t.classList.remove('is-show');
+    if (lxToastTimer) { window.clearTimeout(lxToastTimer); }
+    if (onUndo) { onUndo(); }
+  };
+  t.classList.add('is-show');
+  if (lxToastTimer) { window.clearTimeout(lxToastTimer); }
+  lxToastTimer = window.setTimeout(function () { t.classList.remove('is-show'); }, onUndo ? 6000 : 2600);
+}
+
+// ---- the L4 sheet shell: a bottom sheet (docked right at desktop) ------------
+// build(sheetEl, api) fills it; api.rerender() rebuilds; api.close() closes and
+// returns focus to the opener. Escape and the scrim close it.
+function lxOpenSheet(label, build) {
+  if (lxSheetOpen) { lxSheetOpen(true); }
+  var opener = document.activeElement;
+  var scrim = lxEl('div', 'lx-scrim');
+  var sheet = lxEl('div', 'lx lx-sheet');
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-modal', 'true');
+  sheet.setAttribute('aria-label', label);
+  var closed = false;
+  function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); api.close(); } }
+  var api = {
+    el: sheet,
+    rerender: function () {
+      sheet.innerHTML = '';
+      var h = lxEl('div', 'lx-handle'); h.setAttribute('aria-hidden', 'true'); sheet.appendChild(h);
+      build(sheet, api);
+    },
+    close: function (silent) {
+      if (closed) { return; }
+      closed = true;
+      document.removeEventListener('keydown', onKey);
+      if (scrim.parentNode) { scrim.parentNode.removeChild(scrim); }
+      if (sheet.parentNode) { sheet.parentNode.removeChild(sheet); }
+      if (lxSheetOpen === api.close) { lxSheetOpen = null; }
+      if (!silent && opener && opener.focus && document.body.contains(opener)) { opener.focus(); }
+    }
+  };
+  scrim.addEventListener('click', function () { api.close(); });
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(scrim);
+  document.body.appendChild(sheet);
+  lxSheetOpen = api.close;
+  lxSheetRoute = location.hash;
+  api.rerender();
+  var first = sheet.querySelector('button, input');
+  if (first && first.focus) { first.focus(); }
+  return api;
+}
+
+// ---- covers + her reading -----------------------------------------------------
+// ids in book order; outIds = left-out books (dimmed, dashed); pick = the tapped
+// one; clauses keyed by bookId.
+function lxCovers(ids, outIds, clauses, pick, onPick) {
+  var row = lxEl('div', 'lx-covers'), i, id, b, btn, out, lbl;
+  for (i = 0; i < ids.length; i++) {
+    id = ids[i];
+    b = (state.books && state.books[id]) ? state.books[id] : null;
+    if (!b) { continue; }
+    out = outIds && outIds.indexOf(id) !== -1;
+    btn = lxEl('button', 'lx-cover' + (out ? ' out' : ''));
+    btn.type = 'button';
+    btn.setAttribute('aria-pressed', pick === id ? 'true' : 'false');
+    lbl = (b.title || '') + ', ' + (b.author || '') + (out ? '. Left out of this lens.' : '') + (clauses && clauses[id] ? '. Tap for her clause.' : '');
+    btn.setAttribute('aria-label', lbl);
+    if (b.coverUrl) {
+      var im = lxEl('img'); im.src = b.coverUrl; im.alt = ''; im.setAttribute('loading', 'lazy');
+      btn.appendChild(im);
+    } else {
+      btn.appendChild(lxEl('b', '', b.title || ''));
+      btn.appendChild(lxEl('small', '', b.author || ''));
+    }
+    (function (bid) { btn.addEventListener('click', function () { onPick(bid); }); })(id);
+    row.appendChild(btn);
+  }
+  return row;
+}
+function lxReading(rec) {
+  var p = lxEl('p', 'lx-read'), i, id;
+  p.appendChild(document.createTextNode(rec.lead || ''));
+  for (i = 0; i < rec.bookIds.length; i++) {
+    id = rec.bookIds[i];
+    if (rec.clauses && rec.clauses[id]) { p.appendChild(document.createTextNode(' ')); p.appendChild(lxEl('span', 'cl', rec.clauses[id])); }
+  }
+  if (rec.close) { p.appendChild(document.createTextNode(' ' + rec.close)); }
+  return p;
+}
+function lxQuestion(label, q) {
+  var d = lxEl('div');
+  d.appendChild(lxQl(label));
+  var p = lxEl('p', 'lx-yq'); p.appendChild(lxEl('em', '', q)); d.appendChild(p);
+  return d;
+}
+function lxSaid(label, said) {
+  var d = lxEl('div', 'lx-said'), i;
+  d.appendChild(lxQl(label));
+  for (i = 0; i < said.length; i++) { d.appendChild(lxEl('em', '', '“' + (said[i].t || '') + '”')); }
+  return d;
+}
+function lxNotesOn(uid, ids) {
+  var n = 0, k, e, j, set = {};
+  for (j = 0; j < ids.length; j++) { set[ids[j]] = true; }
+  if (!state.notebookEntries) { return 0; }
+  for (k in state.notebookEntries) {
+    if (!state.notebookEntries.hasOwnProperty(k)) { continue; }
+    e = state.notebookEntries[k];
+    if (!e || e.userId !== uid || !(e.bookIds instanceof Array)) { continue; }
+    for (j = 0; j < e.bookIds.length; j++) { if (set[e.bookIds[j]]) { n++; break; } }
+  }
+  return n;
+}
+
+// ---- the generation (one call; the eval before anything shows) ---------------
+function lxGenFor(uid) {
+  if (lxGen.uid !== uid) { lxGen = { uid: uid, status: 'idle', err: null, survived: -1, autoTried: false }; }
+  return lxGen;
+}
+function lxRefresh() {
+  var r = location.hash.replace(/^#/, '').split('/')[0];
+  if (r === 'lenses') { renderLensesPage(); }
+  else if ((r === 'home' || r === 'profile') && ls('praxis_sky', false) === true) { renderRoute(); }
+}
+// The ONE generation path. The floor (five books) and the yes are checked HERE,
+// by the caller, before any call (contract §3 step 1) -- the eval never sees a
+// shelf under five. Returns true when a call left.
+function lensRunGeneration(uid) {
+  var g = lxGenFor(uid);
+  if (!uid || g.status === 'loading') { return false; }
+  if (!isYumiYesGranted(uid) || lensShelfCount(uid) < LENS_OFFER_FLOOR) { return false; }
+  if (!(window.YumiBrain && window.YumiBrain.generateLenses && window.YumiBrain.evalLensResponse)) { return false; }
+  g.status = 'loading'; g.err = null;
+  var meta = window.YumiBrain.gatherLensMetadata();
+  var titles = [], i;
+  for (i = 0; i < meta.books.length; i++) { titles.push(meta.books[i].title); }
+  window.YumiBrain.generateLenses(meta).then(function (raw) {
+    var surv = window.YumiBrain.evalLensResponse(raw, titles, meta.valueNames, { titleToId: meta.titleToId, against: lensAgainstList(uid) });
+    var made = createLensOffers(uid, surv);
+    markLensRead(uid);
+    g.status = 'done'; g.survived = made.length;
+    lxRefresh();
+  }, function (err) {
+    g.status = 'error'; g.err = err || null;
+    lxRefresh();
+  });
+  return true;
+}
+// Contract §5's automatic re-read: at most once per session per uid, only when a
+// surface renders (never on a timer); fromHome never fires the FIRST read.
+function maybeAutoLensRead(uid, fromHome) {
+  var g = lxGenFor(uid);
+  if (!uid || g.autoTried || g.status === 'loading') { return false; }
+  if (typeof mayAutoReRead !== 'function' || !mayAutoReRead(uid, fromHome)) { return false; }
+  g.autoTried = true;
+  return lensRunGeneration(uid);
+}
+
+// ---- the Lenses page ----------------------------------------------------------
+function lxStateBand(line, small, extra) {
+  var d = lxEl('div', 'lx-ystate');
+  d.appendChild(lxSeed());
+  var t = lxEl('div');
+  t.appendChild(lxEl('p', '', line));
+  if (small) { t.appendChild(lxEl('small', '', small)); }
+  d.appendChild(t);
+  if (!extra) { return d; }
+  var w = lxEl('div', 'lx-stack');
+  w.appendChild(d);
+  w.appendChild(extra);
+  return w;
+}
+function lxSect(label, count) {
+  var s = lxEl('div', 'lx-sect');
+  var k = lxEl('div', 'lx-k');
+  k.appendChild(lxEl('span', 'lx-eyebrow', label));
+  if (count) { k.appendChild(lxEl('span', '', count)); }
+  s.appendChild(k);
+  return s;
+}
+function lxAskAgainBtn(uid) {
+  var a = lxEl('div', 'lx-acts');
+  a.appendChild(lxBtn('ghost', 'Ask Yumi again', function () { lensRunGeneration(uid); renderLensesPage(); }));
+  return a;
+}
+function lxConsentCard() {
+  var c = lxEl('div', 'lx-consent');
+  c.appendChild(lxEl('span', 'lx-eyebrow', 'Before she reads'));
+  c.appendChild(lxEl('h3', '', 'Yumi hasn’t read your shelf.'));
+  c.appendChild(lxEl('p', '', 'One yes lets her read your titles — never what’s inside a book — and offer lenses. You can read the full list any time on What Yumi Sees.'));
+  var a = lxEl('div', 'lx-acts');
+  a.appendChild(lxBtn('pill', 'Yes, bring my books', function () { openYumiYesSheet('lenses'); }));
+  a.appendChild(lxBtn('quiet', 'Not now', function () { lxNotNow = true; renderLensesPage(); }));
+  c.appendChild(a);
+  return c;
+}
+
+function renderLensesPage() {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  var page = lxEl('section', 'lx lx-page');
+  var col = lxEl('div', 'lx-pcol');
+  var hd = lxEl('div', 'lx-phd');
+  var back = lxBtn('lx-back', '', function () { location.hash = '#' + (lxLastRoute || 'home'); });
+  back.setAttribute('aria-label', 'Back');
+  back.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>';
+  hd.appendChild(back);
+  hd.appendChild(lxEl('h1', '', 'Lenses'));
+  col.appendChild(hd);
+  var body = lxEl('div', 'lx-pbody');
+  col.appendChild(body);
+  page.appendChild(col);
+  host.appendChild(page);
+
+  var uid = lxUid();
+  if (!uid) {
+    body.appendChild(buildSignedOutPrompt('Your lenses are private', 'Sign in to see the lenses on your shelf, and Yumi’s offers.'));
+    return;
+  }
+  var g = lxGenFor(uid);
+  if (typeof ensureThemeFieldsAll === 'function') { ensureThemeFieldsAll(state.userThemes); }
+  ensureLensLooks(uid);
+  pruneDeclinedOffers(uid);
+  var yes = isYumiYesGranted(uid), n = lensShelfCount(uid), hers = yes && n >= LENS_OFFER_FLOOR;
+  if (hers) { maybeAutoLensRead(uid, false); }   // the first read fires HERE (L4.4), never from the sky
+  var open = lensOfferList(uid, 'open'), later = lensOfferList(uid, 'later'),
+      declined = lensOfferList(uid, 'declined'), kept = lensKeptThemes(uid), i, sect, card;
+
+  // Her state, in her own voice, then From Yumi (S13).
+  if (!yes) {
+    if (!lxNotNow) { body.appendChild(lxConsentCard()); }
+  } else if (n < LENS_OFFER_FLOOR) {
+    body.appendChild(lxStateBand('Lenses come once your shelf holds five books. It holds ' + n + '.', 'NAME YOUR OWN ANY TIME'));
+  } else if (g.status === 'loading') {
+    body.appendChild(lxStateBand('Reading across your shelf…', 'USUALLY A FEW SECONDS · ' + n + ' BOOKS'));
+  } else if (g.status === 'error') {
+    body.appendChild(lxStateBand(lxErrLine(g.err), '', lxAskAgainBtn(uid)));
+  } else if (open.length) {
+    sect = lxSect('From Yumi', lxPlural(open.length, 'offer'));
+    if (g.status === 'done' && g.survived >= 1 && g.survived <= 2) {
+      sect.appendChild(lxEl('p', 'lx-fine', g.survived === 1
+        ? 'One clear thread so far — more will surface as your shelf grows.'
+        : 'A couple of threads so far — more will surface as your shelf grows.'));
+    }
+    card = lxEl('div', 'lx-offer');
+    lxFillOffer(card, uid, open[0], 1, open.length);
+    sect.appendChild(card);
+    sect.appendChild(lxEl('p', 'lx-fine', 'Yumi proposes these from your titles, authors and categories only — never from inside your books.'));
+    body.appendChild(sect);
+  } else if (g.status === 'done' && g.survived === 0) {
+    body.appendChild(lxStateBand('Yumi didn’t find clear lenses this time — your shelf may be small or wide-ranging.',
+      'NAME YOUR OWN BELOW · OR ASK HER AGAIN AS IT GROWS', lxAskAgainBtn(uid)));
+  } else {
+    body.appendChild(lxStateBand('Nothing new from me. Every thread I found is taken up, waiting, or remembered as not this.',
+      'SHE READS AGAIN WHEN YOUR SHELF CHANGES'));
+  }
+
+  // Later (hers to decide only while the yes stands -- contract §4).
+  if (hers && later.length) {
+    sect = lxSect('Later', later.length + ' set aside · never expires');
+    var lc = lxEl('div', 'lx-card');
+    for (i = 0; i < later.length; i++) {
+      (function (o) {
+        var r = lxBtn('lx-lrow', '', function () { lxLaterSheet(uid, o.id); });
+        r.appendChild(lxMark(o.look, o.name));
+        var tx = lxEl('span', 'tx');
+        tx.appendChild(lxEl('em', '', o.name));
+        tx.appendChild(lxEl('small', '', (o.lead ? o.lead + ' ' : '') + lxPlural(o.bookIds.length, 'book') + '.'));
+        r.appendChild(tx);
+        r.appendChild(lxEl('span', 'chev', '›'));
+        r.setAttribute('aria-label', o.name + ', set aside for later. Opens it.');
+        lc.appendChild(r);
+      })(later[i]);
+    }
+    sect.appendChild(lc);
+    body.appendChild(sect);
+  }
+
+  // Your lenses.
+  sect = lxSect('Your lenses', kept.length + ' kept');
+  var kc = lxEl('div', 'lx-card');
+  if (!kept.length) { kc.appendChild(lxEl('p', 'lx-fine2', 'None yet. Name your own below.')); }
+  for (i = 0; i < kept.length; i++) {
+    (function (t) {
+      var r = lxBtn('lx-lrow', '', function () { openLensSheet(t.id); });
+      r.appendChild(lxMark(t.look, t.name));
+      var tx = lxEl('span', 'tx');
+      tx.appendChild(lxEl('em', '', t.name));
+      tx.appendChild(lxEl('small', '', (t.origin === 'hers' ? 'From Yumi · ' : 'Yours · ') + lxPlural(t.bookIds.length, 'book') + (t.q ? ' · ' + t.q : '')));
+      r.appendChild(tx);
+      r.appendChild(lxEl('span', 'chev', '›'));
+      kc.appendChild(r);
+    })(kept[i]);
+  }
+  sect.appendChild(kc);
+  body.appendChild(sect);
+
+  // Remembered as not this (the fold), Let her forget this + Undo.
+  if (hers && declined.length) {
+    var fold = lxEl('div', 'lx-fold');
+    var fb = lxBtn('', '', function () { lxFoldOpen = !lxFoldOpen; renderLensesPage(); });
+    fb.setAttribute('aria-expanded', lxFoldOpen ? 'true' : 'false');
+    fb.appendChild(lxEl('span', '', 'Remembered as not this · ' + declined.length));
+    fb.appendChild(lxEl('span', 'chev', lxFoldOpen ? '⌃' : '⌄'));
+    fold.appendChild(fb);
+    if (lxFoldOpen) {
+      var inn = lxEl('div', 'in');
+      for (i = 0; i < declined.length; i++) {
+        (function (o) {
+          var row = lxEl('div', 'row');
+          var lab = lxEl('span');
+          lab.appendChild(lxEl('em', '', o.name));
+          lab.appendChild(document.createTextNode(' · ' + lxAgo(o.decidedAt) + (o.said.length ? ' · you said “' + o.said[0].t + '”' : '')));
+          row.appendChild(lab);
+          row.appendChild(lxBtn('txtbtn', 'Let her forget this', function () {
+            var snap = removeLensOffer(uid, o.id);
+            renderLensesPage();
+            lxToast('Forgotten. She may offer ' + o.name + ' again.', function () { restoreLensOffer(uid, snap); renderLensesPage(); });
+          }));
+          inn.appendChild(row);
+        })(declined[i]);
+      }
+      inn.appendChild(lxEl('small', 'lx-fine2', 'She won’t offer these again while their books are on your shelf. Forgetting lets her.'));
+      fold.appendChild(inn);
+    }
+    body.appendChild(fold);
+  }
+
+  // Name your own (the live create flow), then the door to Open Lens (L4b).
+  var own = lxEl('div', 'lx-acts');
+  own.appendChild(lxBtn('ghost', 'Name your own', function () {
+    if (window.PraxisLensPanel && typeof window.PraxisLensPanel.open === 'function') { window.PraxisLensPanel.open(); }
+  }));
+  body.appendChild(own);
+  var nx = lxEl('div', 'lx-next');
+  nx.appendChild(lxEl('div', '', 'Open Lens — one page per lens — opens with the Day Three rooms (L4b).'));
+  body.appendChild(nx);
+}
+
+// The offer card (ninth §A3): offer n of N, the covers with her clause on tap,
+// her reading, the question she would hold, three themes, four answers.
+function lxFillOffer(card, uid, o, idx, total) {
+  card.innerHTML = '';
+  card.appendChild(lxEl('span', 'lx-eyebrow', 'Yumi’s offer · ' + idx + ' of ' + total));
+  var ln = lxEl('div', 'lx-ln');
+  ln.appendChild(lxMark(o.look, o.name, true));
+  ln.appendChild(lxEl('em', '', o.name));
+  card.appendChild(ln);
+  card.appendChild(lxEl('span', 'lx-cnt', 'RESTS ON ' + lxPlural(o.bookIds.length, 'BOOK').toUpperCase() + ' · TAP A COVER FOR HER CLAUSE'));
+  card.appendChild(lxCovers(o.bookIds, [], o.clauses, lxPick, function (bid) {
+    lxPick = (lxPick === bid) ? null : bid;
+    lxFillOffer(card, uid, o, idx, total);
+  }));
+  if (lxPick && o.clauses[lxPick]) {
+    var cl = lxEl('div', 'lx-clause');
+    cl.appendChild(lxEl('p', '', o.clauses[lxPick]));
+    var cr = lxEl('div', 'row');
+    cr.appendChild(lxEl('small', '', (state.books[lxPick] && state.books[lxPick].title) || ''));
+    cl.appendChild(cr);
+    card.appendChild(cl);
+  }
+  var rd = lxEl('div'); rd.appendChild(lxQl('Her reading')); rd.appendChild(lxReading(o)); card.appendChild(rd);
+  if (o.q) { card.appendChild(lxQuestion('The question she would hold for it · not for answering here', o.q)); }
+  if (o.themes.length) {
+    var ul = lxEl('ul', 'lx-themes'), j;
+    for (j = 0; j < o.themes.length && j < 3; j++) {
+      var li = lxEl('li');
+      li.appendChild(lxEl('b', '', o.themes[j].k || ''));
+      li.appendChild(document.createTextNode(' ' + (o.themes[j].t || '')));
+      ul.appendChild(li);
+    }
+    card.appendChild(ul);
+  }
+  if (o.said.length) { card.appendChild(lxSaid('What you said back', o.said)); }
+  var grid = lxEl('div', 'lx-grid');
+  grid.appendChild(lxBtn('pill', 'Take it up', function () {
+    var t = takeUpLensOffer(uid, o.id);
+    lxPick = null;
+    renderLensesPage();
+    if (t) { lxToast('Kept. ' + t.name + ' is yours now; her question stays pinned to it.'); }
+  }));
+  grid.appendChild(lxBtn('ghost', 'Later', function () {
+    setLensOfferLater(uid, o.id);
+    lxPick = null;
+    renderLensesPage();
+    lxToast('Set aside. It waits in Later, as long as you like.');
+  }));
+  grid.appendChild(lxBtn('ghost', 'Not this', function () {
+    var prev = lensOfferNotThis(uid, o.id);
+    lxPick = null;
+    renderLensesPage();
+    lxToast('Not this — remembered. She won’t offer ' + o.name + ' again while these books are on your shelf.', function () {
+      undoLensOfferNotThis(uid, prev); renderLensesPage();
+    });
+  }));
+  grid.appendChild(lxBtn('ghost', 'Not quite — talk it through', function () {
+    if (window.YumiUI && typeof window.YumiUI.openLensSayBack === 'function') {
+      window.YumiUI.openLensSayBack({ kind: 'offer', uid: uid, id: o.id, onDone: function () { lxRefresh(); } });
+    }
+  }));
+  card.appendChild(grid);
+  card.appendChild(lxEl('p', 'lx-fine', 'Not this is remembered: she won’t offer it again while these books are on your shelf. Later never expires.'));
+}
+
+// A Later row's sheet: Take it up · Not this.
+function lxLaterSheet(uid, id) {
+  lxOpenSheet('Set aside for later', function (sh, api) {
+    var o = lensOfferById(uid, id);
+    if (!o) { api.close(); return; }
+    sh.appendChild(lxEl('span', 'lx-eyebrow', 'Set aside for later'));
+    var ln = lxEl('div', 'lx-ln');
+    ln.appendChild(lxMark(o.look, o.name, true));
+    ln.appendChild(lxEl('em', '', o.name));
+    sh.appendChild(ln);
+    sh.appendChild(lxEl('span', 'lx-cnt', lxPlural(o.bookIds.length, 'BOOK').toUpperCase() + ' · WAITING AS LONG AS YOU LIKE'));
+    if (o.lead) { sh.appendChild(lxEl('p', 'lx-read', o.lead)); }
+    var grid = lxEl('div', 'lx-grid');
+    grid.appendChild(lxBtn('pill', 'Take it up', function () {
+      var t = takeUpLensOffer(uid, id);
+      api.close(true);
+      renderLensesPage();
+      if (t) { lxToast('Kept. ' + t.name + ' is yours now; her question stays pinned to it.'); }
+    }));
+    grid.appendChild(lxBtn('ghost', 'Not this', function () {
+      var prev = lensOfferNotThis(uid, id);
+      api.close(true);
+      renderLensesPage();
+      lxToast('Not this — remembered. She won’t offer ' + o.name + ' again while these books are on your shelf.', function () {
+        undoLensOfferNotThis(uid, prev); renderLensesPage();
+      });
+    }));
+    sh.appendChild(grid);
+  });
+}
+
+// ---- THE LENS SHEET (seventh r18 + its depth; S10-S12) ------------------------
+// Opened by a tap on a lens anywhere (the sky, the Shelf's lens bands, the rows).
+function lxAfterLensWrite() {
+  var r = location.hash.replace(/^#/, '').split('/')[0];
+  if (r === 'lenses') { renderLensesPage(); }
+  else if (r === 'books' && typeof renderShelf === 'function') { renderShelf(); }
+  else if ((r === 'home' || r === 'profile') && ls('praxis_sky', false) === true) { renderRoute(); }
+}
+function openLensSheet(themeId) {
+  var pick = null, confirm = false, renaming = false, asking = false;
+  var t0 = lensThemeById(themeId);
+  if (!t0) { return null; }
+  return lxOpenSheet('Lens: ' + t0.name, function (sh, api) {
+    var t = lensThemeById(themeId);
+    if (!t) { api.close(); return; }
+    var uid = t.userId, hers = t.origin === 'hers', read = !!t.lead, i, readN = 0;
+    for (i = 0; i < t.bookIds.length; i++) { if (state.books[t.bookIds[i]] && state.books[t.bookIds[i]].status === 'read') { readN++; } }
+    var top = lxEl('div', 'lx-top');
+    var ln = lxEl('span', 'lx-ln');
+    ln.appendChild(lxMark(t.look, t.name, true));
+    if (renaming) {
+      var line = lxEl('div', 'lx-line');
+      var inp = lxEl('input');
+      inp.type = 'text'; inp.maxLength = 60;
+      inp.setAttribute('aria-label', 'Rename this lens');
+      inp.setAttribute('placeholder', t.hersName || t.name);   // her words in the line until you type
+      var commitRename = function () {
+        var v = inp.value.replace(/^\s+|\s+$/g, '');
+        renaming = false;
+        if (v && renameUserTheme(themeId, v)) { lxAfterLensWrite(); }
+        api.rerender();
+      };
+      var ok = lxBtn('', '', commitRename);
+      ok.setAttribute('aria-label', 'Keep this name');
+      ok.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
+      inp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); commitRename(); }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); renaming = false; api.rerender(); }
+      });
+      line.appendChild(inp);
+      line.appendChild(ok);
+      ln.appendChild(line);
+      window.setTimeout(function () { inp.focus(); }, 0);
+    } else {
+      ln.appendChild(lxEl('em', '', t.name));
+    }
+    top.appendChild(ln);
+    var x = lxBtn('lx-x', '', function () { api.close(); });
+    x.setAttribute('aria-label', 'Close');
+    x.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    top.appendChild(x);
+    sh.appendChild(top);
+    if (renaming && hers && t.hersName) {
+      var uh = lxEl('div', 'lx-acts');
+      uh.appendChild(lxBtn('txtbtn', 'Use her words', function () { var f = sh.querySelector('.lx-line input'); if (f) { f.value = t.hersName; f.focus(); } }));
+      sh.appendChild(uh);
+    }
+    sh.appendChild(lxEl('span', 'lx-cnt', (hers ? 'FROM YUMI' : 'YOURS') + ' · ' + lxPlural(t.bookIds.length, 'BOOK').toUpperCase() +
+      ' · ' + readN + ' READ · ' + lxPlural(lxNotesOn(uid, t.bookIds.concat(t.leftOuts)), 'NOTE').toUpperCase()));
+    if (t.q) { sh.appendChild(lxQuestion('Yumi’s question · pinned to this lens', t.q)); }
+    var rd = lxEl('div');
+    rd.appendChild(lxQl('Her reading'));
+    var floorN = lensShelfCount(uid), floorOk = floorN >= LENS_OFFER_FLOOR;   // no lens call under five books
+    if (read) { rd.appendChild(lxReading(t)); }
+    else if (!floorOk) {
+      rd.appendChild(lxEl('p', 'lx-read lx-quietink', 'She hasn’t read this one. It is yours as you named it.'));
+      rd.appendChild(lxEl('p', 'lx-fine', 'Lenses come once your shelf holds five books. It holds ' + floorN + '.'));
+    } else {
+      rd.appendChild(lxEl('p', 'lx-read lx-quietink', 'She hasn’t read this one. It is yours as you named it.'));
+      var aa = lxEl('div', 'lx-acts');
+      var ask = lxBtn('ghost', asking ? 'Reading across these books…' : 'Ask Yumi to read it', function () {
+        asking = true; api.rerender();
+        lxAskToRead(themeId, function () { asking = false; api.rerender(); lxAfterLensWrite(); });
+      });
+      if (asking) { ask.disabled = true; }
+      aa.appendChild(ask);
+      rd.appendChild(aa);
+    }
+    sh.appendChild(rd);
+    var bk = lxEl('div');
+    bk.appendChild(lxQl('The books in it · tap one' + (read ? ' for her clause' : '')));
+    bk.appendChild(lxCovers(t.bookIds.concat(t.leftOuts), t.leftOuts, t.clauses, pick, function (bid) { pick = (pick === bid) ? null : bid; api.rerender(); }));
+    if (pick && state.books[pick]) {
+      var isOut = t.leftOuts.indexOf(pick) !== -1, canOut = isOut || t.bookIds.length > 2;
+      var cc = lxEl('div', 'lx-clause');
+      var cp = lxEl('p');
+      if (t.clauses[pick]) { cp.textContent = t.clauses[pick]; }
+      else { cp.appendChild(lxEl('span', 'lx-quietink', (state.books[pick].title || '') + ' — in this lens because you put it there.')); }
+      cc.appendChild(cp);
+      var crow = lxEl('div', 'row');
+      crow.appendChild(lxEl('small', '', (state.books[pick].title || '') + ' · ' + (state.books[pick].status === 'read' ? 'read' : 'unread') + (isOut ? ' · left out' : '')));
+      var pb = isOut
+        ? lxBtn('txtbtn', 'Put it back', function () { lensPutBack(themeId, pick); api.rerender(); lxAfterLensWrite(); })
+        : lxBtn('txtbtn', 'Leave out of this lens', function () {
+            var bid = pick;
+            if (lensLeaveOut(themeId, bid)) {
+              api.rerender(); lxAfterLensWrite();
+              lxToast('Left out. ' + (state.books[bid].title || 'It') + ' stays on your shelf; the lens rests on the rest.', function () {
+                lensPutBack(themeId, bid); api.rerender(); lxAfterLensWrite();
+              });
+            }
+          });
+      if (!canOut) { pb.disabled = true; }
+      crow.appendChild(pb);
+      cc.appendChild(crow);
+      if (!canOut) { cc.appendChild(lxEl('small', '', 'A lens rests on at least two books.')); }
+      bk.appendChild(cc);
+    }
+    sh.appendChild(bk);
+    if (t.why) { sh.appendChild(lxQuestion('Why you keep returning to it', t.why)); }
+    if (t.said.length) {
+      var sd = lxSaid('What you said back · kept with the lens', t.said);
+      var srow = lxEl('div', 'row');
+      srow.appendChild(lxEl('small', '', 'Yumi quotes these when she reads this lens.'));
+      srow.appendChild(lxBtn('txtbtn', 'Let her forget this', function () {
+        var prev = lensForgetSaid(themeId);
+        api.rerender();
+        lxToast('Forgotten. She no longer quotes what you said to this lens.', function () { lensRestoreSaid(themeId, prev); api.rerender(); });
+      }));
+      sd.appendChild(srow);
+      sh.appendChild(sd);
+    }
+    var a1 = lxEl('div', 'lx-acts');
+    a1.appendChild(lxBtn('pill', 'Open lens', function () { lxToast('Open Lens — one page for this lens — opens with the Day Three rooms.'); }));
+    if (read && floorOk) {
+      a1.appendChild(lxBtn('ghost', 'Not quite — talk it through', function () {
+        api.close(true);
+        if (window.YumiUI && typeof window.YumiUI.openLensSayBack === 'function') {
+          window.YumiUI.openLensSayBack({ kind: 'theme', uid: uid, id: themeId, onDone: function () { lxAfterLensWrite(); openLensSheet(themeId); } });
+        }
+      }));
+    }
+    sh.appendChild(a1);
+    var a2 = lxEl('div', 'lx-acts');
+    a2.appendChild(lxBtn('ghost', 'Rename', function () { renaming = true; api.rerender(); }));
+    a2.appendChild(lxBtn('txtbtn', 'Let it go', function () { confirm = true; api.rerender(); }));
+    sh.appendChild(a2);
+    if (confirm) {
+      var qc = lxEl('div', 'lx-qc');
+      qc.appendChild(lxEl('b', '', 'Let this lens go?'));
+      qc.appendChild(lxEl('p', '', 'Its ' + lxPlural(t.bookIds.length, 'book') + ' stay on your shelf.' +
+        ((t.said.length && isYumiYesGranted(uid)) ? ' Your words to this lens stay in Yumi’s memory. You can forget them on What Yumi Sees.' : '')));
+      var qa = lxEl('div', 'lx-acts');
+      qa.appendChild(lxBtn('pill', 'Let it go', function () {
+        var tok = letGoLens(themeId);
+        api.close(true);
+        lxAfterLensWrite();
+        lxToast('Let go. Its books stay on your shelf.', function () { undoLetGoLens(tok); lxAfterLensWrite(); });
+      }));
+      qa.appendChild(lxBtn('quiet', 'Keep it', function () { confirm = false; api.rerender(); }));
+      qc.appendChild(qa);
+      sh.appendChild(qc);
+    }
+  });
+}
+
+// "Ask Yumi to read it" (S12): ONE call through the Stage 1 path on this lens's
+// books alone; the eval runs before anything shows; the reader's name stays.
+function lxAskToRead(themeId, done) {
+  var t = lensThemeById(themeId);
+  var uid = t ? t.userId : null;
+  if (!t || !(window.YumiBrain && window.YumiBrain.generateLenses)) { done(false); return; }
+  if (!isYumiYesGranted(uid)) { done(false); openYumiYesSheet('lenses'); return; }
+  // The floor (engine contract §9 proof 9): no lens call of ANY kind under five books.
+  var shelfN = lensShelfCount(uid);
+  if (shelfN < LENS_OFFER_FLOOR) { lxToast('Lenses come once your shelf holds five books. It holds ' + shelfN + '.'); done(false); return; }
+  var bm = window.YumiBrain.lensBookMeta(t.bookIds);
+  if (bm.books.length < 2) { done(false); return; }
+  var titles = [], i;
+  for (i = 0; i < bm.books.length; i++) { titles.push(bm.books[i].title); }
+  var meta = { books: bm.books, keptNames: [], offeredNames: [], valueNames: [], titleToId: bm.titleToId, themeLensNames: [t.name] };
+  window.YumiBrain.generateLenses(meta).then(function (raw) {
+    var s = window.YumiBrain.evalLensResponse(raw, titles, null, { titleToId: bm.titleToId, against: [] });
+    var tt = lensThemeById(themeId);
+    if (!s.length || !tt) { lxToast('Yumi didn’t find a clear reading this time.'); done(false); return; }
+    var r = s[0], j, cl = {};
+    for (j = 0; j < r.bookIds.length; j++) { if (r.clauses[r.books[j]]) { cl[r.bookIds[j]] = r.clauses[r.books[j]]; } }
+    tt.lead = r.lead; tt.close = r.close; tt.q = r.q; tt.themes = r.themes; tt.clauses = cl;
+    tt.reading = lensReadingOf(tt); tt.updatedAt = Date.now();
+    markThemesDirty(); saveState();
+    done(true);
+  }, function (err) { lxToast(lxErrLine(err)); done(false); });
+}
+
+// ---- What Yumi Sees: the reader's words to a lens (lens-contract §3; covenant rule 3:
+// readable, correctable, endable -- every row forgettable with Undo). TWO rows,
+// both labels verbatim from consent-copy.md (ruled 14 Nov, "Added 14 Nov" #2):
+//   1. the lines kept with lenses the reader still keeps (said[]);
+//   2. the let-go row, consent-copy.md:34 (lensWords).
+// Returns [keptSection, letGoSection].
+function lxYumiSeesSaidSection(uid, rerender) {
+  if (!uid) { return null; }
+  var kept = lensKeptThemes(uid), words = lensWordsOf(uid), i, keptRows = 0;
+  var keptSec = renderTransparencySection('What you said back to lenses you keep');
+  var keptBody = keptSec.querySelector('.transparency-section-body');
+  for (i = 0; i < kept.length; i++) {
+    if (!kept[i].said.length) { continue; }
+    (function (t) {
+      keptRows++;
+      var r = lxEl('div', 'lx-wys-row');
+      r.appendChild(lxEl('b', '', t.name));
+      var j;
+      for (j = 0; j < t.said.length; j++) { r.appendChild(lxEl('p', '', '“' + t.said[j].t + '”')); }
+      r.appendChild(lxBtn('txtbtn', 'Let her forget this', function () {
+        var prev = lensForgetSaid(t.id);
+        rerender();
+        lxToast('Forgotten. She no longer quotes what you said to this lens.', function () { lensRestoreSaid(t.id, prev); rerender(); });
+      }));
+      keptBody.appendChild(r);
+    })(kept[i]);
+  }
+  if (!keptRows) { keptBody.textContent = 'Nothing yet.'; keptBody.className = 'transparency-section-body transparency-empty'; }
+  var goSec = renderTransparencySection('Words kept from lenses you let go');
+  var goBody = goSec.querySelector('.transparency-section-body');
+  for (i = 0; i < words.length; i++) {
+    (function (w) {
+      var r = lxEl('div', 'lx-wys-row');
+      r.appendChild(lxEl('b', '', w.lensName));
+      var j;
+      for (j = 0; j < w.lines.length; j++) { r.appendChild(lxEl('p', '', '“' + w.lines[j].t + '”')); }
+      r.appendChild(lxBtn('txtbtn', 'Let her forget this', function () {
+        var tok = forgetLensWords(uid, w.id);
+        rerender();
+        lxToast('Forgotten. She no longer holds what you said to ' + w.lensName + '.', function () { restoreLensWords(uid, tok); rerender(); });
+      }));
+      goBody.appendChild(r);
+    })(words[i]);
+  }
+  if (!words.length) { goBody.textContent = 'Nothing yet.'; goBody.className = 'transparency-section-body transparency-empty'; }
+  return [keptSec, goSec];
+}
+// =====================================================================
+// L4.4 -- THE SKY on Home and You (rulings 84-87; S1-S9; engine contract §6,
+// §8). DARK-LAUNCHED behind ls('praxis_sky', false); ?sky=on|off (app.js) is
+// the motion gate's instrument and Stage 6 removes it. hand.js (PraxisHand) is
+// the ONE engine, lifted byte-for-byte. One sky host per surface, created ONCE
+// and re-used across renders: hand.js keeps every Sky in a list it never
+// prunes, so a fresh host per render would grow it for the whole session. The
+// loop runs only while a sky is on screen and stops when the page is hidden
+// (hand.js); prefers-reduced-motion stills the canvas and every keyframe.
+// =====================================================================
+var lxSkies = {};          // 'home' | 'you' -> { host, S, key, uid, holdT, held }
+var lxYouMode = 'lenses';  // You's segmented control: lenses | cats | marks
+
+function lxSkyOn() { return ls('praxis_sky', false) === true && !!(window.PraxisHand && window.PraxisHand.Sky); }
+function lxSkyToggles() {
+  return { threads: ls('praxis_sky_threads', true) !== false, names: ls('praxis_sky_names', true) !== false };
+}
+function lxSkyHost(key) {
+  if (lxSkies[key]) { return lxSkies[key]; }
+  var host = lxEl('div', 'sky lx lx-sky lx-sky-' + key);
+  host.innerHTML = '<canvas class="paint" aria-hidden="true"></canvas>'
+    + '<div class="lx-skyhead"></div>'
+    + '<div class="field" data-field="' + key + '"><svg class="bg" aria-hidden="true"><g data-stars></g><g data-threads></g></svg>'
+    + '<button type="button" class="core" data-core aria-label="Your centre. Hold it, or press Enter, for your sky’s settings.">'
+    + '<svg data-bloom viewBox="-90 -90 180 180" aria-hidden="true"></svg></button></div>'
+    + '<div class="honest" hidden></div><p class="hint" hidden></p><div class="homecnt" hidden></div>'
+    + '<button type="button" class="door" hidden></button>';
+  var rec = { host: host, S: window.PraxisHand.Sky(host, {}), key: key, uid: null, holdT: null, held: false };
+  lxSkies[key] = rec;
+  lxWireSky(rec);
+  return rec;
+}
+function lxWireSky(rec) {
+  var host = rec.host;
+  function core(e) { return (e.target && e.target.closest) ? e.target.closest('[data-core]') : null; }
+  function clear() { if (rec.holdT) { window.clearTimeout(rec.holdT); rec.holdT = null; } }
+  host.addEventListener('pointerdown', function (e) {
+    var c = core(e);
+    if (!c) { return; }
+    rec.held = false;
+    c.classList.add('held');
+    clear();
+    rec.holdT = window.setTimeout(function () { rec.holdT = null; rec.held = true; c.classList.remove('held'); lxSkySheet(rec); }, 500);
+  });
+  function up(e) { var c = core(e); clear(); if (c) { c.classList.remove('held'); } }
+  host.addEventListener('pointerup', up);
+  host.addEventListener('pointercancel', up);
+  host.addEventListener('pointerleave', up);
+  host.addEventListener('contextmenu', function (e) { if (core(e)) { e.preventDefault(); } });
+  host.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && core(e)) { e.preventDefault(); lxSkySheet(rec); }
+  });
+  host.addEventListener('click', function (e) {
+    var t = e.target, orb = t.closest ? t.closest('.orb') : null, go = t.closest ? t.closest('[data-lx-go]') : null,
+        md = t.closest ? t.closest('[data-mode]') : null;
+    if (core(e)) { rec.held = false; return; }   // a tap on the flower is not a hold
+    if (md) { lxYouMode = md.getAttribute('data-mode'); lxFillYouSky(rec, rec.uid); rec.S.sig = ''; rec.S.build(); return; }
+    if (orb) {
+      var it = rec.S.items[+orb.getAttribute('data-orb')];
+      if (it && it.src) { lxOrbOpen(it.src); }
+      return;
+    }
+    if (go) { lxSkyGo(go.getAttribute('data-lx-go'), rec.uid); }
+  });
+}
+function lxSkyGo(where, uid) {
+  if (where === 'lenses') { location.hash = '#lenses'; return; }
+  if (where === 'ask') { lensRunGeneration(uid); location.hash = '#lenses'; return; }
+  if (where === 'own') { if (window.PraxisLensPanel && window.PraxisLensPanel.open) { window.PraxisLensPanel.open(); } }
+}
+function lxOrbOpen(src) {
+  if (src.kind === 'lens') { openLensSheet(src.id); return; }
+  if (src.kind === 'cat') { lxOpenShelfCategory(src.label); return; }
+  if (src.kind === 'book') { location.hash = '#book/' + src.id; }   // the book's page carries its notes
+}
+// Categories mode: the Shelf, filtered to the category (its focused view).
+function lxOpenShelfCategory(label) {
+  var uid = lxUid(), books = [], ids = (uid && state.userBooks[uid]) ? state.userBooks[uid].bookIds : [], i, b;
+  for (i = 0; i < ids.length; i++) { b = state.books[ids[i]]; if (b && classifyBookLocal(b) === label) { books.push(b); } }
+  sv('praxis_shelf_grouping', 'categories');
+  function open() { window.setTimeout(function () { openShelfFocusedBand('cat:' + label, books, label, null); }, 0); }
+  if (location.hash === '#books') { open(); return; }
+  var once = function () { window.removeEventListener('hashchange', once); open(); };
+  window.addEventListener('hashchange', once);
+  location.hash = '#books';
+}
+
+// The reader's kept lenses as sky items (Home, and You in lens mode).
+function lxLensItems(uid) {
+  ensureLensLooks(uid);
+  var kept = lensKeptThemes(uid), items = [], looks = [], shares = [], i, j, n, set;
+  for (i = 0; i < kept.length; i++) {
+    items.push({ name: kept[i].name, look: kept[i].look, books: kept[i].bookIds.length,
+      state: (kept[i].origin === 'yours') ? 'own' : 'kept',
+      aria: kept[i].name + '. ' + lxPlural(kept[i].bookIds.length, 'book') + '. Opens the lens.',
+      src: { kind: 'lens', id: kept[i].id } });
+    looks.push(kept[i].look);
+  }
+  for (i = 0; i < kept.length; i++) {
+    set = {};
+    for (n = 0; n < kept[i].bookIds.length; n++) { set[kept[i].bookIds[n]] = true; }
+    for (j = i + 1; j < kept.length; j++) {
+      var s = 0;
+      for (n = 0; n < kept[j].bookIds.length; n++) { if (set[kept[j].bookIds[n]]) { s++; } }
+      if (s) { shares.push([i, j, s]); }
+    }
+  }
+  return { items: items, shares: shares, looks: looks };
+}
+function lxNotesCount(uid) {
+  var n = 0, k, e;
+  for (k in state.notebookEntries) { if (state.notebookEntries.hasOwnProperty(k)) { e = state.notebookEntries[k]; if (e && e.userId === uid) { n++; } } }
+  return n;
+}
+// The honest line or the hint, the counts and the door (Home; You in lens mode).
+function lxFillLines(rec, uid, n, surface) {
+  var host = rec.host, honest = host.querySelector('.honest'), hint = host.querySelector('.hint'),
+      cnt = host.querySelector('.homecnt'), door = host.querySelector('.door'), g = lxGenFor(uid),
+      bk = lensShelfCount(uid), yes = isYumiYesGranted(uid), h = '', row = '';
+  honest.innerHTML = ''; hint.textContent = '';
+  function q(label, go) { return '<button type="button" class="quiet" data-lx-go="' + go + '">' + label + '</button>'; }
+  if (bk === 0) { h = 'The seed waits for your first book.'; }
+  else if (bk < LENS_OFFER_FLOOR) { h = 'Lenses come once your shelf holds five books. It holds ' + bk + '.'; row = q('Name your own', 'own'); }
+  else if (n === 0 && yes && g.status === 'loading') { h = 'No lenses yet. Yumi is reading across your shelf.'; row = q('Lenses ›', 'lenses'); }
+  else if (n === 0 && yes && g.status === 'done' && g.survived === 0) { h = 'No lenses yet. Yumi didn’t find clear ones this time.'; row = q('Name your own', 'own') + q('Ask Yumi again', 'ask'); }
+  else if (n === 0) { h = 'No lens yet. Name your own, or ask Yumi to read across your shelf.'; row = q('Lenses ›', 'lenses'); }
+  else if (n === 1) { hint.textContent = (surface === 'you' ? 'Your galaxy, in lens mode: your first lens around your flower · tap it' : 'Your first lens, around your flower · tap it'); }
+  else { hint.textContent = (surface === 'you' ? 'Your galaxy, in lens mode: ' : '') + lxPlural(n, 'lens') + ' around your flower · tap one'; }
+  if (h) {
+    var p = lxEl('p', '', h);
+    honest.appendChild(p);
+    if (row) { var r = lxEl('div', 'row'); r.innerHTML = row; honest.appendChild(r); }
+  }
+  honest.hidden = !h; hint.hidden = !hint.textContent;
+  if (surface === 'home') {
+    cnt.innerHTML = '<span><b>' + bk + '</b> ' + (bk === 1 ? 'book' : 'books') + '</span><span><b>' + n + '</b> ' + (n === 1 ? 'lens' : 'lenses') +
+      '</span><span><b>' + lxNotesCount(uid) + '</b> notes</span>';
+    cnt.hidden = false;
+    var open = yes ? lensOfferList(uid, 'open').length : 0, later = yes ? lensOfferList(uid, 'later').length : 0, parts = [];
+    if (open) { parts.push('<b>Yumi has an offer for you</b>'); }
+    if (later) { parts.push(later + ' waiting in Later'); }
+    door.hidden = !parts.length;
+    door.setAttribute('data-lx-go', 'lenses');
+    door.innerHTML = parts.length ? ('<span>' + parts.join(' · ') + ' <span class="lx-dim">· Lenses</span></span><span class="chev" aria-hidden="true">›</span>') : '';
+  } else { cnt.hidden = true; door.hidden = true; }
+}
+
+// HOME: the sky is Home's head (date · greeting · the field · the line · the counts · the door).
+function lxHomeSky(uid) {
+  var rec = lxSkyHost('home');
+  rec.uid = uid;
+  var head = rec.host.querySelector('.lx-skyhead'), now = new Date(), hr = now.getHours();
+  var D = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var M = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var p = getProfile(uid), u = getCurrentUser(), nm = (p && p.displayNameOverride) ? p.displayNameOverride : ((u && u.displayName) ? u.displayName : '');
+  var first = nm ? nm.split(/\s+/)[0] : '';
+  head.innerHTML = '';
+  head.appendChild(lxEl('span', 'eyebrow lx-date', D[now.getDay()] + ', ' + M[now.getMonth()] + ' ' + now.getDate()));
+  head.appendChild(lxEl('h2', 'greet', (hr < 12 ? 'Good morning' : (hr < 18 ? 'Good afternoon' : 'Good evening')) + (first ? ', ' + first : '') + '.'));
+  var L = lxLensItems(uid);
+  rec.S.set(L.items, L.shares, L.looks);
+  rec.S.toggles(lxSkyToggles());
+  maybeAutoLensRead(uid, true);   // the contract §5 bound; never the FIRST read (that waits for the Lenses page)
+  lxFillLines(rec, uid, L.items.length, 'home');
+  return rec;
+}
+
+// YOU (ruling 87): the same sky under the name, with Lenses · Categories · Marks.
+function lxFillYouSky(rec, uid) {
+  var head = rec.host.querySelector('.lx-skyhead'), M = [['lenses', 'Lenses'], ['cats', 'Categories'], ['marks', 'Marks']], i, h = '';
+  for (i = 0; i < M.length; i++) { h += '<button type="button" data-mode="' + M[i][0] + '" aria-pressed="' + (lxYouMode === M[i][0]) + '">' + M[i][1] + '</button>'; }
+  head.innerHTML = '<div class="modes" role="group" aria-label="What the sky shows">' + h + '</div>';
+  var H = window.PraxisHand, hint = rec.host.querySelector('.hint'), honest = rec.host.querySelector('.honest');
+  if (lxYouMode === 'lenses') {
+    var L = lxLensItems(uid);
+    rec.S.set(L.items, L.shares, L.looks);
+    rec.S.toggles(lxSkyToggles());
+    lxFillLines(rec, uid, L.items.length, 'you');
+    return;
+  }
+  var kept = lensKeptThemes(uid), looks = [], items = [], ids = (state.userBooks[uid] ? state.userBooks[uid].bookIds : []), b, k, lk, g;
+  for (i = 0; i < kept.length; i++) { if (kept[i].look) { looks.push(kept[i].look); } }
+  honest.hidden = true; honest.innerHTML = '';
+  if (lxYouMode === 'cats') {
+    var count = {}, order = [];
+    for (i = 0; i < ids.length; i++) {
+      b = state.books[ids[i]];
+      k = b ? classifyBookLocal(b) : null;
+      if (!k || k === CATEGORY_UNCATEGORIZED) { continue; }
+      if (!count.hasOwnProperty(k)) { count[k] = 0; order.push(k); }
+      count[k]++;
+    }
+    order.sort(function (a, c) { return count[c] - count[a]; });
+    var catLooks = [];
+    for (i = 0; i < order.length; i++) {
+      var ci = SHELF_CATEGORIES.indexOf(order[i]);
+      lk = H.makeLook(order[i], catLooks); g = H.gardenColour(ci < 0 ? i : ci);
+      lk.pi = (ci < 0 ? i : ci); lk.c = [g.c, H.mix(g.c, H.LIGHT, 0.35)];
+      catLooks.push(lk);
+      items.push({ name: order[i], look: lk, books: count[order[i]], state: 'cat',
+        aria: order[i] + '. ' + lxPlural(count[order[i]], 'book') + ' on your shelf. Opens the shelf, filtered.', src: { kind: 'cat', label: order[i] } });
+    }
+    hint.textContent = 'Your shelf by category: ' + lxPlural(items.length, 'category').replace('categorys', 'categories') + ' around your flower · sized by books · tap one to open the shelf there';
+  } else {
+    var per = {}, reg = { marginalia: 0, question: 0, journal: 0 }, e, j, list = [], tot = 0;
+    for (k in state.notebookEntries) {
+      if (!state.notebookEntries.hasOwnProperty(k)) { continue; }
+      e = state.notebookEntries[k];
+      if (!e || e.userId !== uid || !(e.bookIds instanceof Array)) { continue; }
+      for (j = 0; j < e.bookIds.length; j++) {
+        if (!state.books[e.bookIds[j]]) { continue; }
+        if (!per[e.bookIds[j]]) { per[e.bookIds[j]] = { n: 0, marginalia: 0, question: 0, journal: 0 }; list.push(e.bookIds[j]); }
+        per[e.bookIds[j]].n++;
+        if (per[e.bookIds[j]].hasOwnProperty(e.register)) { per[e.bookIds[j]][e.register]++; }
+      }
+    }
+    list.sort(function (a, c) { return per[c].n - per[a].n; });
+    list = list.slice(0, 8);
+    var mLooks = [];
+    for (i = 0; i < list.length; i++) {
+      b = state.books[list[i]];
+      var mc = per[list[i]], bc = classifyBookLocal(b), bi = SHELF_CATEGORIES.indexOf(bc);
+      lk = H.makeLook(b.title || '', mLooks); g = H.gardenColour(bi < 0 ? (i % 17) : bi);
+      lk.pi = (bi < 0 ? (i % 17) : bi); lk.c = [g.c, H.mix(g.c, H.LIGHT, 0.35)];
+      mLooks.push(lk);
+      tot += mc.n; reg.marginalia += mc.marginalia; reg.question += mc.question; reg.journal += mc.journal;
+      items.push({ name: b.title || '', look: lk, books: mc.n, size: mc.n * 2, state: 'book',
+        aria: (b.title || '') + '. ' + lxPlural(mc.n, 'note') + ': ' + mc.marginalia + ' marginalia, ' + lxPlural(mc.question, 'question') + ', ' + mc.journal + ' journal. Opens the book.',
+        src: { kind: 'book', id: list[i] } });
+    }
+    hint.textContent = 'Your marginalia: ' + lxPlural(tot, 'note') + ' on ' + lxPlural(items.length, 'book') + ' · sized by notes · ' +
+      reg.marginalia + ' marginalia · ' + lxPlural(reg.question, 'question') + ' · ' + reg.journal + ' journal';
+  }
+  hint.hidden = false;
+  rec.host.querySelector('.homecnt').hidden = true;
+  rec.host.querySelector('.door').hidden = true;
+  rec.S.set(items, [], looks);                       // no threads in the statistics modes
+  rec.S.toggles({ threads: false, names: lxSkyToggles().names });
+}
+function lxYouSky(uid) {
+  var rec = lxSkyHost('you');
+  rec.uid = uid;
+  lxFillYouSky(rec, uid);
+  return rec;
+}
+
+// After the host is in the DOM: lay it out, start the one loop.
+function lxSkyMounted(rec) {
+  if (!rec) { return; }
+  rec.S.sig = '';
+  rec.S.build();
+  window.PraxisHand.startSkies();
+}
+
+// "Your sky" (ruling 85): the long-press sheet -- Threads, Names, the Lenses door.
+function lxSkySheet(rec) {
+  var uid = rec.uid;
+  lxOpenSheet('Your sky', function (sh, api) {
+    var t = lxSkyToggles();
+    sh.appendChild(lxEl('span', 'lx-eyebrow', 'Your sky'));
+    function tog(key, label, small, on) {
+      var b = lxBtn('togrow', '', function () {
+        sv(key, !on);
+        rec.S.toggles(rec.key === 'you' && lxYouMode !== 'lenses' ? { threads: false, names: lxSkyToggles().names } : lxSkyToggles());
+        rec.S.build();
+        api.rerender();
+      });
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var s = lxEl('span'); s.appendChild(document.createTextNode(label)); s.appendChild(lxEl('small', '', small));
+      b.appendChild(s);
+      var kn = lxEl('span', 'knob'); kn.setAttribute('aria-hidden', 'true'); b.appendChild(kn);
+      return b;
+    }
+    sh.appendChild(tog('praxis_sky_threads', 'Threads', 'Join lenses that share a book', t.threads));
+    sh.appendChild(tog('praxis_sky_names', 'Names', 'Show each lens’s name; off, names come on touch', t.names));
+    var yes = isYumiYesGranted(uid), open = yes ? lensOfferList(uid, 'open').length : 0, later = yes ? lensOfferList(uid, 'later').length : 0,
+        kept = lensKeptThemes(uid).length;
+    var y = lxBtn('yrow', '', function () { api.close(true); location.hash = '#lenses'; });
+    var ys = lxEl('span'), yt = lxEl('span', 'lx-ycol');
+    yt.appendChild(document.createTextNode('Lenses'));
+    yt.appendChild(lxEl('small', '', (open ? 'Yumi has an offer for you · ' : '') + (later ? later + ' in Later · ' : '') + lxPlural(kept, 'lens') + ' kept'));
+    ys.appendChild(yt);
+    y.appendChild(ys);
+    y.appendChild(lxEl('span', 'chev', '›'));
+    sh.appendChild(y);
+    sh.appendChild(lxEl('p', 'lx-fine', 'Hold the flower any time to come back here.'));
+    // the motion gate's readout (contract §6) -- only when Preston sets praxis_sky_stats; Stage 6 removes it
+    if (ls('praxis_sky_stats', false) === true && window.PraxisHand.stats) {
+      var st = window.PraxisHand.stats();
+      sh.appendChild(lxEl('p', 'lx-fine lx-stats', 'fps ' + st.fps + ' · worst 1 s ' + st.worst1s + ' · ' + st.seconds + ' s · ' + st.frames + ' frames'));
+    }
+  });
+}
 window.views = {
   openYumiYesSheet:      openYumiYesSheet,   // L3.1: the one yes (yumi-ui opens it from every Yumi door)
+  // L4.3: the Lenses page, the lens sheet, the L4 toast, the one generation path
+  renderLensesPage:      renderLensesPage,
+  openLensSheet:         openLensSheet,
+  lxToast:               lxToast,
+  lensRunGeneration:     lensRunGeneration,
   initCaptureDoor:       initCaptureDoor,
   openCaptureDoor:       openCaptureDoor,
   capHandleShareTarget:  capHandleShareTarget,

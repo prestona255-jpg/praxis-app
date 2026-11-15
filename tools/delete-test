@@ -162,7 +162,7 @@ try {
   var isrc = neutralize(readFile(fso.BuildPath(root, 'js\\integrations.js')));
   api = new Function('localStorage', 'window', 'console', 'document', 'setTimeout', 'firebase', 'navigator', 'location', 'Promise', 'nbPhotoIdbDelete',
     ssrc + '\n' + isrc + '\nreturn { state: state, ensureUser: ensureUser, deleteAccount: deleteAccount, accountLocalKeysFor: accountLocalKeysFor, wipeAccountLocal: wipeAccountLocal, ls: ls, sv: sv, ' +
-    'setLoaded: function () { arcsLoaded = true; notebookLoaded = true; subTheoriesLoaded = true; themesLoaded = true; artifactsLoaded = true; booksLoaded = true; profileLoaded = true; readerModelLoaded = true; } };')(
+    'setLoaded: function () { arcsLoaded = true; notebookLoaded = true; subTheoriesLoaded = true; themesLoaded = true; artifactsLoaded = true; booksLoaded = true; profileLoaded = true; readerModelLoaded = true; lensOffersLoaded = true; } };')(
     localStorage, window, console, document, setTimeout, firebase, navigator, location, Promise, nbPhotoIdbDelete);
 } catch (e) { WScript.Echo('LOAD FAIL: ' + e.message); WScript.Quit(2); }
 var state = api.state;
@@ -265,10 +265,10 @@ check('not signed out', log.signedOut, 0);
 check('photos not touched', log.photosDeleted.length, 0);
 check('in-memory maps intact', !!state.notebookEntries.e1, true);
 // the RECOVERY is a mechanism, not a hope: every collection re-uploaded from local right away
-var restored = ['userBooks/' + UID, 'userArcs/' + UID, 'userNotebook/' + UID, 'userSubTheories/' + UID, 'userThemes/' + UID, 'userArtifacts/' + UID, 'userProfiles/' + UID, 'userReaderModel/' + UID];
+var restored = ['userBooks/' + UID, 'userArcs/' + UID, 'userNotebook/' + UID, 'userSubTheories/' + UID, 'userThemes/' + UID, 'userArtifacts/' + UID, 'userProfiles/' + UID, 'userReaderModel/' + UID, 'userLensOffers/' + UID];   // L4.2
 var notRestored = [];
 for (i = 0; i < restored.length; i++) { if (!has(log.sets, restored[i])) { notRestored.push(restored[i]); } }
-check('all 8 collections RE-UPLOADED from local after the auth failure (missing: ' + notRestored.join(',') + ')', notRestored.length, 0);
+check('all 9 collections (L4.2: + userLensOffers) RE-UPLOADED from local after the auth failure (missing: ' + notRestored.join(',') + ')', notRestored.length, 0);
 
 WScript.Echo('\n[B2] a second chunk fails after the first committed -> partial reported honestly, local intact');
 seedDevice(); keysBefore = keysWith(UID).length;
@@ -288,12 +288,12 @@ r = run({ reauth: 'ok', batch: 'ok', authDelete: 'ok' });
 check('status deleted', r.status, 'deleted');
 check('phases in the ruled order', log.phases.join('>'), 'reauth>cloud>login>local');
 check('re-auth happened exactly once, first', log.reauthCalls, 1);
-var expectPaths = ['userBooks/' + UID, 'userArcs/' + UID, 'userNotebook/' + UID, 'userSubTheories/' + UID, 'userProfiles/' + UID, 'userThemes/' + UID, 'userReaderModel/' + UID, 'userArtifacts/' + UID,
+var expectPaths = ['userBooks/' + UID, 'userArcs/' + UID, 'userNotebook/' + UID, 'userSubTheories/' + UID, 'userProfiles/' + UID, 'userThemes/' + UID, 'userReaderModel/' + UID, 'userArtifacts/' + UID, 'userLensOffers/' + UID,   /* L4.2 */
                    'aiUsage/' + UID, 'publicProfiles/' + UID, 'publishedArcs/arcA1', 'publishedArcs/arcA2', 'follows/A_B', 'follows/B_A', 'buildOns/bo1'];
 var missing = [], i;
 for (i = 0; i < expectPaths.length; i++) { if (!has(log.deletedPaths, expectPaths[i])) { missing.push(expectPaths[i]); } }
 check('every collection under the uid in the batch (missing: ' + missing.join(',') + ')', missing.length, 0);
-check('batch size = exactly the 15 owned docs', log.deletedPaths.length, 15);
+check('batch size = exactly the 16 owned docs (L4.2: + userLensOffers)', log.deletedPaths.length, 16);
 check('the OTHER uid\'s published arc NOT deleted', has(log.deletedPaths, 'publishedArcs/arcB1'), false);
 check('the OTHER uid\'s foreign follow edge NOT deleted', has(log.deletedPaths, 'follows/B_C'), false);
 check('the OTHER uid\'s build-on on my arc NOT deleted (their words; rule-bound)', has(log.deletedPaths, 'buildOns/bo2'), false);
@@ -314,7 +314,7 @@ serverDocs = []; store['praxis_user'] = JSON.stringify({ uid: UID, email: 'a@exa
 log = { phases: [], deletedPaths: [], batches: 0, signedOut: 0, authDeleted: 0, reauthCalls: 0, photosDeleted: [] };
 r = run({ reauth: 'ok', batch: 'ok', authDelete: 'ok' });
 check('completes with status deleted', r.status, 'deleted');
-check('only the fixed docs (10) in the batch, nothing found by query', log.deletedPaths.length, 10);
+check('only the fixed docs (11, L4.2: + userLensOffers) in the batch, nothing found by query', log.deletedPaths.length, 11);
 
 WScript.Echo('\n' + (total - failures) + ' / ' + total + ' passed' + (failures ? '  -- FAILURES: ' + failures : ''));
 WScript.Quit(failures ? 1 : 0);
