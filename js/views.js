@@ -26642,6 +26642,13 @@ function capHandleShareTarget() {
 // Yumi's reading and her offers live HERE, never on Home (ruling 86).
 // =====================================================================
 var lxGen = { uid: null, status: 'idle', err: null, survived: -1, autoTried: false };
+// L4c: each unread offer's READING, in memory only (never stored), per uid:
+// by[offerId] = { st: 'loading'|'failed'|'done', tried: true }. tried = this
+// session's one automatic attempt is spent. lxReadTime = the last READING call
+// for the ?lenstime=on line. lxLaterLive = the open Later sheet, to re-render.
+var lxReads = { uid: null, by: {} };
+var lxReadTime = null;
+var lxLaterLive = null;
 var lxLastRoute = 'home';     // Back returns to origin (set by renderRoute)
 var lxPick = null;            // the offer card's picked cover (a bookId)
 var lxFoldOpen = false;
@@ -26844,7 +26851,11 @@ function lensRunGeneration(uid) {
   if (!uid || g.status === 'loading') { return false; }
   if (!isYumiYesGranted(uid) || lensShelfCount(uid) < LENS_OFFER_FLOOR) { return false; }
   if (!(window.YumiBrain && window.YumiBrain.generateLenses && window.YumiBrain.evalLensResponse)) { return false; }
-  g.status = 'loading'; g.err = null;
+  // L4c: behind praxis_lens2 the read is the two-step NAMES call (its survivors are
+  // unread offers; each READING is fetched when its offer is on screen).
+  var two = lxLens2On();
+  if (two && !(window.YumiBrain.generateLensNames && window.YumiBrain.evalLensNames)) { return false; }
+  g.status = 'loading'; g.err = null; g.two = two;
   var meta = window.YumiBrain.gatherLensMetadata();
   var titles = [], i, t0 = Date.now();
   for (i = 0; i < meta.books.length; i++) { titles.push(meta.books[i].title); }
@@ -26853,8 +26864,10 @@ function lensRunGeneration(uid) {
     g.time = { ms: Date.now() - t0, ok: ok, err: err || null, made: made,
                usage: (window.YumiBrain.lensLastUsage ? window.YumiBrain.lensLastUsage() : null) };
   }
-  window.YumiBrain.generateLenses(meta).then(function (raw) {
-    var surv = window.YumiBrain.evalLensResponse(raw, titles, meta.valueNames, { titleToId: meta.titleToId, against: lensAgainstList(uid) });
+  (two ? window.YumiBrain.generateLensNames(meta) : window.YumiBrain.generateLenses(meta)).then(function (raw) {
+    var surv = two
+      ? window.YumiBrain.evalLensNames(raw, titles, meta.valueNames, { titleToId: meta.titleToId, against: lensAgainstList(uid) })
+      : window.YumiBrain.evalLensResponse(raw, titles, meta.valueNames, { titleToId: meta.titleToId, against: lensAgainstList(uid) });
     var made = createLensOffers(uid, surv);
     markLensRead(uid);
     g.status = 'done'; g.survived = made.length;
@@ -26881,7 +26894,86 @@ function lxLensTimeLine(g) {
         // L4 hotfix 2 (D-1): the stop reason and the reply's length tell a cut-off from malformed JSON
         (u && typeof u.stop === 'string' ? ' · stop: ' + (u.stop || '?') + ' · reply ' + u.chars + ' chars' : '');
   }
+  // L4c: the last READING call this page session, appended only once one has run.
+  var r = lxReadTime;
+  if (r && g && r.uid === g.uid) {
+    var ru = r.usage;
+    s = s + ' · Reading: ' + (r.ms / 1000).toFixed(1) + ' s · ' +
+        (ru && typeof ru.input === 'number' ? ru.input + ' in / ' + ru.output + ' out' : '—') +
+        (ru && typeof ru.stop === 'string' ? ' · stop: ' + (ru.stop || '?') : '') + ' · ' +
+        (r.ok ? 'OK' : 'error: ' + ((r.err && (r.err.status ? 'proxy ' + r.err.status : r.err.message)) || 'unknown'));
+  }
   return lxEl('p', 'lx-fine lx-lenstime', s);
+}
+
+// ---- L4c: THE READING, fetched when an unread offer is on screen --------------
+// The switch: praxis_lens2, default OFF (set by ?lens2=on|off in app.js).
+function lxLens2On() { return ls('praxis_lens2', false) === true; }
+function lxReadsFor(uid) {
+  if (lxReads.uid !== uid) { lxReads = { uid: uid, by: {} }; }
+  return lxReads.by;
+}
+function lxReadState(uid, id) {
+  var r = lxReadsFor(uid)[id];
+  return r ? r.st : 'idle';
+}
+// Re-render what shows the offer: the Lenses page (or the sky) and an open Later sheet.
+function lxReadRefresh(id) {
+  lxRefresh();
+  if (lxLaterLive && lxLaterLive.id === id && lxLaterLive.api && document.body.contains(lxLaterLive.api.el)) { lxLaterLive.api.rerender(); }
+}
+// Start ONE reading for an unread offer. Automatic (manual false): only if this
+// session has made no attempt for it. Try again (manual true): one more. The gate
+// runs BEFORE any call -- no yes, or a shelf under five: no call, nothing counted,
+// the offer goes to failed (Try again then opens the yes sheet / shows the floor
+// toast). A blocked attempt spends the automatic one. Never retries by itself.
+function lxReadOffer(uid, id, manual) {
+  var by = lxReadsFor(uid), r = by[id], o = lensOfferById(uid, id), n;
+  if (!uid || !o || o.state === 'declined' || !lensOfferUnread(o)) { return false; }
+  if (r && r.st === 'loading') { return false; }
+  if (!manual && r && r.tried) { return false; }
+  // Never automatically before the offers doc has loaded (mayAutoReRead's own rule): a
+  // cold open renders from the local store before sign-in settles, and a call then is
+  // refused and would spend the one attempt. Unspent, it waits; the load re-renders.
+  if (!manual && typeof lensOffersLoaded !== 'undefined' && !lensOffersLoaded) { return false; }
+  by[id] = { st: 'failed', tried: true };
+  if (!isYumiYesGranted(uid)) { if (manual) { openYumiYesSheet('lenses'); } return false; }
+  n = lensShelfCount(uid);
+  if (n < LENS_OFFER_FLOOR) { if (manual) { lxToast('Lenses come once your shelf holds five books. It holds ' + n + '.'); } return false; }
+  if (!(window.YumiBrain && window.YumiBrain.generateLensReading && window.YumiBrain.evalLensReading && window.YumiBrain.lensApplyReading)) { return false; }
+  by[id].st = 'loading';
+  var t0 = Date.now();
+  window.YumiBrain.generateLensReading({ name: o.name, q: o.q, bookIds: o.bookIds.slice(0) }).then(function (res) {
+    var s = window.YumiBrain.evalLensReading(res.text, res.bookMeta, null);
+    var cur = lensOfferById(uid, id);
+    var f = (s.length && cur) ? window.YumiBrain.lensApplyReading(cur, s[0]) : null;
+    var wrote = f ? applyLensOfferReading(uid, id, f) : false;
+    lxReadTime = { uid: uid, ms: Date.now() - t0, ok: !!f, usage: res.usage || null,
+                   err: f ? null : { message: 'reading unusable' } };
+    by[id].st = wrote ? 'done' : 'failed';
+    lxReadRefresh(id);
+  }, function (err) {
+    lxReadTime = { uid: uid, ms: Date.now() - t0, ok: false, usage: (err && err.usage) || null, err: err || null };
+    by[id].st = 'failed';
+    lxReadRefresh(id);
+  });
+  return true;
+}
+// Where her reading would be, for an unread offer: the waiting line, or the
+// failure line with Try again. The existing state band; no new look.
+function lxReadingSlot(uid, id) {
+  if (lxReadState(uid, id) === 'failed') {
+    var a = lxEl('div', 'lx-acts');
+    a.appendChild(lxBtn('ghost', 'Try again', function () { lxReadOffer(uid, id, true); lxReadRefresh(id); }));
+    return lxStateBand('I couldn’t finish this reading just now.', '', a);
+  }
+  return lxStateBand('Reading these together…');
+}
+// Take it up / "Not quite" wait for the reading: disabled, announced, inert.
+function lxWait(b) {
+  b.disabled = true;
+  b.setAttribute('aria-disabled', 'true');
+  return b;
 }
 // Contract §5's automatic re-read: at most once per session per uid, only when a
 // surface renders (never on a timer); fromHome never fires the FIRST read.
@@ -26977,7 +27069,7 @@ function renderLensesPage() {
     body.appendChild(lxStateBand(lxErrLine(g.err), '', lxAskAgainBtn(uid)));
   } else if (open.length) {
     sect = lxSect('From Yumi', lxPlural(open.length, 'offer'));
-    if (g.status === 'done' && g.survived >= 1 && g.survived < LENS_EVAL_CAP) {   // L4 hotfix 2 (D-2): never at a full read
+    if (g.status === 'done' && g.survived >= 1 && g.survived < (g.two ? LENS_NAMES_CAP : LENS_EVAL_CAP)) {   // L4 hotfix 2 (D-2): never at a full read; L4c: a two-step read's cap is three
       sect.appendChild(lxEl('p', 'lx-fine', g.survived === 1
         ? 'One clear thread so far — more will surface as your shelf grows.'
         : 'A couple of threads so far — more will surface as your shelf grows.'));
@@ -27080,13 +27172,17 @@ function renderLensesPage() {
 // The offer card (ninth §A3): offer n of N, the covers with her clause on tap,
 // her reading, the question she would hold, three themes, four answers.
 function lxFillOffer(card, uid, o, idx, total) {
+  // L4c: an UNREAD offer (lead '' and no clauses) fetches its reading now it is on
+  // screen; until it is written only Later and Not this work.
+  var unread = lensOfferUnread(o);
+  if (unread) { lxReadOffer(uid, o.id, false); }
   card.innerHTML = '';
   card.appendChild(lxEl('span', 'lx-eyebrow', 'Yumi’s offer · ' + idx + ' of ' + total));
   var ln = lxEl('div', 'lx-ln');
   ln.appendChild(lxMark(o.look, o.name, true));
   ln.appendChild(lxEl('em', '', o.name));
   card.appendChild(ln);
-  card.appendChild(lxEl('span', 'lx-cnt', 'RESTS ON ' + lxPlural(o.bookIds.length, 'BOOK').toUpperCase() + ' · TAP A COVER FOR HER CLAUSE'));
+  card.appendChild(lxEl('span', 'lx-cnt', 'RESTS ON ' + lxPlural(o.bookIds.length, 'BOOK').toUpperCase() + (unread ? '' : ' · TAP A COVER FOR HER CLAUSE')));
   card.appendChild(lxCovers(o.bookIds, [], o.clauses, lxPick, function (bid) {
     lxPick = (lxPick === bid) ? null : bid;
     lxFillOffer(card, uid, o, idx, total);
@@ -27099,7 +27195,7 @@ function lxFillOffer(card, uid, o, idx, total) {
     cl.appendChild(cr);
     card.appendChild(cl);
   }
-  var rd = lxEl('div'); rd.appendChild(lxQl('Her reading')); rd.appendChild(lxReading(o)); card.appendChild(rd);
+  var rd = lxEl('div'); rd.appendChild(lxQl('Her reading')); rd.appendChild(unread ? lxReadingSlot(uid, o.id) : lxReading(o)); card.appendChild(rd);
   if (o.q) { card.appendChild(lxQuestion('The question she would hold for it · not for answering here', o.q)); }
   if (o.themes.length) {
     var ul = lxEl('ul', 'lx-themes'), j;
@@ -27113,12 +27209,13 @@ function lxFillOffer(card, uid, o, idx, total) {
   }
   if (o.said.length) { card.appendChild(lxSaid('What you said back', o.said)); }
   var grid = lxEl('div', 'lx-grid');
-  grid.appendChild(lxBtn('pill', 'Take it up', function () {
+  var take = lxBtn('pill', 'Take it up', function () {
     var t = takeUpLensOffer(uid, o.id);
     lxPick = null;
     renderLensesPage();
     if (t) { lxToast('Kept. ' + t.name + ' is yours now; her question stays pinned to it.'); }
-  }));
+  });
+  grid.appendChild(unread ? lxWait(take) : take);
   grid.appendChild(lxBtn('ghost', 'Later', function () {
     setLensOfferLater(uid, o.id);
     lxPick = null;
@@ -27133,11 +27230,13 @@ function lxFillOffer(card, uid, o, idx, total) {
       undoLensOfferNotThis(uid, prev); renderLensesPage();
     });
   }));
-  grid.appendChild(lxBtn('ghost', 'Not quite — talk it through', function () {
+  var talk = lxBtn('ghost', 'Not quite — talk it through', function () {
+    if (lensOfferUnread(lensOfferById(uid, o.id))) { return; }   // L4c: waits for the reading
     if (window.YumiUI && typeof window.YumiUI.openLensSayBack === 'function') {
       window.YumiUI.openLensSayBack({ kind: 'offer', uid: uid, id: o.id, onDone: function () { lxRefresh(); } });
     }
-  }));
+  });
+  grid.appendChild(unread ? lxWait(talk) : talk);
   card.appendChild(grid);
   card.appendChild(lxEl('p', 'lx-fine', 'Not this is remembered: she won’t offer it again while these books are on your shelf. Later never expires.'));
 }
@@ -27147,20 +27246,25 @@ function lxLaterSheet(uid, id) {
   lxOpenSheet('Set aside for later', function (sh, api) {
     var o = lensOfferById(uid, id);
     if (!o) { api.close(); return; }
+    // L4c: an unread offer fetches its reading when this sheet opens on it.
+    var unread = lensOfferUnread(o);
+    if (unread) { lxLaterLive = { id: id, api: api }; lxReadOffer(uid, id, false); }
     sh.appendChild(lxEl('span', 'lx-eyebrow', 'Set aside for later'));
     var ln = lxEl('div', 'lx-ln');
     ln.appendChild(lxMark(o.look, o.name, true));
     ln.appendChild(lxEl('em', '', o.name));
     sh.appendChild(ln);
     sh.appendChild(lxEl('span', 'lx-cnt', lxPlural(o.bookIds.length, 'BOOK').toUpperCase() + ' · WAITING AS LONG AS YOU LIKE'));
-    if (o.lead) { sh.appendChild(lxEl('p', 'lx-read', o.lead)); }
+    if (unread) { sh.appendChild(lxReadingSlot(uid, id)); }
+    else if (o.lead) { sh.appendChild(lxEl('p', 'lx-read', o.lead)); }
     var grid = lxEl('div', 'lx-grid');
-    grid.appendChild(lxBtn('pill', 'Take it up', function () {
+    var take = lxBtn('pill', 'Take it up', function () {
       var t = takeUpLensOffer(uid, id);
       api.close(true);
       renderLensesPage();
       if (t) { lxToast('Kept. ' + t.name + ' is yours now; her question stays pinned to it.'); }
-    }));
+    });
+    grid.appendChild(unread ? lxWait(take) : take);
     grid.appendChild(lxBtn('ghost', 'Not this', function () {
       var prev = lensOfferNotThis(uid, id);
       api.close(true);

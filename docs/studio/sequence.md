@@ -1472,7 +1472,7 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   `?sky=on` and the motion gate (contract §6) → **Stage 6 DONE at v3.322 (15 Nov 2026): the sky is on by default** (v3.318–v3.321 are the L4 hotfixes); the motion gate itself is OWED BEFORE THE BETA, on the installed app, and its instrument (`?sky=on|off`, `praxis_sky_stats`) stays until it is run (R2, R3). **Lane order (ruling 83): L4 → L2 → L4b → L5
   → L6 → L7b; the Scan lane as before.** Record: `docs/checkpoints/l4.md`.
   touches: [lenses, home, profile, shelf, yumi, yumi-sees]
-- [~] **LC1 — THE COLOURS (R1, ruled by Preston 15 Nov 2026) — BUILT at v3.323 (16 Nov 2026); closes on the felt pass** — colours only, canon
+- [x] **LC1 — THE COLOURS (R1, ruled by Preston 15 Nov 2026) — BUILT at v3.323 (16 Nov 2026); CLOSED on Preston's felt pass, 16 Nov 2026, at v3.324, Day** — colours only, canon
   amendment 1.5 (`docs/studio/v1-canon-delta-amend-1.5.md`): 35 token values in `assets/theme.css`, the same values in
   the generator's two sources, five colour literals (index.html, manifest.json, js/views.js) — all byte-neutral, every blob
   md5 EXACT against the v19 carry; no new failure on the measured routes; closes on Preston's side-by-side felt pass.
@@ -1481,12 +1481,17 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   Hotfix 1 (16 Nov 2026, v3.324): the day and auto `--grain-op` .32 → .08 (Preston's ruling — the multiply grain greyed
   the 1.5 day paper); three lines, byte-neutral; record in `docs/checkpoints/lc1.md` "Hotfix 1 — the day grain".
   touches: [cross-cutting, global-shell]
-- [ ] **L4c — THE TWO-STEP LENS READ (L4 hotfix 2 R5, ruled by Preston 14 Nov 2026; after LC1 -- R1, 15 Nov 2026)** —
+- [~] **L4c — THE TWO-STEP LENS READ (L4 hotfix 2 R5, ruled by Preston 14 Nov 2026; after LC1 -- R1, 15 Nov 2026) — BUILT DARK at v3.325 (16 Nov 2026); the flip is owed after Preston's timed read** —
   names and questions first in one short call; each lens's full reading (lead, clauses, close, themes) fetched when its
   sheet opens. Replaces the stopgap read (two lenses, max_tokens 800, keep what arrives -- v3.319). Proved with one real,
   timed call before it ships. (Moved out of L4b. R1, 15 Nov 2026: the order is the sky flip → LC1 → L4c, because L4c
   changes nothing the reader can see and the live read works: 3717 in / 728 out, 2 offered, nothing cut.) Record:
   `docs/checkpoints/l4.md` "Hotfix 2, 14 Nov".
+  L4c (16 Nov 2026, v3.325): built DARK behind the per-device switch `praxis_lens2` (default off; `?lens2=on|off`) -- NAMES
+  (one call, max_tokens 400, up to three lenses as name, question and books) + one READING per offer on screen (max_tokens
+  600); rulings R1-R7, where R2 replaces "fetched when its sheet opens" (the offer card shows the reading). With the switch
+  off the read is the one-call read of v3.324. Owed: Preston's one timed read on his phone (names < 12 s, the reading < 20 s),
+  then a small flip build makes it the default and retires the one-call path. Record: `docs/checkpoints/l4.md` "L4c".
   touches: [lenses, yumi]
 - [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
   RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → spine mockup LANDED (`design/praxis-spine-v1.html`) + mockup-stage acceptance card LANDED (`docs/checkpoints/onboarding-acceptance-mockup.md`; 9 OWNER rows open, 6 debts named) → Preston's felt pass on the changed frames → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.

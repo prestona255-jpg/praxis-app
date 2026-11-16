@@ -9,7 +9,7 @@
 // in APP_SHELL (same-origin), no longer loaded from third-party CDNs.
 // =====================================================================
 
-var CACHE_VERSION = 'praxis-v3.324';
+var CACHE_VERSION = 'praxis-v3.325';
 
 var APP_SHELL = [
   '/',

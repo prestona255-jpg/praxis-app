@@ -921,6 +921,59 @@ var LENS_GEN_SYSTEM =
   + '[{"name":"…","lead":"…","clauses":[{"i":3,"c":"…"}],"close":"…","q":"…?"'
   + ',"themes":[{"k":"…","t":"…"}],"books":[3,17]}]';
 
+// L4c (16 Nov 2026): the TWO-STEP read's system prompt -- LENS_GEN_SYSTEM by six
+// ruled edits (engine contract §1, the two-step block): up to THREE lenses, the
+// curly "You told me" quotes, the NAMES / READING paragraph, "The parts of a
+// lens:", and the two return shapes. Runs only behind praxis_lens2 until the flip.
+var LENS2_SYSTEM =
+  'You are Yumi, a reading companion inside Praxis. You are grounded in '
+  + 'critical pedagogy — Freire, hooks, Lorde — and you hold that a reader '
+  + 'naming their own intellectual world is itself an act of freedom. You are '
+  + 'not a recommender and you do not sort books into market genres.\n\n'
+  + 'You are given a reader\'s shelf as METADATA ONLY: a numbered list of '
+  + 'books (a 1-based number, then title, author, and the shelf\'s category), '
+  + 'the names of lenses they already keep, lenses they have already set '
+  + 'aside or declined, and any values they have declared. You are not given '
+  + 'their notes, marginalia, journal or anything from inside a book, and you '
+  + 'never ask for them.\n\n'
+  + 'Read across the whole shelf and offer up to three LENSES: ways of seeing '
+  + 'it, named in the language of ideas, not bookstores ("Technologies of '
+  + 'liberation and oppression", not "Technology"). A lens rests on at least '
+  + 'two books and at most five.\n\n'
+  + 'Speak about the BOOKS, never about the reader. You may be sure about the '
+  + 'shelf — what these titles do when set side by side — and you may ask the '
+  + 'reader a question. You may not claim anything about the reader\'s inner '
+  + 'life, habits, feelings or motives: never "you keep circling", "you seem '
+  + 'drawn to", "you love", "you tend to", "you have been". The one exception '
+  + 'is quoting their own words back when they are given to you under "The '
+  + 'reader said", marked “You told me: …”.\n\n'
+  + 'You are asked in two steps, and each message says which. NAMES: return '
+  + 'each lens with only its name, q and books. READING: you are given one '
+  + 'lens — its books renumbered from 1, its name and its question — and you '
+  + 'return that one lens with its lead, clauses, close and themes, keeping '
+  + 'the name, the question and the books exactly as given.\n\n'
+  + 'The parts of a lens: name (a few words, precise, in the spirit of '
+  + 'critical pedagogy); lead (one sentence, sure about the shelf, about what '
+  + 'these books do together); clauses (one short clause per cited book, by '
+  + 'its number — what that book does in this lens, from its title and author '
+  + 'only, never its contents); close (one sentence that brings them '
+  + 'together); q (one question the lens would hold for the reader, ending in '
+  + 'a question mark); themes (three short key phrases, each a key word and a '
+  + 'few words after it); books (an array of the 1-based numbers cited, 2 to '
+  + '5, only numbers from the list).\n\n'
+  + 'Keep every line short. The app drops a whole lens when one line runs long: '
+  + 'lead at most 180 characters, each clause at most 100, close at most 130, q '
+  + 'at most 100. A quoted “You told me: …” sentence does not count toward the '
+  + 'lead. Each theme key is one to three words.\n\n'
+  + 'Never propose a lens that duplicates or lightly rephrases a value they '
+  + 'have declared, a lens they keep, or one they set aside or declined. If '
+  + 'the shelf is too small or scattered for honest lenses, offer fewer, or '
+  + 'none. Warmth over cleverness.\n\n'
+  + 'Return ONLY JSON, nothing around it.\n'
+  + 'NAMES, an array: [{"name":"…","q":"…?","books":[3,17]}]\n'
+  + 'READING, one object: {"name":"…","lead":"…","clauses":[{"i":1,"c":"…"}],"close":"…","q":"…?"'
+  + ',"themes":[{"k":"…","t":"…"}],"books":[1,2]}';
+
 // Gather the deduped library as METADATA ONLY (title/author/genre per book)
 // plus the names of lenses the reader already has (distinct present genres +
 // their userThemes). titleToId is carried for the caller's adoption step and
@@ -1161,6 +1214,91 @@ function generateLensReReading(meta, lens, line) {
       throw new Error('lens re-reading unreadable (truncated or non-JSON)');
     }
     return { text: text, bookMeta: bookMeta };
+  });
+}
+
+// ---- L4c (16 Nov 2026): THE TWO-STEP READ, built dark behind praxis_lens2 ----
+// NAMES: one short call returns up to three lenses as name, question and books
+// only. READING: one call per lens, made when its offer is on screen, returns
+// that lens's lead, clauses, close and themes. Both send LENS2_SYSTEM. The
+// one-call path above (generateLenses) is untouched and stays the default.
+
+// The NAMES user message: the one-call message, one blank line, the instruction.
+function buildLensNamesMessage(meta) {
+  return buildLensGenUserMessage(meta) + '\n'
+    + 'NAMES: offer up to three lenses. Return only name, q and books for each.';
+}
+
+// The READING user message: ONE lens -- its own books renumbered from 1, its name
+// and its question, then the instruction. No id, no notes, no said lines, no
+// other lens.
+function buildLensReadingMessage(lens, bookMeta) {
+  var s = 'Here is one lens on the reader\'s shelf (metadata only), its books numbered:\n\n';
+  var i, books = (bookMeta && bookMeta.books instanceof Array) ? bookMeta.books : [];
+  for (i = 0; i < books.length; i++) { s = s + lensBookLine(i + 1, books[i]); }
+  return s + '\nIts name: ' + ((lens && lens.name) || '') + '\n'
+    + 'Its question: ' + ((lens && lens.q) || '') + '\n\n'
+    + 'READING: write this lens\'s reading. Keep the name, the question and the books exactly as given. Return ONE lens object.';
+}
+
+// NAMES: one call. Rejects on an unreadable reply (LENS-1: never silence); records
+// usage, stop reason and reply length for the ?lenstime=on line as generateLenses does.
+function generateLensNames(meta) {
+  lensLastUsageVal = null;
+  yumiMarkLensNamesSent(meta);
+  var payload = {
+    model:      'claude-sonnet-4-6',
+    max_tokens: 400,
+    system:     LENS2_SYSTEM,
+    messages: [
+      { role: 'user', content: buildLensNamesMessage(meta) }
+    ]
+  };
+  return aiProxyFetch(payload).then(function (data) {
+    var text = lensReplyText(data, 'lens names');
+    var parsedReply = parseLensReply(text, false);
+    var cut = !!(data && data.stop_reason === 'max_tokens');
+    lensLastUsageVal = lensLastUsageVal || {};
+    lensLastUsageVal.stop = (data && typeof data.stop_reason === 'string') ? data.stop_reason : '';
+    lensLastUsageVal.chars = text.length;
+    lensLastUsageVal.cut = cut;
+    lensLastUsageVal.kept = parsedReply ? parsedReply.length : 0;
+    if (parsedReply === null) {
+      throw new Error('lens names unreadable (truncated or non-JSON)');
+    }
+    if (cut) { lensEvalLog('truncated', 'kept ' + parsedReply.length); }
+    return text;
+  });
+}
+
+// READING: one call for ONE lens = { name, q, bookIds }, on lensBookMeta(bookIds).
+// Resolves to { text, bookMeta, usage } so the caller evaluates against the SAME
+// numbered sub-list the model saw; rejects on an unreadable reply (err.usage set).
+// Its usage never overwrites the read line's record (lensLastUsageVal).
+function generateLensReading(lens) {
+  var bookMeta = lensBookMeta(lens && lens.bookIds);
+  var payload = {
+    model:      'claude-sonnet-4-6',
+    max_tokens: 600,
+    system:     LENS2_SYSTEM,
+    messages: [
+      { role: 'user', content: buildLensReadingMessage(lens || {}, bookMeta) }
+    ]
+  };
+  return aiProxyFetch(payload).then(function (data) {
+    var held = lensLastUsageVal, usage, err;
+    lensLastUsageVal = null;
+    var text = lensReplyText(data, 'lens reading');
+    usage = lensLastUsageVal || {};
+    lensLastUsageVal = held;
+    usage.stop = (data && typeof data.stop_reason === 'string') ? data.stop_reason : '';
+    usage.chars = text.length;
+    if (parseLensReply(text, true) === null) {
+      err = new Error('lens reading unreadable (truncated or non-JSON)');
+      err.usage = usage;
+      throw err;
+    }
+    return { text: text, bookMeta: bookMeta, usage: usage };
   });
 }
 
@@ -1487,6 +1625,117 @@ function evalLensResponse(rawText, libraryTitles, valueNames, opts) {
     }
   }
   return out;
+}
+
+// ---- L4c: the NAMES eval and the READING eval (engine contract §3) -------------
+var LENS_NAMES_CAP = 3;
+
+// The NAMES eval: a NAMES reply (name, q, books only) through the steps of
+// evalLensResponse that apply, in its order, on its helpers -- parse (array);
+// structure; the name (blocklist, a declared value, the same lens by name);
+// grounding (1-based, distinct, in bounds; <2 drops; >5 keeps the first 5) and the
+// same lens by two-thirds shared; q at most 120 and ending "?"; the voice lint on
+// q; cap LENS_NAMES_CAP. (The grounding loop is evalLensResponse's own, repeated
+// here so that function stays byte-for-byte as shipped.) A survivor is UNREAD:
+// lead '', close '', clauses {}, themes [], reading ''. Pure; fail-safe []; never throws.
+function evalLensNames(rawText, libraryTitles, valueNames, opts) {
+  var out = [];
+  try {
+    var o = (opts && typeof opts === 'object') ? opts : {};
+    var titles = (libraryTitles instanceof Array) ? libraryTitles : [];
+    var others = (valueNames instanceof Array) ? valueNames : readActiveValueNames();
+    var t2id = (o.titleToId && typeof o.titleToId === 'object') ? o.titleToId : null;
+    var against = lensIsArray(o.against) ? o.against : [];
+    var parsed = parseLensReply(rawText, false);
+    if (!parsed) { lensEvalLog('unparseable', '(reply)'); return []; }
+    var i, j, k, n, tw;
+    for (i = 0; i < parsed.length; i++) {
+      var L = parsed[i];
+      var nm = (L && typeof L === 'object') ? lensTrim(L.name) : '';
+      if (nm === '' || !lensIsArray(L.books) || typeof L.q !== 'string') { lensEvalLog('structure', nm || '(no name)'); continue; }
+      if (isBlockedLensName(nm)) { lensEvalLog('blocklist', nm); continue; }
+      if (nameCollidesWith(nm, others)) { lensEvalLog('value-collision', nm); continue; }
+      tw = lensTwinOf({ name: nm, bookIds: [] }, against);
+      if (tw) { lensEvalLog(lensTwinReason(tw), nm); continue; }
+      var idx = [], seen = {};
+      for (j = 0; j < L.books.length; j++) {
+        n = L.books[j];
+        if (typeof n === 'string' && /^\s*[0-9]+\s*$/.test(n)) { n = parseInt(n, 10); }
+        if (typeof n !== 'number' || !isFinite(n)) { continue; }
+        k = Math.floor(n) - 1;
+        if (k < 0 || k >= titles.length || seen.hasOwnProperty('k' + k)) { continue; }
+        seen['k' + k] = true;
+        idx.push(k);
+      }
+      if (idx.length > LENS_EVAL_MAX_BOOKS) { idx = idx.slice(0, LENS_EVAL_MAX_BOOKS); }
+      if (idx.length < 2) { lensEvalLog('under-2', nm); continue; }
+      var keys = [], bookTitles = [], bookIds = [];
+      for (j = 0; j < idx.length; j++) {
+        var nt = normalizeLensTitle(titles[idx[j]]);
+        keys.push((t2id && t2id[nt]) ? t2id[nt] : ('t:' + nt));
+        bookTitles.push(titles[idx[j]]);
+        if (t2id && t2id[nt]) { bookIds.push(t2id[nt]); }
+      }
+      tw = lensTwinOf({ name: '', bookIds: keys }, against);
+      if (tw) { lensEvalLog(lensTwinReason(tw), nm); continue; }
+      var qq = lensTrim(L.q);
+      if (qq === '' || qq.length > 120 || qq.charAt(qq.length - 1) !== '?') { lensEvalLog('question', nm); continue; }
+      var hit = lensVoiceHit(qq, false);
+      if (hit) { lensEvalLog('voice: "' + hit + '"', nm); continue; }
+      out.push({ name: nm, lead: '', clauses: {}, close: '', q: qq, themes: [],
+                 books: bookTitles, bookIds: bookIds, reading: '' });
+      if (out.length >= LENS_NAMES_CAP) {
+        for (j = i + 1; j < parsed.length; j++) { lensEvalLog('cap', (parsed[j] && lensTrim(parsed[j].name)) || '(no name)'); }
+        break;
+      }
+    }
+  } catch (e) { lensEvalLog('error', '(names eval)'); return []; }
+  return out;
+}
+
+// The READING eval: ONE object back (the first, read object-first), evaluated by
+// evalLensResponse against the SAME numbered sub-list the model saw, against: []
+// and NO You-told-me exemption -- every step in force (clauses cover the books;
+// lead 220, clause 140, close 160; theme key three words; the voice lint).
+// Returns the survivors ([] or one). Pure; never throws.
+function evalLensReading(rawText, bookMeta, valueNames) {
+  try {
+    var bm = (bookMeta && typeof bookMeta === 'object') ? bookMeta : {};
+    var books = lensIsArray(bm.books) ? bm.books : [], titles = [], i;
+    for (i = 0; i < books.length; i++) { titles.push(books[i].title); }
+    var one = parseLensReply(rawText, true);
+    if (!one || !one.length) { lensEvalLog('unparseable', '(reading)'); return []; }
+    return evalLensResponse(JSON.stringify([one[0]]), titles, valueNames,
+      { titleToId: (bm.titleToId && typeof bm.titleToId === 'object') ? bm.titleToId : null, against: [] });
+  } catch (e) { lensEvalLog('error', '(reading eval)'); return []; }
+}
+
+// The fields a READING writes onto an unread offer: lead, close, themes, clauses
+// keyed by bookId, reading (lead + clauses in the offer's book order + close), and
+// bookIds -- present ONLY when step 6 removed a book and at least two remain. The
+// offer's name, q, names, look, state, round and said are never written. No
+// survivor (or fewer than two books) -> null: the reading failed. Pure.
+function lensApplyReading(offer, survivor) {
+  if (!offer || !survivor || !lensIsArray(survivor.books) || !lensIsArray(survivor.bookIds) ||
+      survivor.books.length !== survivor.bookIds.length) { return null; }
+  var ids = lensIsArray(offer.bookIds) ? offer.bookIds : [], byId = {}, keep = [], clauses = {}, parts = [], i, t;
+  for (i = 0; i < survivor.bookIds.length; i++) {
+    t = survivor.books[i];
+    if (survivor.clauses && typeof survivor.clauses[t] === 'string' && survivor.clauses[t] !== '') { byId['k' + survivor.bookIds[i]] = survivor.clauses[t]; }
+  }
+  for (i = 0; i < ids.length; i++) {
+    if (byId.hasOwnProperty('k' + ids[i])) { keep.push(ids[i]); clauses[ids[i]] = byId['k' + ids[i]]; parts.push(byId['k' + ids[i]]); }
+  }
+  if (keep.length < 2) { return null; }
+  var lead = lensTrim(survivor.lead), close = lensTrim(survivor.close);
+  if (lead === '') { return null; }
+  var f = {
+    lead: lead, close: close, clauses: clauses,
+    themes: lensIsArray(survivor.themes) ? survivor.themes.slice(0, 3) : [],
+    reading: lead + ' ' + parts.join(' ') + (close ? ' ' + close : '')
+  };
+  if (keep.length < ids.length) { f.bookIds = keep; }
+  return f;
 }
 
 // =====================================================================
@@ -3492,6 +3741,11 @@ window.YumiBrain = {
   lensBookMeta:       lensBookMeta,
   lensLastUsage:      function () { return lensLastUsageVal; },   // L4 hotfix: ?lenstime=on
   sameLens:           sameLens,
+  generateLensNames:     generateLensNames,     // L4c: the two-step read (behind praxis_lens2)
+  evalLensNames:         evalLensNames,
+  generateLensReading:   generateLensReading,
+  evalLensReading:       evalLensReading,
+  lensApplyReading:      lensApplyReading,
   gatherValueMetadata:   gatherValueMetadata,
   generateValueRetrofit: generateValueRetrofit,
   evalValueResponse:     evalValueResponse,

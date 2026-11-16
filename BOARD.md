@@ -10,7 +10,14 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
-**LC1 hotfix 1 (2026-11-16, v3.324, local) — the day grain.** The day and auto `--grain-op` go from .32 to .08
+**L4c (2026-11-16, v3.325, local) — the two-step lens read, built dark.** Behind the per-device switch `praxis_lens2`
+(default OFF; `?lens2=on|off`): one NAMES call (max_tokens 400, up to three lenses as name, question and books) creates UNREAD
+offers; each offer's READING (max_tokens 600) is fetched when the offer is on screen (the Lenses card or the Later sheet) and
+fills in under "Reading these together…" — or "I couldn’t finish this reading just now." + Try again. Until it is written only
+Later and Not this work. No cell's STRUCTURE changed: with the switch off the Lenses page is pixel-identical to v3.324 at 1360
+and 390 (Night, 0 px). Owed: Preston's one timed read on his phone, then the flip build. Record: `docs/checkpoints/l4.md` "L4c".
+
+**LC1 hotfix 1 (2026-11-16, v3.324, pushed 2d7b7b7; Preston's felt pass, Day, 16 Nov) — the day grain.** The day and auto `--grain-op` go from .32 to .08
 (Preston's ruling, 16 Nov 2026): the multiply grain on `body::after` greyed the 1.5 day paper to about #E5E2DB where the
 open page shows. Three lines (theme.css day + auto, `l1-day-body.css`); night (.22, screen) unchanged. No cell's STRUCTURE
 changed. Measured: the Day open page at 390 + 1360 now #F4F1EA–#F6F3ED (was #E4E1DA–#E5E2DD); Night pixel-identical to

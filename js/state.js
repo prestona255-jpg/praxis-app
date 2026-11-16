@@ -2966,6 +2966,33 @@ function lensOfferById(uid, id) {
   return (d && d.offers[id]) ? d.offers[id] : null;
 }
 
+// L4c (engine contract §2): an offer is UNREAD when its lead is the empty string
+// and its clauses object is empty -- a two-step NAMES survivor before its READING.
+// No stored field marks it; this is the whole rule, whatever made the offer.
+function lensOfferUnread(o) {
+  if (!o || typeof o !== 'object') { return false; }
+  if (o.lead !== '') { return false; }
+  var k, c = o.clauses;
+  if (c && typeof c === 'object') { for (k in c) { if (c.hasOwnProperty(k)) { return false; } } }
+  return true;
+}
+
+// L4c: write a READING (lensApplyReading's fields) onto an offer. Written only if
+// the offer still exists, is not declined, and is still unread (a reading another
+// device already wrote is never overwritten). Never touches name, q, names, look,
+// state, round or said. Pending-sync + dirty + save, as createLensOffers does.
+function applyLensOfferReading(uid, id, f) {
+  var o = lensOfferById(uid, id);
+  if (!o || !f || o.state === 'declined' || !lensOfferUnread(o)) { return false; }
+  o.lead = f.lead; o.close = f.close; o.clauses = f.clauses;
+  o.themes = (f.themes instanceof Array) ? f.themes : [];
+  o.reading = f.reading;
+  if (f.bookIds instanceof Array && f.bookIds.length >= 2) { o.bookIds = f.bookIds.slice(0); }
+  markPendingSync('lensOffers', uid, id);   // FX-1: survive the sign-in REPLACE until confirmed synced
+  markLensOffersDirty(); saveState();
+  return true;
+}
+
 // Later: never expires (Preston, 17 Oct).
 function setLensOfferLater(uid, id) {
   var o = lensOfferById(uid, id);
@@ -3022,6 +3049,7 @@ function restoreLensOffer(uid, snap) {
 function takeUpLensOffer(uid, id) {
   var o = lensOfferById(uid, id);
   if (!o || typeof createUserTheme !== 'function') { return null; }
+  if (lensOfferUnread(o)) { return null; }   // L4c: no path keeps a lens without a reading
   var t = createUserTheme(o.name);
   if (!t) { return null; }
   t.bookIds = o.bookIds.slice(0);

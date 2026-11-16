@@ -277,6 +277,108 @@ assert('say-back message: the reader\'s straight quotes go out as single quotes;
   SBMSG.indexOf('The reader said: "It is \'intelligence\' they count, not knowledge."') !== -1 && SBMSG.indexOf('never straight ones') !== -1,
   function () { return SBMSG.substring(SBMSG.indexOf('The reader said')).replace(/\n/g, ' / '); });
 
+// ---- L4c (16 Nov 2026): the two-step read -- LENS2_SYSTEM, the two messages,
+// the NAMES eval and the READING eval. Each fixture is one assertion below.
+function evalLogsNow() { var o = [], i; for (i = 0; i < LOGS.length; i++) { if (LOGS[i].indexOf('[L4-eval]') === 0) { o.push(LOGS[i]); } } return o.join('|'); }
+var CONTRACT_PROMPT2 = (function () {
+  var md = readUtf8(fso.BuildPath(root, 'docs\\studio\\l4-lens-engine-contract.md')).replace(/\r\n/g, '\n').split('\n'), i, on = false, out = [], ln;
+  for (i = 0; i < md.length; i++) {
+    if (md[i].indexOf('**Two-step system prompt**') === 0) { on = true; continue; }
+    if (md[i].indexOf('**Two-step user messages**') === 0) { break; }
+    if (!on || md[i].charAt(0) !== '>') { continue; }
+    ln = md[i].replace(/^> ?/, '');
+    if (/^`.*`$/.test(ln)) { ln = ln.substring(1, ln.length - 1); }
+    out.push(ln);
+  }
+  return out.join('\n');
+})();
+assert('L4c: LENS2_SYSTEM === contract sec.1 two-step block, character for character (' + CONTRACT_PROMPT2.length + ' chars; 3,046)',
+  LENS2_SYSTEM.length === 3046 && LENS2_SYSTEM === CONTRACT_PROMPT2 && LENS2_SYSTEM.split('\n\n').length === 9,
+  function () { var d = firstDiff(LENS2_SYSTEM, CONTRACT_PROMPT2); return 'lengths ' + LENS2_SYSTEM.length + ' / ' + CONTRACT_PROMPT2.length + '; first diff at ' + d + ': code [' + LENS2_SYSTEM.substr(d, 40) + '] contract [' + CONTRACT_PROMPT2.substr(d, 40) + ']'; });
+var NAMES_INSTR = 'NAMES: offer up to three lenses. Return only name, q and books for each.';
+var NMSG = buildLensNamesMessage(META);
+assert('L4c: the NAMES message = the one-call message, one blank line, then exactly the instruction',
+  NMSG === MSG + '\n' + NAMES_INSTR && NMSG.substring(NMSG.length - NAMES_INSTR.length - 2) === '\n\n' + NAMES_INSTR,
+  function () { return 'tail: ' + NMSG.substring(NMSG.length - 120).replace(/\n/g, ' / '); });
+CALLS = 0; NEXT = jsonStr([{ name: 'Who gets to deposit', q: 'Who decides what counts?', books: [1, 2, 3] }]); got = null;
+generateLensNames(META).then(function (t) { got = t; });
+assert('L4c: NAMES = one call; max_tokens 400; system LENS2_SYSTEM; model sonnet-4-6; usage recorded for ?lenstime',
+  CALLS === 1 && got === NEXT && LASTPAYLOAD.max_tokens === 400 && LASTPAYLOAD.system === LENS2_SYSTEM && LASTPAYLOAD.model === 'claude-sonnet-4-6' &&
+  LASTPAYLOAD.messages[0].content === NMSG && lensLastUsageVal && lensLastUsageVal.kept === 1 && lensLastUsageVal.chars === NEXT.length);
+CALLS = 0; NEXT = 'Not a lens list.'; rejected = false;
+generateLensNames(META).then(function () {}, function () { rejected = true; });
+assert('L4c: an unreadable NAMES reply rejects (LENS-1: never silence), one call', CALLS === 1 && rejected);
+var RLENS = { name: 'Machines that sort', q: 'Who built the sorter?', bookIds: [id(4), id(7), id(8)] };
+var READ_INSTR = 'READING: write this lens\'s reading. Keep the name, the question and the books exactly as given. Return ONE lens object.';
+var heldUsage = lensLastUsageVal;
+CALLS = 0; NEXT = jsonStr({ name: RLENS.name, lead: 'L.', clauses: [{ i: 1, c: 'a' }, { i: 2, c: 'b' }, { i: 3, c: 'c' }], close: 'C.', q: RLENS.q, themes: [], books: [1, 2, 3] });
+var RRES = null; generateLensReading(RLENS).then(function (r) { RRES = r; });
+var RDMSG = LASTPAYLOAD.messages[0].content;
+assert('L4c: READING = one call; max_tokens 600; LENS2_SYSTEM; the read line\'s usage record untouched',
+  CALLS === 1 && LASTPAYLOAD.max_tokens === 600 && LASTPAYLOAD.system === LENS2_SYSTEM && RRES && RRES.text === NEXT && RRES.usage && lensLastUsageVal === heldUsage);
+assert('L4c: the READING message sends only the lens\'s own books (renumbered from 1), its name and its question',
+  RDMSG === 'Here is one lens on the reader\'s shelf (metadata only), its books numbered:\n\n' +
+    '1. "Weapons of Math Destruction" by Author 4\n2. "Automating Inequality" by Author 7\n3. "Algorithms of Oppression" by Author 8\n' +
+    '\nIts name: Machines that sort\nIts question: Who built the sorter?\n\n' + READ_INSTR &&
+  !/bk[0-9][0-9]/.test(RDMSG) && RDMSG.indexOf('Pedagogy') === -1 && RDMSG.indexOf('Values') === -1 && RDMSG.indexOf('Lenses') === -1,
+  function () { return RDMSG.replace(/\n/g, ' / '); });
+// the NAMES eval, on the 20-title library against AGAINST (kept 18-20; declined 15-17)
+function l4cNm(name, books, q) { return { name: name, q: (q === undefined) ? 'Who decides what counts?' : q, books: books }; }
+function l4cNames(out) { var o = [], i; for (i = 0; i < out.length; i++) { o.push(out[i].name); } return o.join('|'); }
+function namesCase(label, reply, keep, logs, check) {
+  LOGS = [];
+  var out = evalLensNames(reply, LIB, [], { titleToId: T2ID, against: AGAINST });
+  var ok = l4cNames(out) === keep && evalLogsNow() === logs && (!check || check(out));
+  assert('L4c names eval: ' + label, ok, function () { return 'got [' + l4cNames(out) + '] logs [' + evalLogsNow() + '] ' + (out[0] ? jsonStr(out[0]) : ''); });
+}
+var N3 = [l4cNm('The bank and the classroom', [1, 2, 3]), l4cNm('Machines that sort', [4, 5, 6]), l4cNm('Land as teacher', [10, 12])];
+namesCase('a clean three -> 3 UNREAD survivors (lead \'\', clauses {}, themes [], reading \'\')', jsonStr(N3),
+  'The bank and the classroom|Machines that sort|Land as teacher', '',
+  function (o) { var k, c = 0; for (k in o[0].clauses) { c++; } return o.length === 3 && o[0].lead === '' && o[0].close === '' && c === 0 && o[0].themes.length === 0 && o[0].reading === '' &&
+    o[0].q === 'Who decides what counts?' && o[0].bookIds.join() === 'bk01,bk02,bk03' && o[0].books.length === 3 && o[2].bookIds.join() === 'bk10,bk12'; });
+namesCase('a fourth dropped by the cap of three', jsonStr(N3.concat([l4cNm('Rest as refusal', [13, 14])])),
+  'The bank and the classroom|Machines that sort|Land as teacher', '[L4-eval] cap: Rest as refusal');
+namesCase('a twin of a kept lens (two-thirds of its books)', jsonStr([l4cNm('Teaching from the shelf', [18, 19, 20])]), '', '[L4-eval] same-lens (kept): Teaching from the shelf');
+namesCase('a twin of a declined offer (by name)', jsonStr([l4cNm('cruel, EVERYWHERE', [10, 11, 12])]), '', '[L4-eval] declined-twin: cruel, EVERYWHERE');
+namesCase('a one-book lens', jsonStr([l4cNm('One book only', [4])]), '', '[L4-eval] under-2: One book only');
+namesCase('an out-of-range number is ignored (2 in-bounds books remain)', jsonStr([l4cNm('Out of range', [4, 5, 99])]), 'Out of range', '',
+  function (o) { return o[0].bookIds.join() === 'bk04,bk05'; });
+namesCase('an out-of-range number leaving one book drops it', jsonStr([l4cNm('Mostly missing', [4, 99, 0])]), '', '[L4-eval] under-2: Mostly missing');
+namesCase('a q without "?"', jsonStr([l4cNm('No question', [4, 5], 'Who decides what counts')]), '', '[L4-eval] question: No question');
+namesCase('a q over 120 characters', jsonStr([l4cNm('The long question', [8, 9], longQ + '?')]), '', '[L4-eval] question: The long question');
+namesCase('a voice-lint hit in q', jsonStr([l4cNm('Selfhood', [10, 11], 'Why do you keep returning to these?')]), '', '[L4-eval] voice: "you keep": Selfhood');
+namesCase('a blocked name', jsonStr([l4cNm('Fiction', [10, 11])]), '', '[L4-eval] blocklist: Fiction');
+namesCase('an unreadable reply returns []', 'Sorry ' + MDASH + ' nothing to read.', '', '[L4-eval] unparseable: (reply)');
+// the READING eval + lensApplyReading, on the lens's own sub-list
+var RBM = lensBookMeta(RLENS.bookIds);
+var ROFFER = { name: RLENS.name, q: RLENS.q, bookIds: RLENS.bookIds.slice(0), lead: '', clauses: {}, close: '', themes: [], reading: '', names: [RLENS.name], said: [], state: 'open', round: 1 };
+function rd(over) {
+  var o = { name: RLENS.name, lead: 'Set side by side, these books treat sorting as a decision.', clauses: [{ i: 1, c: 'Scores as verdicts.' }, { i: 2, c: 'Welfare by algorithm.' }, { i: 3, c: 'Search as a mirror.' }],
+            close: 'Together they name the sorter.', q: RLENS.q, themes: THEMES, books: [1, 2, 3] }, k;
+  if (over) { for (k in over) { if (over.hasOwnProperty(k)) { o[k] = over[k]; } } }
+  return o;
+}
+function readingCase(label, reply, expectOk, logs, check) {
+  LOGS = [];
+  var s = evalLensReading(reply, RBM, []), f = s.length ? lensApplyReading(ROFFER, s[0]) : null;
+  var ok = ((f !== null) === expectOk) && evalLogsNow() === logs && (!check || check(f, s));
+  assert('L4c reading eval: ' + label, ok, function () { return 'survivors ' + s.length + ', fields ' + (f ? jsonStr(f) : 'null') + ', logs [' + evalLogsNow() + ']'; });
+}
+readingCase('a clean reading is applied (clauses keyed by bookId; bookIds untouched)', jsonStr(rd()), true, '',
+  function (f) { return f.lead === rd().lead && f.close === rd().close && f.clauses.bk04 === 'Scores as verdicts.' && f.clauses.bk07 === 'Welfare by algorithm.' &&
+    f.clauses.bk08 === 'Search as a mirror.' && f.themes.length === 3 && !f.hasOwnProperty('bookIds') &&
+    f.reading === rd().lead + ' Scores as verdicts. Welfare by algorithm. Search as a mirror. ' + rd().close; });
+readingCase('a fenced reply reads as ONE object (its inner arrays are never the reply)', sbFence(jsonStr(rd())), true, '');
+readingCase('a reading that drops one book of three: two remain, bookIds reduced', jsonStr(rd({ clauses: [{ i: 1, c: 'Scores as verdicts.' }, { i: 3, c: 'Search as a mirror.' }] })), true, '',
+  function (f) { return f.bookIds && f.bookIds.join() === 'bk04,bk08' && !f.clauses.hasOwnProperty('bk07'); });
+readingCase('a reading that leaves one book fails', jsonStr(rd({ clauses: [{ i: 2, c: 'Welfare by algorithm.' }] })), false, '[L4-eval] under-2 (clauses): Machines that sort');
+readingCase('an over-length lead fails', jsonStr(rd({ lead: exactLen('These books set the ledger beside the classroom', 221) })), false, '[L4-eval] length: lead: Machines that sort');
+readingCase('a voice-lint hit fails', jsonStr(rd({ close: 'You keep circling the sorter.' })), false, '[L4-eval] voice: "you keep": Machines that sort');
+readingCase('no You-told-me exemption on a READING', jsonStr(rd({ lead: 'You told me: ' + LDQ + 'you love these.' + RDQ + ' These books sort.' })), false, '[L4-eval] voice: "you love": Machines that sort');
+readingCase('a reply that changes the name and the question: the offer keeps its own', jsonStr(rd({ name: 'Sorting, renamed', q: 'A different question?' })), true, '',
+  function (f) { return !f.hasOwnProperty('name') && !f.hasOwnProperty('q') && !f.hasOwnProperty('names') && !f.hasOwnProperty('look') && !f.hasOwnProperty('state') && !f.hasOwnProperty('said') && !f.hasOwnProperty('round'); });
+readingCase('an unreadable reading returns [] (failed)', 'Sorry, no reading.', false, '[L4-eval] unparseable: (reading)');
+
 WScript.Echo('L4.1 lens eval v2 -- 25 fixtures on a 20-title library');
 WScript.Echo(pad('#', 3) + pad('fixture', 38) + pad('expect', 10) + 'expected log  verdict');
 for (ii = 0; ii < rows.length; ii++) { WScript.Echo(rows[ii]); }
