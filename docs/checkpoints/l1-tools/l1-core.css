@@ -15,26 +15,26 @@
 /* §1 + §2 — the core, NIGHT column (night is the default; r39, 25 Oct). */
 :root {
   /* paper */
-  --page:   #24180C;
-  --page-2: #4A2E18;
-  --page-3: #63401F;
-  --ink:    #F5E8C4;
-  --ink-2:  #CDB894;
-  --ink-3:  #BAA48C;
+  --page:   #1F140C;
+  --page-2: #33241A;
+  --page-3: #46321F;
+  --ink:    #FBF4E6;
+  --ink-2:  #CDBBA5;
+  --ink-3:  #BFAB94;
   --line:   rgba(255,255,255,.14);
   --line-field: var(--ink-3);
   /* gold (the petal) */
-  --gold:      #E8B23A;
-  --gold-ink:  #E8B23A;
-  --gold-star: #E8B23A;
-  --on-gold:   #1C120A;
+  --gold:      #F2B72E;
+  --gold-ink:  #E3B88A;
+  --gold-star: #F2B72E;
+  --on-gold:   #2B1B10;
   /* sky (the seed head) */
   --sky:        #1C120A;
-  --umber:      #4A2E18;
-  --umber-2:    #63401F;
-  --on-night:   #F5E8C4;
-  --on-night-2: #CDB894;
-  --on-night-3: #BAA48C;
+  --umber:      #33241A;
+  --umber-2:    #46321F;
+  --on-night:   #FBF4E6;
+  --on-night-2: #CDBBA5;
+  --on-night-3: #BFAB94;
   --line-night: rgba(255,255,255,.14);
   /* Yumi and the stem */
   --yumi:     #C8552E;

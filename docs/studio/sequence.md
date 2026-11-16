@@ -31,6 +31,11 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-16 (LC1 BUILT + the L4b lane table — Preston's rulings r88–r97, 14 Nov 2026)** — LC1, the colours (canon
+  amendment 1.5, tokens only), is built at v3.323. The single L4b entry gives way to the lane table of
+  `docs/checkpoints/p2-eighteenth-sitting-rulings.md` §C (LC1 → L4b-1 → L4b-2 → L4b-3 → L4b-4 → LC2 → L4b-5); its original
+  text stays beneath as history. L4c stays the next build after LC1 (R1, 15 Nov). No other lane is reordered. Preston's
+  rulings, recorded as ruled. Record: `docs/checkpoints/lc1.md`.
 - **2026-11-15 (L4 STAGE 6 + R1–R3 — ruled by Preston, 15 Nov 2026)** — the sky is ON BY DEFAULT at v3.322 (Stage 6 done).
   **R1** the build order from here: this sky flip (v3.322) → LC1, the colours-only build → L4c, the two-step lens read; this
   supersedes "L4c is the NEXT build, ahead of everything below" (L4c changes nothing the reader can see, and the live read
@@ -1467,9 +1472,12 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   `?sky=on` and the motion gate (contract §6) → **Stage 6 DONE at v3.322 (15 Nov 2026): the sky is on by default** (v3.318–v3.321 are the L4 hotfixes); the motion gate itself is OWED BEFORE THE BETA, on the installed app, and its instrument (`?sky=on|off`, `praxis_sky_stats`) stays until it is run (R2, R3). **Lane order (ruling 83): L4 → L2 → L4b → L5
   → L6 → L7b; the Scan lane as before.** Record: `docs/checkpoints/l4.md`.
   touches: [lenses, home, profile, shelf, yumi, yumi-sees]
-- [ ] **LC1 — THE COLOURS (R1, ruled by Preston 15 Nov 2026; the NEXT build)** — colours only. Its source is the v19
-  carry from the 14 Nov design chat, which is NOT in this repo; its build prompt is refreshed from a fresh clone before it
-  runs. Record: `docs/checkpoints/l4.md` "Stage 6, the sky on by default, 15 Nov 2026".
+- [~] **LC1 — THE COLOURS (R1, ruled by Preston 15 Nov 2026) — BUILT at v3.323 (16 Nov 2026); closes on the felt pass** — colours only, canon
+  amendment 1.5 (`docs/studio/v1-canon-delta-amend-1.5.md`): 35 token values in `assets/theme.css`, the same values in
+  the generator's two sources, five colour literals (index.html, manifest.json, js/views.js) — all byte-neutral, every blob
+  md5 EXACT against the v19 carry; no new failure on the measured routes; closes on Preston's side-by-side felt pass.
+  Its source was the v19 carry from the 14 Nov design chat; its prompt was refreshed 16 Nov against 50d419d. Record:
+  `docs/checkpoints/lc1.md`.
   touches: [cross-cutting, global-shell]
 - [ ] **L4c — THE TWO-STEP LENS READ (L4 hotfix 2 R5, ruled by Preston 14 Nov 2026; after LC1 -- R1, 15 Nov 2026)** —
   names and questions first in one short call; each lens's full reading (lead, clauses, close, themes) fetched when its
@@ -1573,7 +1581,18 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   v3.229.** Everything built; only that felt confirmation is outstanding.
 
 ## Next
-- [ ] **L4b — THE DAY THREE ROOMS (ruling 79, 2026-10-29; after L4, before L5)** — the rooms no lane owned: Search
+- [ ] **L4b — THE DAY THREE ROOMS, NOW SIX LANES (p2-eighteenth-sitting-rulings.md §C, 14 Nov 2026; replaces "L4b is one
+  build")** — order: **LC1 → L4b-1 → L4b-2 → L4b-3 → L4b-4 → LC2 → L4b-5** (LC2 can move earlier once its engine
+  exists; L4c, the two-step lens read, stays the next build after LC1 — R1, 15 Nov 2026).
+  · **LC1** — the colours: token values in `theme.css` plus five literals; no layout. BUILT at v3.323 (`docs/checkpoints/lc1.md`).
+  · **L4b-1** — the tab bar and the Search pill replace the phone nav. Needs LC1. Small.
+  · **L4b-2** — new routes `#lens/<id>` (Open Lens) and `#category/<id>`. Needs L4 (the lens engine). Medium.
+  · **L4b-3** — the redrawn rooms, a few per build: Home body, Shelf, book, Notebook, note, You, artifact, the pages under
+  You, Search. Needs L4b-1. Large; split by room.
+  · **L4b-4** — the capture dial, the hold menu, status behind the cover, the hint. Needs L4b-3 (book). Medium.
+  · **LC2** — the blue sky and the sunset burst. Needs L4 AND a new `hand.js` from a design sitting (ledger E1). Engine.
+  · **L4b-5** — the empty rooms. Needs W1–W3 ruled; ideally with L5. Small.
+  History — the single L4b entry as written (ruling 79, 2026-10-29; after L4, before L5) — the rooms no lane owned: Search
   redrawn (r45: the labelled pill, scope under the box, one list in three groups) · the lens page (r46) · the category
   page (r47) · the Notebook head + its Settings link · the What Yumi Sees page ("Everything she sees right now") · the
   bottom tabs (Home · Shelf · Notebook · Capture · You) + the Search pill, the floating "+" retired. Needs L4's lens

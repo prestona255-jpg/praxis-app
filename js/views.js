@@ -23084,7 +23084,7 @@ function _pfSetRow(act, on, title, sub) {
 function praxisSetMood(mood) {
   var root = document.documentElement, tc = document.querySelector('meta[name="theme-color"]');
   if (mood === 'day') { root.setAttribute('data-mood', 'day'); } else { root.removeAttribute('data-mood'); }
-  if (tc) { tc.setAttribute('content', mood === 'day' ? '#EDD79E' : '#24180C'); }
+  if (tc) { tc.setAttribute('content', mood === 'day' ? '#FBF8F1' : '#1F140C'); }
   sv('praxis_mood', mood === 'day' ? 'day' : 'night');
 }
 function _pfMoodRow() {

@@ -10,6 +10,12 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
+**LC1 (2026-11-16, v3.323, local) — the colours: canon amendment 1.5, tokens only.** Thirty-five token values in
+theme.css (night 15; day and auto 10 each), the same values in the generator's two sources, and five colour literals
+(index.html, manifest.json, js/views.js) — near-white day paper, a slightly deeper brown night, one yellow fill, links in
+`--gold-ink` brown by day and tan by night. No cell's STRUCTURE changed: every surface reads the same tokens it did. The
+lens sky keeps its brown ground. Measured at 390 + 1360, both moods, 18 routes: 0 new failures. Record: `docs/checkpoints/lc1.md`.
+
 **L1.1 (2026-10-28, v3.313, local) — the Amber column now reads through the Sunflower token layer.** Every
 surface's colour, type and shape resolve from theme.css (canon 1.4): night by default, day via the Settings
 Night · Day row. The per-surface Amber cells below are unchanged in STRUCTURE (no layout moved) and were
