@@ -6,10 +6,10 @@
 > commits its state as diff-reviewable text and is updated in the **same commit**
 > that finalizes each checkpoint, so it can never go stale on the desktop again.
 
-**Authoritative as of:** 2026-11-16 (refreshed at LC1; before that at L4 Stage 6, 2026-11-15)
+**Authoritative as of:** 2026-11-16 (refreshed at LC1 hotfix 1; before that at LC1, the same day)
 **Live:** https://praxis-reading.netlify.app (Netlify's primary URL for the site is now https://praxisreader.com)
-**Live CACHE_VERSION:** `praxis-v3.322` (L4 Stage 6, pushed 50d419d); LC1 ships v3.323
-**HEAD == origin/main:** `50d419d` (L4 Stage 6); LC1 is built on it, local, awaiting the commit
+**Live CACHE_VERSION:** `praxis-v3.323` (LC1, pushed 1739253); LC1 hotfix 1 ships v3.324
+**HEAD == origin/main:** `1739253` (LC1); LC1 hotfix 1 is built on it, local, awaiting the commit
 **Coverage board:** per-surface coverage now lives in `BOARD.md` at the repo root. The body and
 appendix below reflect detailed state as of `praxis-v3.123` (2026-06-19) and have **not** been
 retro-filled to current HEAD — treat them as historical beyond that point.
@@ -359,5 +359,6 @@ the very end (after this list).
 | v3.319 | L4 hotfix 2 — keep what arrives (a cut-off reply keeps its complete lenses), ask for two (max_tokens 800); the ?lenstime=on line shows stop and length — pushed ce5d773; its one complete lens was dropped at the close cap |
 | v3.320 | L4 hotfix 3 — Yumi is told the line lengths (below the eval caps); "Ask Yumi again" on the Lenses page's last band — pushed 6faafc3; the say-back's re-reading was unreadable (bare straight quotes) |
 | v3.321 | L4 hotfix 4 — the say-back's reply is readable again (curly quotes asked for; a bare-quoted "You told me" repaired on the re-reading path) — pushed fdcbc7b |
-| **v3.322** | **L4 Stage 6 — the sky is on by default (Home and You); You's mode switch cleared from under the name row; the motion gate OWED before the beta — pushed 50d419d, current live** |
-| v3.323 | LC1 — the colours: canon amendment 1.5, tokens only (35 theme.css values, the two generator sources, five literals; byte-neutral) — built local, awaiting commit |
+| v3.322 | L4 Stage 6 — the sky is on by default (Home and You); You's mode switch cleared from under the name row; the motion gate OWED before the beta — pushed 50d419d |
+| **v3.323** | **LC1 — the colours: canon amendment 1.5, tokens only (35 theme.css values, the two generator sources, five literals; byte-neutral) — pushed 1739253, current live** |
+| v3.324 | LC1 hotfix 1 — the day grain: the day and auto `--grain-op` .32 → .08 (Preston's ruling, 16 Nov 2026; three lines, byte-neutral) — built local, awaiting commit |

@@ -123,8 +123,8 @@ listed lines, CRLF intact, the JS a string swap inside the existing ternary (PAR
   parse-check **21/21** OK (js/*.js + sw.js + assets/marks.js); hook gate **ARMED**; the four landed docs MATCH.
 
 ## SEPARATE TASKS (pre-existing, flagged — not fixed here)
-1. **The day grain on near-white paper** reads as a grey wash (`--grain-op .32` × `multiply`), most visibly on About and in the
-   page gutters. `--grain-*` is a non-goal token for LC1.
+1. **ANSWERED by Hotfix 1 (16 Nov 2026, v3.324) — see below.** ~~The day grain on near-white paper reads as a grey wash
+   (`--grain-op .32` × `multiply`), most visibly on About and in the page gutters. `--grain-*` is a non-goal token for LC1.~~
 2. **Gold as text on day paper:** About's spine (`.about-spine-eyebrow`, `.about-spine-link`) at 1.71 — the C1 list; the
    amendment's fill/ink split says these want `--gold-ink`.
 3. **R1 / R2** (above): old-gold and old-ink rgba literals in non-goal tokens and hand.js.
@@ -137,3 +137,111 @@ listed lines, CRLF intact, the JS a string swap inside the existing ternary (PAR
 ## NOT proven
 The look on Preston's own devices (his side-by-side felt pass closes the lane), and the live site (served version and
 theme.css), which waits for the push.
+
+**At the push (16 Nov 2026):** `50d419d..1739253` pushed; Netlify deploy `6afb3f7a8f677f802585c4fd` built from `1739253`,
+state ready, current production. The served bytes were NOT read: this machine cannot reach praxis-reading.netlify.app,
+praxisreader.com or the deploy permalink (browser pane refused, curl exit 56).
+
+## Hotfix 1 — the day grain, 16 Nov 2026 (v3.324)
+
+**Ruling (recorded as ruled):** "Preston, 16 Nov 2026: the day and auto --grain-op changes from .32 to .08, because the
+multiply grain greys the 1.5 day paper." Canon amendment 1.5 says every token it does not list keeps its 1.4 value
+(`v1-canon-delta-amend-1.4-tokens.md` :49 / :106 list the day grain at .32); this ruling supersedes that value for day and
+auto. No landed design document is edited; this section is the record.
+
+**The problem** (Preston's phone, live v3.323, Day): the open page background read as a grey speckled film on Home below the
+sky, on About, and down the side margins of Shelf, Notebook and Lenses. `body::after` (theme.css :834–846) paints an SVG
+fractal noise at `opacity: var(--grain-op)` with `mix-blend-mode: var(--grain-blend)`; day/auto were .32 / multiply.
+
+**Felt delta (stated before build), 1360 + 390:** before — in Day the open page background is a grey speckled film; after —
+it reads as the near-white paper `#FBF8F1` with at most a faint texture. Night does not change.
+
+### Stage 0 — pre-flight and the pictures (read-only): PASS
+- HEAD `1739253` == origin/main; CACHE_VERSION `praxis-v3.323`; tracked tree clean; hook gate ARMED. Protocol docs: all
+  ten named found (CLAUDE.md, PROTOCOL.md, docs/FIX-PROTOCOL.md, CRAFT.md, BOARD.md, docs/studio/sequence.md,
+  docs/studio/lessons.md, docs/checkpoints/lc1.md, docs/checkpoints/l1.md, docs/studio/v1-canon-delta.md + five
+  amendments); seven agent files in `.claude/agents/`. None missing.
+- Pre-images (committed blob): theme.css 41,369 B `25c4081a…` · l1-day-body.css 961 B `2b3ecf50…` · sw.js 6,894 B
+  `82900fea…` — **3 / 3 MATCH**.
+- Anchors: theme.css :398 / :431 `  --grain-op:    .32;`, :399 / :432 `  --grain-blend: multiply;`; l1-day-body.css :19;
+  night :59 `.22` / :60 `screen`; reader `body::after` :842 (`opacity`) / :843 (`mix-blend-mode`). `--grain-op` occurs
+  outside docs/ and design/ only at theme.css :59, :398, :431, :842; no JS sets it.
+- **The pictures:** rig (port 8833, l4 fixture, Day, sky key unset), `--grain-op` set by an inline style on `<html>` only, at
+  .32 / .16 / .08 / .00 × {#home sky edge 390, #books 390, #home 1360} — 12 captures in `.claude/rig/captures/lc1-grain/`
+  (untracked). Measured open-background colour, averaged over a text-free patch of each capture's pixels:
+
+  | value | Home 390 | Shelf 390 | Home 1360 |
+  |---|---|---|---|
+  | .32 | `#E5E2DB` | `#E5E2DD` | `#E4E1DA` |
+  | .16 | `#F0EDE6` | `#F0EDE8` | `#EFECE5` |
+  | .08 | `#F6F3EC` | `#F6F3EE` | `#F5F2EB` |
+  | .00 | `#FBF8F1` | `#FBF8F3` | `#FBF8F1` |
+
+- **The cause, proven:** at .00 Home's open background is `#FBF8F1` exactly at both widths; `html` and `body::before` both
+  paint `#FBF8F1`, `body` / `#app` / `.home-page` are transparent, nothing else covers the sampled area. The grain is the only
+  cause. (Shelf's 10px gutter reads `#FBF8F3` at .00 — JPEG chroma bleed from the adjacent white card.)
+- Preston picked **.08**.
+
+### CHECKPOINT 1 — the three lines: PASS
+- numstat: theme.css **2 2** · l1-day-body.css **1 1**; no other file changed.
+- Staged blob bytes **41,369 · 961** (delta 0).
+- Staged blob md5 theme.css **`571e0ccc1d87cd94ccbe02755441c639`** · l1-day-body.css **`65a5d0fbea40531b2ce47a1f9f908fdb`** —
+  both equal the .08 row.
+- Day body (:380–409) == auto body (:413–442) == l1-day-body.css (md5 `65a5d0fb…` all three).
+- Night unchanged: :59 `.22`, :60 `screen`. EOL kept (theme.css `i/lf w/crlf`; l1-day-body.css `i/lf w/lf`).
+
+### CHECKPOINT 2 — look: PASS (the look itself is Preston's call)
+Edited theme.css loaded into the rig by a cache-busted `<link>` swap; computed day `body::after` opacity `0.08`, night
+`0.22 screen`. 15 settled captures in `docs/checkpoints/lc1-shots/grain-<mood>-<width>-<route>.jpg`: Day at 390 and 1360 ×
+{home (sky edge + page below), books, notebook, lenses, about}; Night at 390 × the same five.
+
+Day open-background samples at .08:
+
+| route | 390 | 1360 |
+|---|---|---|
+| home (below the sky) | `#F6F3EC` | `#F5F2EB` |
+| books (gutter) | `#F6F3ED` | `#F4F2ED` |
+| notebook (gutter) | `#F6F3ED` | `#F4F2ED` |
+| lenses | `#FBF8F1` ¹ | `#F5F2EB` ² |
+| about | `#F6F3ED` | `#F4F1EA` |
+
+¹ At 390 `.lx-page` covers the viewport and paints its own `--page` ground above the grain, so the grain never shows there.
+² At 1360 the band below `.lx-page` (y > 730) is the open ground; `.lx-page` itself reads `#FBF8F1`.
+
+**Night did not change.** LC1's own `after-390-night-*` captures turned out to be crops (see SEPARATE TASKS 7), so a
+picture-for-picture comparison against them is not possible. Instead, a same-session A/B: the committed HEAD theme.css
+(md5 `25c4081a…`, copied to the untracked rig folder) swapped in, the same five Night routes captured at the same size and
+scroll, compared pixel by pixel with the edited-tree captures (max channel difference per pixel):
+notebook / lenses / about **0 differing pixels (max 0)**; home below the sky **0 pixels over 12 (max 8, JPEG noise; the sky
+above animates and was excluded)**; books — every difference over 12 lies in CSS rows 74–139, the shelf head's stems, which
+are drawn afresh on each render; 0 differences below them. Night samples `#1E140B`–`#1F140B` on all five (`--page #1F140C`).
+
+### CHECKPOINT 3 — the red-team (fix-red-team, Sonnet): PASS
+In its words: "VERDICT: PASS — no blocking findings, two nits." It re-ran the staged set (exactly 2 files, 3 lines), the
+bytes and md5s, day == auto == l1-day-body.css, the night block untouched; found no other reader or setter of `--grain-op` /
+`--grain-blend` and no override of `body::after`; confirmed the auto block sits inside `@media (prefers-color-scheme:
+light)` and that nothing in js/ or index.html ever writes `data-mood="auto"` (the block is dormant), so .08 multiply never
+lands on a dark ground; no tools/ harness asserts a grain value; the sw.js bump is required (theme.css is precached).
+Nits: (a) `v1-canon-delta-amend-1.4-tokens.md` :49 / :106 still read .32 — answered by the ruling recorded above (the
+prompt forbids editing landed design documents); (b) the comment at theme.css :828–829 says the grain is "held at .015",
+already wrong at .32 — pre-existing, left (see SEPARATE TASKS 8).
+
+### CHECKPOINT 4 — docs and the version: PASS
+- sw.js CACHE_VERSION `praxis-v3.323` → **`praxis-v3.324`** (nothing in sequence.md reserved v3.324).
+- BOARD.md: a dated note at the head. sequence.md: one line on the LC1 entry (LC1 stays `[~]` until the felt pass; nothing
+  reordered). BUILD_STATE.md: header (live v3.323 at 1739253; this hotfix ships v3.324) and the ladder (v3.323 current live;
+  a v3.324 row). The Builder regenerated.
+- Re-verified: the Stage 1 md5s hold; foundations lumen-amber `631bc2aa…`, marks `772886c0…`, hand.js `fd51ca7e…`
+  unchanged; lens-eval **40/40**, lens-data **101/101**, export **58/58**, delete **58/58**, ceiling-core **36/36**, fx1c-sim
+  **60/60**, parse-check **21/21**, hook gate ARMED — all unchanged from 1739253.
+
+### SEPARATE TASKS added by Hotfix 1 (pre-existing, flagged — not fixed)
+7. **LC1's 390 captures are crops.** `docs/checkpoints/lc1-shots/before-390-*` / `after-390-*` (234 × 506 px) show only the
+   top-left of the page, about 234 × 506 CSS px of the 390 × 844 viewport, because the browser pane was small or hidden when
+   they were taken. (The 1360 captures, 320 × 214 px, are full frames, only small.) The layout was 390 (`innerWidth`
+   confirmed) and the contrast numbers were measured in the DOM, so Checkpoint 3's lists stand; but the 390 pictures are not
+   full-viewport evidence. The hotfix's captures are full frames (390: 336 × 728; 1360: 800 × 529).
+8. **theme.css :828–829's comment** says the grain is "held at .015 so it is felt and not seen" — stale before LC1 (.32) and
+   still stale at .08. A comment-only fix changes served bytes; left for a deliberate pass.
+9. **The `auto` mood block is dormant:** nothing writes `data-mood="auto"`. It is kept in step with day by rule; whether it
+   should exist is a later call.

@@ -10,7 +10,13 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
-**LC1 (2026-11-16, v3.323, local) — the colours: canon amendment 1.5, tokens only.** Thirty-five token values in
+**LC1 hotfix 1 (2026-11-16, v3.324, local) — the day grain.** The day and auto `--grain-op` go from .32 to .08
+(Preston's ruling, 16 Nov 2026): the multiply grain on `body::after` greyed the 1.5 day paper to about #E5E2DB where the
+open page shows. Three lines (theme.css day + auto, `l1-day-body.css`); night (.22, screen) unchanged. No cell's STRUCTURE
+changed. Measured: the Day open page at 390 + 1360 now #F4F1EA–#F6F3ED (was #E4E1DA–#E5E2DD); Night pixel-identical to
+v3.323 on the five routes checked. Record: `docs/checkpoints/lc1.md` "Hotfix 1 — the day grain".
+
+**LC1 (2026-11-16, v3.323, pushed 1739253) — the colours: canon amendment 1.5, tokens only.** Thirty-five token values in
 theme.css (night 15; day and auto 10 each), the same values in the generator's two sources, and five colour literals
 (index.html, manifest.json, js/views.js) — near-white day paper, a slightly deeper brown night, one yellow fill, links in
 `--gold-ink` brown by day and tan by night. No cell's STRUCTURE changed: every surface reads the same tokens it did. The

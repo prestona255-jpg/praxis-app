@@ -1478,6 +1478,8 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   md5 EXACT against the v19 carry; no new failure on the measured routes; closes on Preston's side-by-side felt pass.
   Its source was the v19 carry from the 14 Nov design chat; its prompt was refreshed 16 Nov against 50d419d. Record:
   `docs/checkpoints/lc1.md`.
+  Hotfix 1 (16 Nov 2026, v3.324): the day and auto `--grain-op` .32 → .08 (Preston's ruling — the multiply grain greyed
+  the 1.5 day paper); three lines, byte-neutral; record in `docs/checkpoints/lc1.md` "Hotfix 1 — the day grain".
   touches: [cross-cutting, global-shell]
 - [ ] **L4c — THE TWO-STEP LENS READ (L4 hotfix 2 R5, ruled by Preston 14 Nov 2026; after LC1 -- R1, 15 Nov 2026)** —
   names and questions first in one short call; each lens's full reading (lead, clauses, close, themes) fetched when its
