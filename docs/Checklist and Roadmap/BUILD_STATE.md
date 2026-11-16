@@ -6,10 +6,10 @@
 > commits its state as diff-reviewable text and is updated in the **same commit**
 > that finalizes each checkpoint, so it can never go stale on the desktop again.
 
-**Authoritative as of:** 2026-11-14 (refreshed at L4 hotfix 4; before that at L4 hotfixes 1–3, the same day)
+**Authoritative as of:** 2026-11-15 (refreshed at L4 Stage 6; before that at L4 hotfix 4, 2026-11-14)
 **Live:** https://praxis-reading.netlify.app (Netlify's primary URL for the site is now https://praxisreader.com)
-**Live CACHE_VERSION:** `praxis-v3.320` (L4 hotfix 3, pushed 6faafc3); L4 hotfix 4 ships v3.321
-**HEAD == origin/main:** `6faafc3` (L4 hotfix 3); L4 hotfix 4 is built on it, local, awaiting the commit
+**Live CACHE_VERSION:** `praxis-v3.321` (L4 hotfix 4, pushed fdcbc7b); L4 Stage 6 ships v3.322
+**HEAD == origin/main:** `fdcbc7b` (L4 hotfix 4); L4 Stage 6 is built on it, local, awaiting the commit
 **Coverage board:** per-surface coverage now lives in `BOARD.md` at the repo root. The body and
 appendix below reflect detailed state as of `praxis-v3.123` (2026-06-19) and have **not** been
 retro-filled to current HEAD — treat them as historical beyond that point.
@@ -357,5 +357,6 @@ the very end (after this list).
 | v3.317 | L4.1–L4.4 the lens eval, the data contract, the Lenses page and sheet, the sky (dark) — pushed ee8309d; its lens read timed out on the live site (three 504s at 30 s) |
 | v3.318 | L4 hotfix — the lens read fits the limit (three lenses, five books, max_tokens 1000), the look-save guarded, the ?lenstime=on line — pushed 0959606; its reads finished in time (200) but were discarded as unreadable |
 | v3.319 | L4 hotfix 2 — keep what arrives (a cut-off reply keeps its complete lenses), ask for two (max_tokens 800); the ?lenstime=on line shows stop and length — pushed ce5d773; its one complete lens was dropped at the close cap |
-| **v3.320** | **L4 hotfix 3 — Yumi is told the line lengths (below the eval caps); "Ask Yumi again" on the Lenses page's last band — pushed 6faafc3, current live; the say-back's re-reading was unreadable (bare straight quotes)** |
-| v3.321 | L4 hotfix 4 — the say-back's reply is readable again (curly quotes asked for; a bare-quoted "You told me" repaired on the re-reading path) — built local, awaiting commit |
+| v3.320 | L4 hotfix 3 — Yumi is told the line lengths (below the eval caps); "Ask Yumi again" on the Lenses page's last band — pushed 6faafc3; the say-back's re-reading was unreadable (bare straight quotes) |
+| **v3.321** | **L4 hotfix 4 — the say-back's reply is readable again (curly quotes asked for; a bare-quoted "You told me" repaired on the re-reading path) — pushed fdcbc7b, current live** |
+| v3.322 | L4 Stage 6 — the sky is on by default (Home and You); You's mode switch cleared from under the name row; the motion gate OWED before the beta — built local, awaiting commit |

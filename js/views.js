@@ -2009,9 +2009,9 @@ function renderHome() {
   altNote.textContent = 'Pick a view — it stays put until you flip it.';
   alt.appendChild(altNote);
   welcome.appendChild(alt);
-  // L4.4: behind praxis_sky the sky is Home's head -- it replaces the kicker, the
+  // L4.4: the sky is Home's head (on by default since v3.322) -- it replaces the kicker, the
   // greeting and the rule; the view switch (the paper's own control) moves under
-  // it. Dark-launched: with the key off this branch never runs.
+  // it. With the key set false (?sky=off) this branch never runs.
   var lxHome = null;
   if (lxSkyOn()) {
     lxHome = lxHomeSky(homeUser.uid);
@@ -23760,9 +23760,9 @@ function renderProfilePage() {
   wrap.setAttribute('data-mob', mob ? '1' : '0');
   wrap.innerHTML = _pfBuildPage(uid, vis, mob);
   host.appendChild(wrap);
-  // L4.4 (ruling 87): behind praxis_sky, the hand.js sky -- Lenses · Categories ·
+  // L4.4 (ruling 87): the hand.js sky (on by default since v3.322) -- Lenses · Categories ·
   // Marks -- replaces the old .pf-sky (and its axis toggle) under the name. Owner
-  // only; with the key off You is exactly as it was.
+  // only; with the key set false (?sky=off) You is exactly as it was.
   if (!vis && lxSkyOn()) {
     var lxYHost = wrap.querySelector('.pf-sky-host');
     if (lxYHost) {
@@ -26834,7 +26834,7 @@ function lxGenFor(uid) {
 function lxRefresh() {
   var r = location.hash.replace(/^#/, '').split('/')[0];
   if (r === 'lenses') { renderLensesPage(); }
-  else if ((r === 'home' || r === 'profile') && ls('praxis_sky', false) === true) { renderRoute(); }
+  else if ((r === 'home' || r === 'profile') && ls('praxis_sky', true) !== false) { renderRoute(); }
 }
 // The ONE generation path. The floor (five books) and the yes are checked HERE,
 // by the caller, before any call (contract §3 step 1) -- the eval never sees a
@@ -27179,7 +27179,7 @@ function lxAfterLensWrite() {
   var r = location.hash.replace(/^#/, '').split('/')[0];
   if (r === 'lenses') { renderLensesPage(); }
   else if (r === 'books' && typeof renderShelf === 'function') { renderShelf(); }
-  else if ((r === 'home' || r === 'profile') && ls('praxis_sky', false) === true) { renderRoute(); }
+  else if ((r === 'home' || r === 'profile') && ls('praxis_sky', true) !== false) { renderRoute(); }
 }
 function openLensSheet(themeId) {
   var pick = null, confirm = false, renaming = false, asking = false;
@@ -27406,8 +27406,8 @@ function lxYumiSeesSaidSection(uid, rerender) {
 }
 // =====================================================================
 // L4.4 -- THE SKY on Home and You (rulings 84-87; S1-S9; engine contract §6,
-// §8). DARK-LAUNCHED behind ls('praxis_sky', false); ?sky=on|off (app.js) is
-// the motion gate's instrument and Stage 6 removes it. hand.js (PraxisHand) is
+// §8). ON BY DEFAULT since v3.322 -- ls('praxis_sky', true); ?sky=on|off (app.js) is
+// the motion gate's instrument and stays until that gate is run. hand.js (PraxisHand) is
 // the ONE engine, lifted byte-for-byte. One sky host per surface, created ONCE
 // and re-used across renders: hand.js keeps every Sky in a list it never
 // prunes, so a fresh host per render would grow it for the whole session. The
@@ -27417,7 +27417,7 @@ function lxYumiSeesSaidSection(uid, rerender) {
 var lxSkies = {};          // 'home' | 'you' -> { host, S, key, uid, holdT, held }
 var lxYouMode = 'lenses';  // You's segmented control: lenses | cats | marks
 
-function lxSkyOn() { return ls('praxis_sky', false) === true && !!(window.PraxisHand && window.PraxisHand.Sky); }
+function lxSkyOn() { return ls('praxis_sky', true) !== false && !!(window.PraxisHand && window.PraxisHand.Sky); }
 function lxSkyToggles() {
   return { threads: ls('praxis_sky_threads', true) !== false, names: ls('praxis_sky_names', true) !== false };
 }
@@ -27690,7 +27690,7 @@ function lxSkySheet(rec) {
     y.appendChild(lxEl('span', 'chev', '›'));
     sh.appendChild(y);
     sh.appendChild(lxEl('p', 'lx-fine', 'Hold the flower any time to come back here.'));
-    // the motion gate's readout (contract §6) -- only when Preston sets praxis_sky_stats; Stage 6 removes it
+    // the motion gate's readout (contract §6) -- only when Preston sets praxis_sky_stats; it stays until that gate is run
     if (ls('praxis_sky_stats', false) === true && window.PraxisHand.stats) {
       var st = window.PraxisHand.stats();
       sh.appendChild(lxEl('p', 'lx-fine lx-stats', 'fps ' + st.fps + ' · worst 1 s ' + st.worst1s + ' · ' + st.seconds + ' s · ' + st.frames + ' frames'));

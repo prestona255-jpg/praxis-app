@@ -31,6 +31,15 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-15 (L4 STAGE 6 + R1–R3 — ruled by Preston, 15 Nov 2026)** — the sky is ON BY DEFAULT at v3.322 (Stage 6 done).
+  **R1** the build order from here: this sky flip (v3.322) → LC1, the colours-only build → L4c, the two-step lens read; this
+  supersedes "L4c is the NEXT build, ahead of everything below" (L4c changes nothing the reader can see, and the live read
+  works: 3717 in / 728 out, 2 offered, nothing cut). **R2** the iPhone motion gate (contract §6) moves to BEFORE THE BETA, run
+  on the installed app, which does not exist yet; the sky ships on by default without it; runs A/B/C, the frame-rate readout
+  and the Reduce Motion screenshots stay OWED. **R3** the gate's instrument stays: `?sky=on|off` and `praxis_sky_stats` are
+  not removed (supersedes "Stage 6 removes it"). Also in this build: one CSS rule clears You's mode switch from under the
+  name row (it was untappable at every width). Preston's ruling, recorded as ruled. Record: `docs/checkpoints/l4.md`
+  "Stage 6, the sky on by default, 15 Nov 2026".
 - **2026-11-14 (L4 HOTFIX 4 — Preston, 14 Nov 2026)** — the say-back's re-reading was thrown away every time on v3.320: the
   call worked (949 in / ~300 out), but Yumi quoted the reader in straight, unescaped quotes inside a JSON string, so the reply
   was unreadable and the panel said "couldn't reach". Hotfix 4: the reader's own straight quotes go out as single quotes, Yumi
@@ -1452,17 +1461,22 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   readerModel.lensWords; lens-contract rule 4: the save opens only after a found/absent load; tools/lens-data-test 99/99
   after the §9 fix round: the floor on every lens call, pending marks on every offer writer, a uid guard on the merge);
   the Lenses page (`#lenses`), the lens sheet and the say-back pinned in Yumi's panel (sweep 61/61); the sky (hand.js L4
-  edition, lifted byte-for-byte; the scoped sky block in components.css) on Home and You, dark-launched (sweep 29/29;
+  edition, lifted byte-for-byte; the scoped sky block in components.css) on Home and You, dark-launched at v3.317 and ON BY DEFAULT since v3.322 (sweep 29/29;
   key-off DOM identical to HEAD but for the post-yes Yumi row, ruling 84 as amended). Owed at the push gate: Preston
   publishes the `/userLensOffers` rule BEFORE the push; one real generation on his account; the phone walk; then
-  `?sky=on` and the motion gate (contract §6) → Stage 6 flips it (v3.322; v3.318, v3.319, v3.320 and v3.321 are the L4 hotfixes). **Lane order (ruling 83): L4 → L2 → L4b → L5
+  `?sky=on` and the motion gate (contract §6) → **Stage 6 DONE at v3.322 (15 Nov 2026): the sky is on by default** (v3.318–v3.321 are the L4 hotfixes); the motion gate itself is OWED BEFORE THE BETA, on the installed app, and its instrument (`?sky=on|off`, `praxis_sky_stats`) stays until it is run (R2, R3). **Lane order (ruling 83): L4 → L2 → L4b → L5
   → L6 → L7b; the Scan lane as before.** Record: `docs/checkpoints/l4.md`.
   touches: [lenses, home, profile, shelf, yumi, yumi-sees]
-- [ ] **L4c — THE TWO-STEP LENS READ (L4 hotfix 2 R5, ruled by Preston 14 Nov 2026; the NEXT build, ahead of everything below)** —
+- [ ] **LC1 — THE COLOURS (R1, ruled by Preston 15 Nov 2026; the NEXT build)** — colours only. Its source is the v19
+  carry from the 14 Nov design chat, which is NOT in this repo; its build prompt is refreshed from a fresh clone before it
+  runs. Record: `docs/checkpoints/l4.md` "Stage 6, the sky on by default, 15 Nov 2026".
+  touches: [cross-cutting, global-shell]
+- [ ] **L4c — THE TWO-STEP LENS READ (L4 hotfix 2 R5, ruled by Preston 14 Nov 2026; after LC1 -- R1, 15 Nov 2026)** —
   names and questions first in one short call; each lens's full reading (lead, clauses, close, themes) fetched when its
   sheet opens. Replaces the stopgap read (two lenses, max_tokens 800, keep what arrives -- v3.319). Proved with one real,
-  timed call before it ships. (Moved out of L4b; "ahead of LC1" -- no LC1 exists in the repo or the carry, so it heads
-  the unstarted work here.) Record: `docs/checkpoints/l4.md` "Hotfix 2, 14 Nov".
+  timed call before it ships. (Moved out of L4b. R1, 15 Nov 2026: the order is the sky flip → LC1 → L4c, because L4c
+  changes nothing the reader can see and the live read works: 3717 in / 728 out, 2 offered, nothing cut.) Record:
+  `docs/checkpoints/l4.md` "Hotfix 2, 14 Nov".
   touches: [lenses, yumi]
 - [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
   RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → spine mockup LANDED (`design/praxis-spine-v1.html`) + mockup-stage acceptance card LANDED (`docs/checkpoints/onboarding-acceptance-mockup.md`; 9 OWNER rows open, 6 debts named) → Preston's felt pass on the changed frames → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.

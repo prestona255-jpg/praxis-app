@@ -116,7 +116,7 @@ evidence: docs/checkpoints/dw-2.md (Stage 1) · dw-2-recon.md · mockup docs/stu
 
 commits: (one L4 commit, pending Preston's word)
 changed: the Yumi dock renders only BEFORE the yes (ruling 84 as amended; consent-copy.md:24 names it) — for everyone. Behind
-`praxis_sky` (dark-launched; `?sky=on`), the lens sky is Home's head: date · greeting · the field (hand.js) · the honest line or
+`praxis_sky` (dark-launched at v3.317; ON BY DEFAULT since v3.322, L4 Stage 6), the lens sky is Home's head: date · greeting · the field (hand.js) · the honest line or
 hint · counts · the door to #lenses; ≥1200 a sticky 600px left column; the view switch moves under it. The auto re-read bound
 may fire from Home, never the first read.
 gates: key-off DOM identical to HEAD but for the post-yes dock (same tab, 1360, fixture); sky sweep 29/29 at 390; visual 390 +

@@ -17715,6 +17715,7 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
 .lx .lx-stats{font-family:var(--font-mono)}
 .pf-sky-host.lx-you-host{height:auto}
 .pf-sky-host.lx-you-host > .sky{border-radius:0 0 28px 28px;padding-bottom:10px}
+.pf-hero:has(.lx-you-host) .pf-hero-head{position:relative}   /* L4 Stage 6: with the lens sky mounted, the name row joins the flow, so the sky (and its Lenses / Categories / Marks switch) starts below it at any tagline length; the old sky (key off) keeps the overlay */
 @media (min-width:1200px){
   /* seventh r8 / S8: the sky is the sticky left column (600px), the paper on the right */
   .home-page.lum-amber-deep.home-composed.home-sky-on{grid-template-columns:600px minmax(0,1fr)}

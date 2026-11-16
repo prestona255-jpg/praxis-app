@@ -34,10 +34,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // already contain — and it lives on the render heartbeat rather than at boot
   // because the qualifying moment (first book + first marginalia) happens
   // mid-session, by which time a boot-only check has already run and lost.
-  // L4.4: the motion gate's instrument (Stage 6 removes it). ?sky=on|off sets the
+  // L4.4: the motion gate's instrument (it stays until that gate is run). ?sky=on|off sets the
   // per-device sky key BEFORE the first render (renderRoute below); only that one
   // query parameter is stripped (the hash route and any share-target params stay),
-  // so a reload never re-applies it. Default: off.
+  // so a reload never re-applies it. Default: on (v3.322).
   (function () {
     var m = /[?&]sky=(on|off)\b/.exec(location.search || '');
     if (!m) { return; }

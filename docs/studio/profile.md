@@ -93,7 +93,7 @@ project's FIRST desktop composition tier. Owner-vs-visitor is a CONTENT fence (`
   verify. Gates: praxis-reviewer ×2 CLEAR; fix-red-team BLOCK→FIXED (dominant off-axis at every width). Records:
   `docs/checkpoints/r9b-laneg*.md` + `r9b-laneP*.md`.
 
-- **L4 (2026-11-10/11, local, v3.317 at the push).** Behind `praxis_sky` (dark-launched), the hand.js sky with Lenses ·
+- **L4 (2026-11-10/11, local, v3.317 at the push).** Behind `praxis_sky` (dark-launched at v3.317; ON BY DEFAULT since v3.322, L4 Stage 6), the hand.js sky with Lenses ·
   Categories · Marks replaces `.pf-sky` under the name (ruling 87): Categories via `classifyBookLocal` (override wins,
   Uncategorized out), tap → the Shelf's focused view; Marks = the eight most-annotated books, tap → the book's page (no
   Notebook book-filter exists — DIVERGES from the ruling, decision row in l4.md); no threads in either. The Numbers-axis tap no

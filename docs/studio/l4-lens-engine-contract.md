@@ -118,6 +118,8 @@ Frame rate, measured by the engine itself, not by eye: L4 adds `PraxisHand.stats
 
 Also proven in the same session: the loop stops when the tab is hidden (`document.hidden`) and when the sky is scrolled off (`S.visible()`); **Reduce Motion on the phone stills the canvas and every CSS animation** (one screenshot each of Home and You under it); the canvas is capped at devicePixelRatio 2 (`Flow.init`). If B or C fails: halve the particle density (`W*H/760` → `/1500`), lengthen the orbit period, and re-run; if it still fails, the sky ships with motion off by default behind a `praxis_sky_motion` key and the gate is re-run in L4b. The gate's three runs and their numbers go into `docs/checkpoints/l4.md`.
 
+**15 Nov 2026 — ruled by Preston (R2, R3).** The sky ships ON BY DEFAULT at v3.322 (L4 Stage 6) without this gate. The gate moves to **BEFORE THE BETA**, to be run on the installed app, which does not exist yet. All three runs (A baseline, B 8 lenses, C 16 lenses), the frame-rate readout and the Reduce Motion screenshots stay **OWED**; the gate is not deleted. Its instrument stays until it is run: `?sky=on|off` (js/app.js) and `praxis_sky_stats` are not removed (this supersedes "Stage 6 removes it"). Record: `docs/checkpoints/l4.md` "Stage 6, the sky on by default, 15 Nov 2026".
+
 ## 7 · Where the live panel's voice differs from the ruled voice — the exact lines
 
 | Live (file:line) | Ruled | Change |

@@ -38,7 +38,7 @@ the mobile nav where a safe-area inset exists; the Add-a-book radios are in the 
 greys at night. Every cell's structure unchanged. Record: `docs/checkpoints/l1.md`.
 **L4 (2026-11-10/11, v3.317, local) — the lens engine + the sky.** NEW surface **#20 `#lenses`** (below). Cell changes:
 **#home** — the Yumi dock now renders only BEFORE the yes, as the consent door (ruling 84 as amended; after the yes the Bloom
-carries her, and the raised hand); with `praxis_sky` on (dark-launched, `?sky=on`), the sky is Home's head (date · greeting ·
+carries her, and the raised hand); with `praxis_sky` on (ON BY DEFAULT since v3.322, L4 Stage 6; `?sky=off` turns it off on a device), the sky is Home's head (date · greeting ·
 the field · the honest line · counts · the door to Lenses), a sticky 600px column ≥1200. **#profile (You)** — with the key on,
 the hand.js sky with Lenses · Categories · Marks replaces `.pf-sky`; with it off You is DOM-identical to HEAD. **#books** — a
 lens band carries its mark (→ the lens sheet); "Ask Yumi for more lenses" / "Find my lenses" go to #lenses. **#yumi-sees** —
