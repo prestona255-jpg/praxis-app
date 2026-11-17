@@ -31,6 +31,11 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-17 (L4b-1 CLOSED on Preston's phone look; the L4b-1 hotfix BUILT at v3.328)** — Preston walked v3.327 on his
+  phone, Day and Night: the tab bar PASSED and the lane closes. The walk's four findings (none caused by L4b-1) are fixed in
+  one hotfix build, v3.328, ahead of L4b-2; nothing is reordered or retired and no decision is contradicted, so no
+  `PROPOSED:` flag. One line of the reviewing chat's patch was changed after a red-team BLOCK (H1, after a browser Back) —
+  recorded verbatim for Preston. Record: `docs/checkpoints/l4b-1-hotfix.md`.
 - **2026-11-16 (LC1 BUILT + the L4b lane table — Preston's rulings r88–r97, 14 Nov 2026)** — LC1, the colours (canon
   amendment 1.5, tokens only), is built at v3.323. The single L4b entry gives way to the lane table of
   `docs/checkpoints/p2-eighteenth-sitting-rulings.md` §C (LC1 → L4b-1 → L4b-2 → L4b-3 → L4b-4 → LC2 → L4b-5); its original
@@ -1596,8 +1601,11 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   build")** — order: **LC1 → L4b-1 → L4b-2 → L4b-3 → L4b-4 → LC2 → L4b-5** (LC2 can move earlier once its engine
   exists; L4c, the two-step lens read, stays the next build after LC1 — R1, 15 Nov 2026).
   · **LC1** — the colours: token values in `theme.css` plus five literals; no layout. BUILT at v3.323 (`docs/checkpoints/lc1.md`).
-  · **L4b-1** — the tab bar and the Search pill replace the phone nav. Needs LC1. Small. BUILT at v3.327 (17 Nov 2026,
-  `docs/checkpoints/l4b-1.md`); Preston's phone look owed.
+  · **L4b-1** — the tab bar and the Search pill replace the phone nav. Needs LC1. Small. SHIPPED v3.327 (pushed 3d722db,
+  `docs/checkpoints/l4b-1.md`); Preston's phone look PASS (17 Nov 2026, Day and Night) — CLOSED. Its walk's four findings
+  (pages opening at the last page's depth, the keyboard over the capture field, the first-visit card on the bar, a value
+  showing `[object Object]`) are fixed in the **L4b-1 hotfix**, BUILT at v3.328 (`docs/checkpoints/l4b-1-hotfix.md`);
+  Preston's phone check owed.
   · **L4b-2** — new routes `#lens/<id>` (Open Lens) and `#category/<id>`. Needs L4 (the lens engine). Medium.
   · **L4b-3** — the redrawn rooms, a few per build: Home body, Shelf, book, Notebook, note, You, artifact, the pages under
   You, Search. Needs L4b-1. Large; split by room.

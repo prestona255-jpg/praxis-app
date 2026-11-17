@@ -428,6 +428,69 @@ function tabbarMark() {
   }
 }
 
+// L4b-1 hotfix (H1) -- A NEW PAGE OPENS AT ITS TOP. The router never moved the
+// scroll, so a page opened at whatever depth the last one was left at. This
+// listener is bound at load, and views.js loads before app.js, so it runs BEFORE
+// the hashchange listener that calls renderRoute: the reset comes first and any
+// scroll a page does on purpose while it renders still wins. Four cases:
+//   1. a tap in the tab bar or the top nav -> the top, always;
+//   2. the browser's own Back / Forward (a history entry this listener already
+//      stamped) -> left alone, the browser restores it as it always has;
+//   3. a link straight back to the page you just came from (a page's own
+//      "back to the shelf" link is a NEW history entry, not a Back) -> the depth
+//      you left that page at, set after the page has rendered;
+//   4. anything else -> the top.
+// Tapping the tab or nav link of the page you are already on returns to the top.
+var routeTopSeq = 0;           // stamps history entries so Back/Forward can be told from a new page
+var routeTopCur = (typeof location !== 'undefined') ? location.hash : '';
+var routeTopPrevHash = null;   // the page before the current one, and how deep it was left
+var routeTopPrevY = 0;
+var routeTopForce = false;     // set by a tab-bar / top-nav tap, spent by the next hashchange
+
+function routeTopStamp() {
+  try {
+    if (window.history && history.replaceState) {
+      routeTopSeq = routeTopSeq + 1;
+      history.replaceState({ praxisRoute: routeTopSeq }, '', location.href);
+    }
+  } catch (e) {}
+}
+
+function routeTopOnHash() {
+  var next = location.hash, st = null;
+  var fromHash = routeTopCur, fromY = window.pageYOffset || 0;
+  try { st = window.history ? history.state : null; } catch (e) {}
+  var seen = !!(st && st.praxisRoute);
+  if (!seen) { routeTopStamp(); }
+  if (routeTopForce) { window.scrollTo(0, 0); }
+  else if (seen) { /* Back / Forward: the browser's own restoration stands */ }
+  else if (routeTopPrevHash !== null && next === routeTopPrevHash) {
+    var y = routeTopPrevY;
+    window.setTimeout(function () { window.scrollTo(0, y); }, 0);   // after renderRoute has drawn the page
+  }
+  else { window.scrollTo(0, 0); }
+  routeTopForce = false;
+  // After a Back / Forward the browser has already restored the depth of the page it
+  // returned to, so fromY is not where fromHash was left: arm no case-3 restore then.
+  routeTopPrevHash = seen ? null : fromHash; routeTopPrevY = fromY; routeTopCur = next;
+}
+
+function routeTopOnTap(e) {
+  var a = (e.target && e.target.closest) ? e.target.closest('.tabbar-tab, .app-nav a') : null;
+  if (!a) { return; }
+  var href = a.getAttribute('href');
+  if (!href || href.charAt(0) !== '#' || href.length < 2) { return; }   // the Capture tab is a button: it opens the door, not a page
+  if (href === location.hash) { window.scrollTo(0, 0); return; }
+  routeTopForce = true;
+  window.setTimeout(function () { routeTopForce = false; }, 1000);   // never outlives the tap it belongs to
+}
+
+if (typeof window !== 'undefined' && window.addEventListener) {
+  window.addEventListener('hashchange', routeTopOnHash);
+  window.addEventListener('load', routeTopStamp);   // the entry the app opened on, after app.js's boot replaceState
+  document.addEventListener('click', routeTopOnTap);
+}
+
 function tabbarRoute(parts) {
   tabbarRouteTab = tabbarTabFor(parts);
   if (parts[0] !== 'search') { tabbarSearchFrom = tabbarRouteTab; }
@@ -22311,6 +22374,7 @@ function _profileValueLoad(uid) {
     for (k = 0; k < marks.length; k = k + 1) {
       m = marks[k];
       if (!m || typeof m.value !== 'string' || !m.value) { continue; }
+      if (m.value === '[object Object]') { continue; }   // L4b-1 hotfix (H4): a mark left by the coercion bug names no value
       val = m.value; why = (typeof m.why === 'string') ? m.why : '';
       if (declaredSet[val]) {
         if (!whys[val]) { whys[val] = []; }
@@ -25710,6 +25774,31 @@ function capScheduleDraftSave() {
   capDraftTimer = window.setTimeout(capSaveDraftNow, 300);
 }
 
+// L4b-1 hotfix (H2) -- THE SHEET RIDES ABOVE THE KEYBOARD (mobile canon P7). On a
+// phone the sheet is fixed to the bottom of the page, and the software keyboard
+// covers the bottom of the page, so the field sat behind the keys until the first
+// keystroke. visualViewport reports what is actually visible: the gap between it
+// and the page's bottom edge is the keyboard. The gap goes to the sheet as
+// --cap-kb (its bottom) and the visible height as --cap-room (its height limit);
+// components.css reads both. No visualViewport, a wide screen, or a closed sheet:
+// both properties are removed and the sheet is exactly as it was.
+function capKeyboardLift() {
+  var sh = capEl('capSheet'), vv = window.visualViewport;
+  if (!sh) { return; }
+  var inset = 0;
+  if (vv && sh.classList.contains('is-open') && window.matchMedia && window.matchMedia('(max-width: 759px)').matches) {
+    inset = Math.round(window.innerHeight - vv.height - vv.offsetTop);
+    if (inset < 120) { inset = 0; }   // a keyboard, not a browser toolbar sliding a few px
+  }
+  if (inset > 0) {
+    sh.style.setProperty('--cap-kb', inset + 'px');
+    sh.style.setProperty('--cap-room', Math.max(200, Math.round(vv.height) - 8) + 'px');
+  } else {
+    sh.style.removeProperty('--cap-kb');
+    sh.style.removeProperty('--cap-room');
+  }
+}
+
 function capOpen(opts) {
   opts = opts || {};
   var u = getCurrentUser();
@@ -25733,6 +25822,7 @@ function capOpen(opts) {
   // "open" and the caret in the field.
   capEl('capField').focus();
   capAutogrow();
+  capKeyboardLift();   // L4b-1 hotfix (H2)
 }
 function capClose() {
   if (capMicSession) { try { capMicSession.stop(); } catch (e) {} capMicSession = null; capMicSeq = capMicSeq + 1; } // bound loss window (CA-2) + drop the orphaned callback (BLOCK 2)
@@ -25744,6 +25834,7 @@ function capClose() {
   var nav = document.querySelector('.cap-nav-entry');
   if (nav) { nav.setAttribute('aria-current', 'false'); }
   tabbarMark();   // L4b-1: the route's tab is current again
+  capKeyboardLift();   // L4b-1 hotfix (H2): a closed sheet carries no lift
 }
 
 function capRenderCaught() {
@@ -26440,6 +26531,11 @@ function initCaptureDoor() {
   CAP_MOUNTED = true;
   buildCaptureDoor();
   nbInstallDraftHooks(); // reuse the shipped visibilitychange/pagehide flush infra
+  // L4b-1 hotfix (H2): follow the software keyboard for as long as the door exists.
+  if (window.visualViewport && window.visualViewport.addEventListener) {
+    window.visualViewport.addEventListener('resize', capKeyboardLift);
+    window.visualViewport.addEventListener('scroll', capKeyboardLift);
+  }
 
   // BLOCK 1: the door is mounted ONCE and never torn down on auth-change (unlike
   // the notebook composer, which renderRoute rebuilds). On a uid change, reset EVERY

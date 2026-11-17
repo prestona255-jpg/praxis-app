@@ -1,0 +1,209 @@
+// docs/checkpoints/l4b-1-hotfix-shots/unit-harness -- L4b-1 hotfix unit proofs
+// P5 (H1 routeTop*), P6 (H2 capKeyboardLift), P8 (H4 healValueEntry via getProfile /
+// setProfile). cscript JScript (Node is blocked), the tools/delete-test pattern:
+// state.js is loaded WHOLE from its real bytes; the H1 block and capKeyboardLift are
+// extracted by text from the real bytes of views.js and run against stubbed window,
+// history, location and document. EXTENSIONLESS on purpose (see tools/parse-check).
+//
+// Usage:  cscript //nologo //E:jscript docs/checkpoints/l4b-1-hotfix-shots/unit-harness [root]
+// Exit:   0 = every case passed · 1 = a case failed · 2 = could not load
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName))));
+if (WScript.Arguments.length > 0) { root = String(WScript.Arguments(0)); }
+function readFile(p) { var s = fso.OpenTextFile(p, 1, false); var t = s.ReadAll(); s.Close(); return t; }
+function neutralize(src) { return src.replace(/\.catch\b/g, '.catch_').replace(/\.finally\b/g, '.finally_').replace(/\.delete\b/g, '.delete_'); }
+if (typeof JSON === 'undefined') {
+  JSON = { stringify: function (v) {
+    var t = typeof v, out, i, k;
+    if (v === null || t === 'undefined') { return 'null'; }
+    if (t === 'number' || t === 'boolean') { return String(v); }
+    if (t === 'string') { return '"' + v + '"'; }
+    if (Object.prototype.toString.call(v) === '[object Array]') { out = []; for (i = 0; i < v.length; i++) { out.push(JSON.stringify(v[i])); } return '[' + out.join(',') + ']'; }
+    out = []; for (k in v) { if (Object.prototype.hasOwnProperty.call(v, k) && typeof v[k] !== 'function') { out.push(k + ':' + JSON.stringify(v[k])); } }
+    return '{' + out.join(',') + '}';
+  }, parse: function (s) { return eval('(' + s + ')'); } };
+}
+if (typeof String.prototype.trim !== 'function') { String.prototype.trim = function () { return this.replace(/^\s+|\s+$/g, ''); }; }
+if (typeof Array.isArray !== 'function') { Array.isArray = function (a) { return Object.prototype.toString.call(a) === '[object Array]'; }; }
+if (typeof Array.prototype.indexOf !== 'function') { Array.prototype.indexOf = function (v) { var i; for (i = 0; i < this.length; i++) { if (this[i] === v) { return i; } } return -1; }; }
+if (typeof Date.now !== 'function') { Date.now = function () { return new Date().getTime(); }; }
+
+var failures = 0, total = 0;
+function check(name, got, want) { total++; if (got === want) { WScript.Echo('  PASS  ' + name + '  = ' + got); } else { failures++; WScript.Echo('  FAIL  ' + name + '\n        got  ' + got + '\n        want ' + want); } }
+(function () { var b = failures; check('self-check (expected to FAIL)', 1, 2); if (failures - b !== 1) { WScript.Echo('HARNESS SELF-CHECK FAILED'); WScript.Quit(2); } failures = b; total--; })();
+
+function between(src, a, b) {
+  var i = src.indexOf(a), j = src.indexOf(b, i + 1);
+  if (i < 0 || j < 0) { throw new Error('anchor not found: ' + a + ' .. ' + b); }
+  return src.slice(i, j);
+}
+
+// ---------------------------------------------------------------- shared stubs
+var W, H, L, D;
+function mkEnv(hash, y) {
+  W = { pageYOffset: y, scrolls: [], timers: [], listeners: {}, innerHeight: 844, innerWidth: 390, visualViewport: null };
+  W.scrollTo = function (x, yy) { W.scrolls.push(x + ',' + yy); W.pageYOffset = yy; };
+  W.setTimeout = function (fn, ms) { W.timers.push({ fn: fn, ms: ms }); return W.timers.length; };
+  W.addEventListener = function (ev, fn) { W.listeners[ev] = fn; };
+  W.matchMedia = function (q) { var m = /max-width:\s*(\d+)px/.exec(q); return { matches: m ? (W.innerWidth <= +m[1]) : false }; };
+  L = { hash: hash, href: 'http://x/' + hash };
+  H = { state: null, replaceState: function (s, t, u) { H.state = s; } };
+  W.history = H;
+  D = { listeners: {}, addEventListener: function (ev, fn) { D.listeners[ev] = fn; } };
+}
+function flush(onlyMs) { var q = W.timers, i, ran = 0; W.timers = []; for (i = 0; i < q.length; i++) { if (onlyMs === undefined || q[i].ms === onlyMs) { q[i].fn(); ran++; } else { W.timers.push(q[i]); } } return ran; }
+
+// ---------------------------------------------------------------- load
+var vsrc, ssrc, H1, H2, S;
+try {
+  vsrc = readFile(fso.BuildPath(root, 'js\\views.js'));
+  ssrc = neutralize(readFile(fso.BuildPath(root, 'js\\state.js')));
+} catch (e) { WScript.Echo('LOAD FAIL (read): ' + e.message); WScript.Quit(2); }
+
+function loadH1() {
+  var blk = between(vsrc, 'var routeTopSeq = 0;', 'function tabbarRoute(parts)');
+  return new Function('window', 'history', 'location', 'document',
+    blk + '\nreturn { onHash: routeTopOnHash, onTap: routeTopOnTap, stamp: routeTopStamp,' +
+    ' st: function () { return { force: routeTopForce, prevHash: routeTopPrevHash, prevY: routeTopPrevY, cur: routeTopCur, seq: routeTopSeq }; },' +
+    ' setForce: function (v) { routeTopForce = v; } };')(W, H, L, D);
+}
+function loadH2(sheet) {
+  var blk = between(vsrc, 'function capKeyboardLift() {', 'function capOpen(opts) {');
+  return new Function('window', 'capEl', 'Math', blk + '\nreturn capKeyboardLift;')(W, function (id) { return id === 'capSheet' ? sheet : null; }, Math);
+}
+try {
+  mkEnv('#a', 0);
+  loadH1(); loadH2(null);
+  var store = {};
+  var localStorage = { getItem: function (k) { return store.hasOwnProperty(k) ? store[k] : null; }, setItem: function (k, v) { store[k] = String(v); }, removeItem: function (k) { delete store[k]; }, key: function () { return null; }, length: 0 };
+  var con = { log: function () {}, warn: function () {}, error: function () {} };
+  S = new Function('localStorage', 'window', 'console', 'document', 'setTimeout', 'navigator', 'location',
+    ssrc + '\nreturn { state: state, ensureUser: ensureUser, getProfile: getProfile, setProfile: setProfile, healValueEntry: healValueEntry };')(
+    localStorage, {}, con, { addEventListener: function () {}, getElementById: function () { return null; } }, function (f) { return 0; }, { userAgent: 'cscript' }, { hash: '', href: '' });
+} catch (e) { WScript.Echo('LOAD FAIL: ' + e.message); WScript.Quit(2); }
+
+// ================================================================ P5 -- H1
+WScript.Echo('\nP5 (H1) routeTopOnHash / routeTopOnTap');
+var r, s0;
+// Forward to a new hash from depth 900.
+mkEnv('#a', 900); r = loadH1(); r.stamp(); var stampSeq = H.state && H.state.praxisRoute;
+H.state = null; L.hash = '#b'; r.onHash();
+check('fwd new hash from 900: scrollTo calls', W.scrolls.join('|'), '0,0');
+check('fwd new hash: history.state stamped praxisRoute', !!(H.state && H.state.praxisRoute), true);
+check('fwd new hash: no deferred scroll', (flush(), W.scrolls.join('|')), '0,0');
+// Forward to a second new hash (leaving #b at 450).
+W.scrolls = []; W.pageYOffset = 450; H.state = null; L.hash = '#c'; r.onHash();
+check('fwd second new hash: scrollTo calls', W.scrolls.join('|'), '0,0');
+// A NEW entry whose hash equals the page before (#b, left at 450), from #c at 200.
+W.scrolls = []; W.pageYOffset = 200; H.state = null; L.hash = '#b'; r.onHash();
+check('back-link new entry: no scrollTo before the timeout', W.scrolls.join('|'), '');
+check('back-link: exactly one timer at 0ms', W.timers.length + ':' + (W.timers[0] && W.timers[0].ms), '1:0');
+flush();
+check('back-link: after the timeout scrollTo(0, saved depth 450)', W.scrolls.join('|'), '0,450');
+// A hashchange whose history.state already carries praxisRoute (Back / Forward).
+W.scrolls = []; W.pageYOffset = 300; H.state = { praxisRoute: 1 }; L.hash = '#c'; r.onHash();
+flush();
+check('stamped entry (Back/Forward): no scrollTo at all', W.scrolls.join('|'), '');
+check('stamped entry: state not re-stamped', H.state.praxisRoute, 1);
+// Red-team BLOCK 1 (recon gate): after a Back / Forward, a link to the page just left
+// must NOT restore the depth read at the Back (the browser had already restored the
+// OTHER page's depth by then) -- it opens at the top.
+check('after Back/Forward: no case-3 restore armed (prevHash null)', r.st().prevHash === null ? 'null' : r.st().prevHash, 'null');
+// The Back above left '#b' for '#c'; a NEW entry to '#b' now opens at the top.
+W.scrolls = []; W.pageYOffset = 1156; H.state = null; L.hash = '#b'; r.onHash(); flush();
+check('re-enter the page left at a Back, by a link: top, no restore', W.scrolls.join('|'), '0,0');
+// routeTopForce true, in every case shape.
+var shapes = [['new', null, '#z'], ['back-link-equal', null, null], ['stamped', { praxisRoute: 9 }, '#q']];
+var si;
+for (si = 0; si < shapes.length; si++) {
+  W.scrolls = []; W.pageYOffset = 640; r.setForce(true);
+  H.state = shapes[si][1];
+  L.hash = shapes[si][2] === null ? r.st().prevHash : shapes[si][2];
+  r.onHash(); flush();
+  check('force + ' + shapes[si][0] + ': scrollTo calls', W.scrolls.join('|'), '0,0');
+  check('force + ' + shapes[si][0] + ': flag spent', r.st().force, false);
+}
+// Taps.
+function tapEl(href) { return { getAttribute: function (k) { return k === 'href' ? href : null; } }; }
+function tap(el) { r.onTap({ target: { closest: function (sel) { return el; } } }); }
+mkEnv('#home', 500); r = loadH1();
+tap(tapEl(null));      check('tap, no href (Capture tab button): flag', r.st().force, false);
+tap(tapEl('#'));       check('tap, href "#" (desktop Capture link): flag', r.st().force, false);
+tap(null);             check('tap outside the nav and tab bar: flag', r.st().force, false);
+check('those three taps: no scrollTo, no timer', W.scrolls.length + ':' + W.timers.length, '0:0');
+tap(tapEl('#books'));  check('tab tap to another page: flag set', r.st().force, true);
+check('tab tap: 1000ms expiry timer armed', W.timers.length + ':' + W.timers[0].ms, '1:1000');
+flush(1000);           check('flag expires after 1000ms if no hashchange', r.st().force, false);
+W.scrolls = []; tap(tapEl('#home')); check('tap the current page\'s tab: scrollTo(0,0), no flag', W.scrolls.join('|') + ':' + r.st().force, '0,0:false');
+// Listener wiring.
+mkEnv('#a', 0); r = loadH1();
+check('binds hashchange + load on window, click on document', (typeof W.listeners.hashchange) + ',' + (typeof W.listeners.load) + ',' + (typeof D.listeners.click), 'function,function,function');
+
+// ================================================================ P6 -- H2
+WScript.Echo('\nP6 (H2) capKeyboardLift');
+function mkSheet(open) {
+  var props = {};
+  return { props: props,
+    classList: { contains: function (c) { return c === 'is-open' ? open : false; } },
+    style: { setProperty: function (k, v) { props[k] = v; }, removeProperty: function (k) { delete props[k]; } } };
+}
+function lift(open, width, vv, preset) {
+  mkEnv('#home', 0); W.innerWidth = width; W.innerHeight = 844; W.visualViewport = vv;
+  var sh = mkSheet(open), k;
+  if (preset) { sh.props['--cap-kb'] = '1px'; sh.props['--cap-room'] = '1px'; }
+  loadH2(sh)();
+  var o = []; for (k in sh.props) { if (sh.props.hasOwnProperty(k)) { o.push(k + '=' + sh.props[k]); } }
+  return o.sort().join(' ') || '(none)';
+}
+check('vv 508 / offsetTop 0', lift(true, 390, { height: 508, offsetTop: 0 }), '--cap-kb=336px --cap-room=500px');
+check('vv 508 / offsetTop 120: --cap-kb', /--cap-kb=(\d+px)/.exec(lift(true, 390, { height: 508, offsetTop: 120 }))[1], '216px');
+check('vv 800 / offsetTop 0 (no keyboard): both absent', lift(true, 390, { height: 800, offsetTop: 0 }, true), '(none)');
+check('sheet closed: both absent', lift(false, 390, { height: 508, offsetTop: 0 }, true), '(none)');
+check('1280 wide: both absent', lift(true, 1280, { height: 508, offsetTop: 0 }, true), '(none)');
+check('no visualViewport: both absent', lift(true, 390, null, true), '(none)');
+check('no sheet in the DOM: no throw', (function () { mkEnv('#h', 0); W.visualViewport = { height: 508, offsetTop: 0 }; try { loadH2(null)(); return 'ok'; } catch (e) { return 'threw ' + e.message; } })(), 'ok');
+
+// ================================================================ P8 -- H4
+WScript.Echo('\nP8 (H4) healValueEntry through getProfile / setProfile');
+var UID = 'h4_uid';
+S.ensureUser(UID);
+var prof = S.state.users[UID].profile;
+var care = { id: 'care', name: 'Care', statement: 's', declaredAt: 5 };
+var arr = [{ id: 'object-object', name: '[object Object]' }, care, 'Freedom', '[object Object]',
+  { id: 'x', name: { id: 'joy', name: 'Joy', statement: 'j' } }, { id: 'y', name: { foo: 1 } }];
+prof.values = arr;
+var got = S.getProfile(UID);
+check('getProfile returns the SAME array object', got.values === arr, true);
+check('exactly three entries', got.values.length, 3);
+check('entry 0 is the same Care object (identity)', got.values[0] === care, true);
+check('Care statement kept', got.values[0].statement, 's');
+check('entry 1 is Freedom, wrapped, id freedom', got.values[1].name + '/' + got.values[1].id + '/' + typeof got.values[1], 'Freedom/freedom/object');
+check('entry 2 is Joy with statement j', got.values[2].name + '/' + got.values[2].statement, 'Joy/j');
+var snap = [got.values[0], got.values[1], got.values[2]];
+var got2 = S.getProfile(UID);
+check('second getProfile: same array, same three objects', (got2.values === arr) + ':' + got2.values.length + ':' + (got2.values[0] === snap[0] && got2.values[1] === snap[1] && got2.values[2] === snap[2]), 'true:3:true');
+// Healthy-only profile untouched.
+var U2 = 'h4_ok'; S.ensureUser(U2);
+var a1 = { id: 'care', name: 'Care', statement: 's', statementRevisedAt: 0, statementHistory: [], declaredAt: 5 };
+var a2 = { id: 'hope', name: 'Hope', statement: '', statementRevisedAt: 0, statementHistory: [], declaredAt: 6 };
+var okArr = [a1, a2]; S.state.users[U2].profile.values = okArr;
+var before = JSON.stringify(okArr), g3 = S.getProfile(U2);
+check('healthy-only: same array, same objects, same content', (g3.values === okArr) + ':' + (g3.values[0] === a1 && g3.values[1] === a2) + ':' + (JSON.stringify(g3.values) === before), 'true:true:true');
+// setProfile merge.
+S.setProfile(UID, { values: ['Care', '[object Object]', { name: '[object Object]' }, 'New'] });
+var after = S.getProfile(UID).values, names = [], i;
+for (i = 0; i < after.length; i++) { names.push(after[i].name); }
+check('setProfile leaves exactly Care, New', names.join(','), 'Care,New');
+check('Care statement s kept through the merge', after[0].statement, 's');
+// A broken EXISTING list that setProfile meets before any getProfile read.
+var U3 = 'h4_raw'; S.ensureUser(U3);
+S.state.users[U3].profile.values = ['[object Object]', { id: 'x', name: { id: 'joy', name: 'Joy', statement: 'j' } }];
+S.setProfile(U3, { values: ['Joy', 'Rest'] });
+var r3 = S.state.users[U3].profile.values;
+check('setProfile heals the existing list too (Joy keeps j)', r3.length + ':' + r3[0].name + '/' + r3[0].statement + ':' + r3[1].name, '2:Joy/j:Rest');
+check('whitespace-padded "[object Object]" is dropped', S.healValueEntry('  [object Object] '), null);
+check('a real name is returned untouched', S.healValueEntry(care) === care, true);
+
+WScript.Echo('\n' + (total - failures) + '/' + total + ' passed');
+WScript.Quit(failures ? 1 : 0);

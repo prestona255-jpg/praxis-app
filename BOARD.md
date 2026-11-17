@@ -10,14 +10,24 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
-**L4b-1 (2026-11-17, v3.327, local) — the tab bar and the Search pill (phones).** At ≤759px the hamburger menu gives way to
+**L4b-1 hotfix (2026-11-17, v3.328, local) — pages open at the top, the sheet clears the keyboard (phones).** Four
+findings from Preston's phone walk of v3.327, none caused by L4b-1: a new page now opens at its top (tab and nav taps always;
+the browser's Back left alone; a page's own back link returns to the depth you left); the capture sheet rides above the
+software keyboard (visualViewport → `--cap-kb` / `--cap-room`, phones only); a first-visit card sits above the tab bar, not on
+it; a declared value broken into the text `[object Object]` is healed on read and on write (`healValueEntry`, state.js). No
+layout or colour change; every CSS line is inside `(max-width:759px)`; at 1280 and 1360 the sheet's and the card's computed
+styles are identical with and without the new rules. No cell flips: these are fixes inside mobile cells that already read
+✅ (every surface for H1; Capture for H2; Home / Shelf / Notebook / You for H3's first-visit cards; You for H4). Owed: Preston's phone check (H2 is unproven in the rig — no software keyboard). Record:
+`docs/checkpoints/l4b-1-hotfix.md`.
+
+**L4b-1 (2026-11-17, v3.327, pushed 3d722db; phone look PASS, Day and Night, lane CLOSED) — the tab bar and the Search pill (phones).** At ≤759px the hamburger menu gives way to
 a tab bar fixed at the bottom (Home · Shelf · Notebook · Capture · You; the current tab brown, `--gold-ink`) and a Search pill
 where the hamburger was. About Praxis is the last row of You (phones only, signed out too). The gold + is retired on phones
 (Capture opens the same door); Yumi's flower, the Shelf's "+ Add a book", Yumi's panel and the general toast lift above the
 bar. The bar hides at the invite gate and on #deleted. Arcs has no phone door (ledger N1). The mobile cell of every surface
 that carried the hamburger now carries the bar instead; no desktop cell changed: at 1360 and 760, 36 of 36 route/mood/width
-layouts are identical with and without every L4b-1 element and rule. Owed: Preston's phone look. Record:
-`docs/checkpoints/l4b-1.md`.
+layouts are identical with and without every L4b-1 element and rule. Preston's phone look (17 Nov): PASS; its four
+findings went to the hotfix above. Record: `docs/checkpoints/l4b-1.md`.
 
 **L4c — the flip (2026-11-17, v3.326, pushed 111b741) — the two-step lens read is the read.** Preston's timed read on v3.325 passed
 (names 5.6 s, the reading 7.5 s; two proxy calls). Every lens read is now NAMES (400) + one READING per offer on screen (600);

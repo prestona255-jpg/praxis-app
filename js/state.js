@@ -1622,6 +1622,23 @@ function valueSlug(name) {
   return s || 'value';
 }
 function valueIdFor(name) { return valueSlug(name); }
+// L4b-1 hotfix (H4) -- heal a value entry broken by the old coercion bug (the
+// one the R10 S1 notes above and in intros.js describe: an object written where
+// a name belongs, stored as the text "[object Object]"). Returns the entry to
+// keep, or null to drop it. Two shapes are healed: a name that IS that text is
+// dropped (no real name survives in it), and a name that is itself a value
+// object is unwrapped to that object when it carries a real name. Every other
+// entry is returned untouched (same object), so statements are never lost.
+function healValueEntry(entry) {
+  if (entry && typeof entry === 'object' && entry.name && typeof entry.name === 'object') {
+    if (typeof entry.name.name === 'string' && entry.name.name) { entry = entry.name; }
+    else { return null; }
+  }
+  var nm = (entry && typeof entry === 'object') ? entry.name : entry;
+  nm = ('' + (nm == null ? '' : nm)).replace(/^\s+|\s+$/g, '');
+  if (nm === '[object Object]') { return null; }
+  return entry;
+}
 function normalizeValue(entry) {
   if (entry && typeof entry === 'object') {
     var onm = ('' + (entry.name == null ? '' : entry.name)).replace(/^\s+|\s+$/g, '');
@@ -1659,13 +1676,19 @@ function getProfile(uid) {
     // object identity + authored statements are preserved). Persists on the next
     // saveState -- no destructive rewrite.
     if (pr.values instanceof Array) {
-      var _vi;
+      // L4b-1 hotfix (H4): heal first (healValueEntry), then wrap. The array is
+      // rebuilt IN PLACE, so its identity and every kept object's identity hold.
+      var _vi, _vkeep = [];
       for (_vi = 0; _vi < pr.values.length; _vi = _vi + 1) {
-        var _ve = pr.values[_vi];
+        var _ve = healValueEntry(pr.values[_vi]);
+        if (_ve === null) { continue; }
         if (!(_ve && typeof _ve === 'object' && typeof _ve.id === 'string')) {
-          pr.values[_vi] = normalizeValue(_ve);
+          _ve = normalizeValue(_ve);
         }
+        _vkeep.push(_ve);
       }
+      pr.values.length = 0;
+      for (_vi = 0; _vi < _vkeep.length; _vi = _vi + 1) { pr.values.push(_vkeep[_vi]); }
     }
     return pr;
   }
@@ -1744,12 +1767,16 @@ function setProfile(uid, fields) {
     var _existing = {}, _ei;
     var _cur = (p.values instanceof Array) ? p.values : [];
     for (_ei = 0; _ei < _cur.length; _ei = _ei + 1) {
-      var _co = normalizeValue(_cur[_ei]);
+      var _ch = healValueEntry(_cur[_ei]);   // L4b-1 hotfix (H4)
+      if (_ch === null) { continue; }
+      var _co = normalizeValue(_ch);
       if (_co.name) { _existing[_co.name] = _co; }
     }
     var vv = [], vi, _seen = {};
     for (vi = 0; vi < fields.values.length; vi = vi + 1) {
-      var _inc = normalizeValue(fields.values[vi]);
+      var _ih = healValueEntry(fields.values[vi]);   // L4b-1 hotfix (H4): a broken entry never comes back in
+      if (_ih === null) { continue; }
+      var _inc = normalizeValue(_ih);
       if (!_inc.name || _seen[_inc.name]) { continue; }
       _seen[_inc.name] = 1;
       if (_existing[_inc.name]) {

@@ -17795,3 +17795,15 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
   .pf-aboutrow a.pf-btn{ text-decoration:none; }
 }
 /* === L4b-1 — end === */
+
+/* === L4b-1 hotfix — phones (docs/checkpoints/l4b-1-hotfix.md) ===
+   H2: the capture sheet rides above the software keyboard. views.js
+   (capKeyboardLift) writes --cap-kb and --cap-room on the sheet only while a
+   keyboard is up; without them both rules resolve to what they were.
+   H3: a first-visit page card sits above the tab bar, not on it. */
+@media (max-width: 759px){
+  .capdoor-sheet{ bottom:var(--cap-kb, 0px); max-height:min(56vh, var(--cap-room, 100vh)); }
+  .capdoor-sheet.cap-expanded{ max-height:min(86vh, var(--cap-room, 100vh)); }
+  body:not(.l3-gated):not(.tabbar-off) .intro-panel-wrap{ bottom:var(--tabbar-h); padding-bottom:14px; }
+}
+/* === L4b-1 hotfix — end === */
