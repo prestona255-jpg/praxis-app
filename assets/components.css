@@ -17729,3 +17729,69 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
   .home-page.lum-amber-deep.home-sky-on .sky.lx-sky .greet{font-size:44px}
 }
 /* === L4 LENSES — end === */
+
+/* === L4b-1 — THE TAB BAR AND THE SEARCH PILL (phones), 17 Nov 2026 ===========
+   r91 / R1–R5 (docs/checkpoints/l4b-1.md). On phones (<=759, the hamburger's own
+   query) the hamburger menu gives way to a fixed bottom tab bar (index.html, after
+   #app) and a Search pill in the top bar. At 760+ every rule here is display:none,
+   so desktop is untouched. The bar hides at the invite gate (body.l3-gated, the
+   door's own switch) and on #deleted (body.tabbar-off, renderRoute); the first-run
+   walk (.intro-journey, z 10060) covers it by z-order. z 50: above sticky heads
+   (.shelf-head 40, #statusbar-scrim 31, .app-nav 30), below every scrim, sheet,
+   panel, drawer and toast. --tabbar-h is the bar's height with the bottom inset
+   counted ONCE (6 + 50 + max(10px, inset)); the lifted elements below replace
+   their own inset term with it rather than adding to it. */
+.tabbar{ display:none; }
+.app-nav-searchpill{ display:none; }
+.pf-aboutrow{ display:none; }
+@media (max-width: 759px) {
+  :root{ --tabbar-h:calc(56px + max(10px, env(safe-area-inset-bottom, 0px))); }
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:50;
+    display:flex; justify-content:space-around;
+    padding:6px 6px max(10px, env(safe-area-inset-bottom, 0px));
+    background:var(--page); box-shadow:0 -1px 0 var(--line);
+  }
+  .tabbar-tab{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    min-width:60px; min-height:50px; margin:0; padding:0;
+    font:500 12px var(--font-body); color:var(--ink-2); border-radius:12px;
+    text-decoration:none; border:0; background:none; cursor:pointer; -webkit-appearance:none; appearance:none;
+  }
+  .tabbar-tab svg{ width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .tabbar-tab[aria-current="page"]{ color:var(--gold-ink); }
+  .tabbar-tab:focus-visible{ outline:2px solid var(--gold-ink); outline-offset:2px; }
+  body.l3-gated .tabbar, body.tabbar-off .tabbar{ display:none; }
+
+  /* C — the hamburger and the round gold + stand down on phones (R5); the Capture tab opens the door. */
+  .app-nav-hamburger{ display:none; }
+  #capCreateDoor{ display:none; }
+
+  /* B — the Search pill, where the hamburger sat (R4); hidden on #search (D5). */
+  .app-nav-searchpill{
+    display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:0 14px 0 11px;
+    border-radius:999px; border:1px solid color-mix(in srgb, currentColor 28%, transparent); background:transparent;
+    font:500 15px var(--font-body); color:var(--ink); text-decoration:none;
+  }
+  .app-nav-searchpill svg{ width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; }
+  .app-nav-searchpill.is-here{ display:none; }
+
+  /* D — room for the bar (Preston, 17 Nov): the flower, the Shelf's "+ Add a book", Yumi's
+     panel and the general toast rise by the bar's height. Spacing above the bar is today's:
+     the flower and the Add button keep --sp-5, the panel keeps its 100px over the flower's
+     corner, the toast its 28px. The page gutter (#app padding, --floating-stack-h) is
+     unchanged: 160px + inset already clears the bar and the lifted flower. lxToast is
+     top-anchored and needs nothing. */
+  body:not(.l3-gated):not(.tabbar-off) #yumi-bloom{ bottom:calc(var(--sp-5) + var(--tabbar-h)); }
+  body:not(.l3-gated):not(.tabbar-off) #yumi-panel{
+    bottom:calc(var(--sp-5) + 100px + var(--tabbar-h));
+    max-height:calc(100vh - var(--sp-5) - 100px - var(--tabbar-h) - var(--sp-5));
+  }
+  body:not(.l3-gated):not(.tabbar-off) .shelf.lum-amber-deep .shelf-add-primary{ bottom:calc(var(--sp-5) + var(--tabbar-h)); }
+  body:not(.l3-gated):not(.tabbar-off) .praxis-toast{ bottom:calc(28px + var(--tabbar-h)) !important; }   /* beats showToast's inline bottom:28px */
+
+  /* E — About Praxis, the last row of You (R3, D4), phones only. */
+  .pf-aboutrow{ display:block; }
+  .pf-aboutrow a.pf-btn{ text-decoration:none; }
+}
+/* === L4b-1 — end === */

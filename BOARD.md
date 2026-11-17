@@ -10,7 +10,16 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
-**L4c — the flip (2026-11-17, v3.326, local) — the two-step lens read is the read.** Preston's timed read on v3.325 passed
+**L4b-1 (2026-11-17, v3.327, local) — the tab bar and the Search pill (phones).** At ≤759px the hamburger menu gives way to
+a tab bar fixed at the bottom (Home · Shelf · Notebook · Capture · You; the current tab brown, `--gold-ink`) and a Search pill
+where the hamburger was. About Praxis is the last row of You (phones only, signed out too). The gold + is retired on phones
+(Capture opens the same door); Yumi's flower, the Shelf's "+ Add a book", Yumi's panel and the general toast lift above the
+bar. The bar hides at the invite gate and on #deleted. Arcs has no phone door (ledger N1). The mobile cell of every surface
+that carried the hamburger now carries the bar instead; no desktop cell changed: at 1360 and 760, 36 of 36 route/mood/width
+layouts are identical with and without every L4b-1 element and rule. Owed: Preston's phone look. Record:
+`docs/checkpoints/l4b-1.md`.
+
+**L4c — the flip (2026-11-17, v3.326, pushed 111b741) — the two-step lens read is the read.** Preston's timed read on v3.325 passed
 (names 5.6 s, the reading 7.5 s; two proxy calls). Every lens read is now NAMES (400) + one READING per offer on screen (600);
 the switch `praxis_lens2` and `?lens2` are gone (a stored key is ignored). F1 fixed: a failed offers load shows an unread offer's
 failure line with Try again, and the load redraws only when this device holds offers. No cell's STRUCTURE changed: the Lenses

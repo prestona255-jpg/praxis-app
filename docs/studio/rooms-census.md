@@ -37,7 +37,7 @@ Read against `praxis-app` **main at v3.316** (GitHub zip, tree dated 30 Oct 2026
 
 | Surface | Where | In Day Three | Status | Lane |
 |---|---|---|---|---|
-| Top nav `.app-nav` (Home · Shelf · Arcs · Notebook · Scan · Capture · About · Account, hamburger on mobile) | `index.html` :60–92; `initNavMobileToggle`, `initNavReveal` | paintTabs | **Replaced on phones** by the tab bar Home · Shelf · Notebook · Capture · You + the Search pill (ruling 79). Arcs, Scan and About leave the top level (ledger N1–N3) | L4b-1 |
+| Top nav `.app-nav` (Home · Shelf · Arcs · Notebook · Scan · Capture · About · Account, hamburger on mobile) | `index.html` :60–92; `initNavMobileToggle`, `initNavReveal` | paintTabs | **Replaced on phones** by the tab bar Home · Shelf · Notebook · Capture · You + the Search pill (ruling 79). Arcs, Scan and About leave the top level (ledger N1–N3). **L4b-1 built at v3.327 (17 Nov 2026, `docs/checkpoints/l4b-1.md`)**: the bar + the pill on phones, About Praxis as the last row of You; 760+ unchanged | L4b-1 |
 | Capture door | `initCaptureDoor` :26317, `capOpen` :25595, `openCaptureDoor` :26530 | doorHtml | Redrawn as **the dial** (five coloured wedges; folds to a chip while typing) | L4b-4 |
 | Yumi panel and the Bloom | `js/yumi-ui.js` `openYumiPanel` :1548, `toggleYumiPanel` :1575, `openLensPanel` :2248 | paintYumi | Reskin only (not redrawn this sitting) | LC1 |
 | Lens sheet, offer card, say-back, Lenses page | L4 (not on this tree) | paintLensSheets | L4's own; reskinned by LC1, sky by LC2 | L4, LC2 |

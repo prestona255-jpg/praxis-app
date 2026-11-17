@@ -1596,7 +1596,8 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   build")** — order: **LC1 → L4b-1 → L4b-2 → L4b-3 → L4b-4 → LC2 → L4b-5** (LC2 can move earlier once its engine
   exists; L4c, the two-step lens read, stays the next build after LC1 — R1, 15 Nov 2026).
   · **LC1** — the colours: token values in `theme.css` plus five literals; no layout. BUILT at v3.323 (`docs/checkpoints/lc1.md`).
-  · **L4b-1** — the tab bar and the Search pill replace the phone nav. Needs LC1. Small.
+  · **L4b-1** — the tab bar and the Search pill replace the phone nav. Needs LC1. Small. BUILT at v3.327 (17 Nov 2026,
+  `docs/checkpoints/l4b-1.md`); Preston's phone look owed.
   · **L4b-2** — new routes `#lens/<id>` (Open Lens) and `#category/<id>`. Needs L4 (the lens engine). Medium.
   · **L4b-3** — the redrawn rooms, a few per build: Home body, Shelf, book, Notebook, note, You, artifact, the pages under
   You, Search. Needs L4b-1. Large; split by room.

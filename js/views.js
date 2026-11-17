@@ -393,6 +393,51 @@ function initNavReveal() {
   window.praxisRevealNav = praxisRevealNav;
 }
 
+// L4b-1 · THE TAB BAR (phones; docs/checkpoints/l4b-1.md). The bar is static
+// index.html markup (#tabbar), shown only <=759 by CSS. ONE writer marks the
+// current tab, tabbarMark, called from renderRoute and from the capture door's
+// open / close / owner-reset -- so a renderRoute re-run while the door is open
+// can never light a second tab (Capture alone is current while the door is open).
+// The map is keyed on what ACTUALLY renders (D2 + the unknown-hash ruling): a
+// route that needs an id and has none falls through to renderNotebook, so it
+// lights Notebook. #search keeps the tab that was current when Search was opened
+// (memory only; never overwritten by a re-run on #search), else Home.
+var tabbarRouteTab = null;    // the tab the current route lights, or null
+var tabbarSearchFrom = null;  // the tab current when Search was opened
+
+function tabbarTabFor(parts) {
+  var p0 = parts[0] || '', p1 = parts[1];
+  if (p0 === 'search') { return tabbarSearchFrom || 'home'; }
+  if (p0 === 'home' || p0 === 'lenses') { return 'home'; }
+  if (p0 === 'books') { return 'shelf'; }
+  if ((p0 === 'book' || p0 === 'artifact') && p1) { return 'shelf'; }
+  if (p0 === 'profile' || p0 === 'account' || p0 === 'yumi-sees' || p0 === 'about') { return 'you'; }
+  if (p0 === 'scan' || p0 === 'arcs' || p0 === 'diag' || p0 === 'deleted' || p0 === 'commons') { return null; }
+  if ((p0 === 'arc' || p0 === 'subtheory' || p0 === 'value' || p0 === 'reader' || p0 === 'walk') && p1) { return null; }
+  return 'notebook';   // #notebook, #note/<id>, and every hash that renders the Notebook
+}
+
+function tabbarMark() {
+  var bar = document.getElementById('tabbar');
+  if (!bar) { return; }
+  var sheet = document.getElementById('capSheet');
+  var cur = (sheet && sheet.classList.contains('is-open')) ? 'capture' : tabbarRouteTab;
+  var tabs = bar.querySelectorAll('.tabbar-tab'), i;
+  for (i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute('aria-current', (tabs[i].getAttribute('data-tab') === cur) ? 'page' : 'false');
+  }
+}
+
+function tabbarRoute(parts) {
+  tabbarRouteTab = tabbarTabFor(parts);
+  if (parts[0] !== 'search') { tabbarSearchFrom = tabbarRouteTab; }
+  var pill = document.querySelector('.app-nav-searchpill');   // D5: no pill on #search itself
+  if (pill) {
+    if (parts[0] === 'search') { pill.classList.add('is-here'); } else { pill.classList.remove('is-here'); }
+  }
+  tabbarMark();
+}
+
 function renderRoute() {
   // ME-1 (B4): the activation latch needs a mid-session heartbeat, not a boot
   // check — the qualifying moment (first book + first marginalia) happens WHILE
@@ -434,6 +479,9 @@ function renderRoute() {
   var l3Held = (typeof L3_LIST_GATE !== 'undefined' && !!L3_LIST_GATE);
   if (document.body) {
     if (l3Held) { document.body.classList.add('l3-gated'); } else { document.body.classList.remove('l3-gated'); }
+    // L4b-1 (D3 as ruled): the tab bar hides on #deleted as it does at the gate.
+    if (location.hash.replace(/^#/, '').split('/')[0] === 'deleted') { document.body.classList.add('tabbar-off'); }
+    else { document.body.classList.remove('tabbar-off'); }
   }
   if (l3Held) { renderListGate(L3_LIST_GATE); return; }
 
@@ -567,6 +615,7 @@ function renderRoute() {
       links[i].classList.remove('app-nav-link-active');
     }
   }
+  tabbarRoute(parts);   // L4b-1: the phone tab bar's current tab (D2), beside the nav link
   // SCAN ROUND: the quiet draft-count badge on the Scan nav entry (unreviewed scan
   // exceptions), visible from every route (SCE-2 idiom, device-local).
   if (typeof scanUpdateNavBadge === 'function') { scanUpdateNavBadge(); }
@@ -23298,6 +23347,8 @@ function _pfBuildPage(uid, vis, mob) {
   }
   h += '<div class="pf-sec sec-settings pf-owner-only pf-settings">' + _pfSettingsSection(uid) + '</div>';
   h += '<div class="pf-sec sec-data pf-owner-only pf-yourdata">' + _pfDataSection(uid) + '</div>';   // P1 Item 3 (+ Item 2)
+  // L4b-1 (R3, D4): About Praxis, the last row of You -- phones only (.pf-aboutrow is display:none at 760+).
+  h += '<div class="pf-sec pf-aboutrow"><div class="pf-set-row"><a class="pf-btn ghost" href="#about">About Praxis</a></div></div>';
   // R9b Lane G S6: the selection-panel host (fixed overlay; filled on a planet/Numbers-card tap).
   return h + '</div><div class="pf-panel-host" aria-hidden="true"></div>';
 }
@@ -23749,7 +23800,8 @@ function renderProfilePage() {
   wrap.className = 'pf-root';
   var user = getCurrentUser();
   if (!user || !user.uid) {
-    wrap.innerHTML = '<div class="pf-below" style="padding-top:80px"><div class="pf-thesis"><p>Your profile</p></div><div class="pf-card" style="max-width:520px"><div class="pf-now">Sign in to see your reading as a galaxy.</div><div class="pf-set-row"><button class="pf-btn save" data-act="signin">Sign in</button></div></div></div>';
+    wrap.innerHTML = '<div class="pf-below" style="padding-top:80px"><div class="pf-thesis"><p>Your profile</p></div><div class="pf-card" style="max-width:520px"><div class="pf-now">Sign in to see your reading as a galaxy.</div><div class="pf-set-row"><button class="pf-btn save" data-act="signin">Sign in</button></div></div>'
+      + '<div class="pf-sec pf-aboutrow"><div class="pf-set-row"><a class="pf-btn ghost" href="#about">About Praxis</a></div></div></div>';   // L4b-1 (R3): About under You, signed out too
     host.appendChild(wrap);
     wrap.addEventListener('click', function (e) { var b = (e.target && e.target.closest) ? e.target.closest('[data-act="signin"]') : null; if (b && typeof signInWithGoogle === 'function') { signInWithGoogle(); } });
     return;
@@ -25676,6 +25728,7 @@ function capOpen(opts) {
   capEl('capSheet').classList.add('is-open');
   var nav = document.querySelector('.cap-nav-entry');
   if (nav) { nav.setAttribute('aria-current', 'true'); }
+  tabbarMark();   // L4b-1: Capture alone is current while the door is open
   // CD-2: focus lands in ONE synchronous frame — no fetch, nothing between
   // "open" and the caret in the field.
   capEl('capField').focus();
@@ -25690,6 +25743,7 @@ function capClose() {
   capEl('capSheet').classList.remove('is-open');
   var nav = document.querySelector('.cap-nav-entry');
   if (nav) { nav.setAttribute('aria-current', 'false'); }
+  tabbarMark();   // L4b-1: the route's tab is current again
 }
 
 function capRenderCaught() {
@@ -26422,6 +26476,7 @@ function initCaptureDoor() {
         if (sh && sh.classList.contains('is-open')) {
           capEl('capScrim').classList.remove('is-open'); sh.classList.remove('is-open');
           var navX = document.querySelector('.cap-nav-entry'); if (navX) { navX.setAttribute('aria-current', 'false'); }
+          tabbarMark();   // L4b-1
         }
         var tt = capEl('capToast'); if (tt) { tt.classList.remove('is-show'); }
         if (capToastTimer) { window.clearTimeout(capToastTimer); capToastTimer = null; }
@@ -26475,6 +26530,9 @@ function initCaptureDoor() {
   capEl('capCreateDoor').addEventListener('click', function () { capOpen({ mode: 'note' }); });
   var navEntry = document.querySelector('.cap-nav-entry');
   if (navEntry) { navEntry.addEventListener('click', function (e) { e.preventDefault(); capOpen({ mode: 'note' }); }); }
+  // L4b-1 (R5): the phone tab bar's Capture tab -- a <button>, bound once here (CAP_MOUNTED guard).
+  var capTab = document.querySelector('.tabbar-tab[data-tab="capture"]');
+  if (capTab) { capTab.addEventListener('click', function () { capOpen({ mode: 'note' }); }); }
 
   // close (CD-5: explicit only)
   capEl('capClose').addEventListener('click', capClose);
