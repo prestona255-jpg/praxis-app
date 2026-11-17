@@ -409,6 +409,7 @@ function tabbarTabFor(parts) {
   var p0 = parts[0] || '', p1 = parts[1];
   if (p0 === 'search') { return tabbarSearchFrom || 'home'; }
   if (p0 === 'home' || p0 === 'lenses') { return 'home'; }
+  if (p0 === 'lens' && p1) { return tabbarTabFor((olFrom || 'home').split('/')); }   // L4b-2a: Open Lens keeps the tab it was opened from
   if (p0 === 'books') { return 'shelf'; }
   if ((p0 === 'book' || p0 === 'artifact') && p1) { return 'shelf'; }
   if (p0 === 'profile' || p0 === 'account' || p0 === 'yumi-sees' || p0 === 'about') { return 'you'; }
@@ -577,7 +578,12 @@ function renderRoute() {
   var rest = location.hash.replace(/^#/, '');
   var parts = rest.split('/');
   // L4.3: the Lenses page's Back returns to wherever the reader came from.
-  if (parts[0] !== 'lenses') { lxLastRoute = rest || 'home'; }
+  if (parts[0] !== 'lenses' && parts[0] !== 'lens') { lxLastRoute = rest || 'home'; }   // L4b-2a: Lenses -> Open Lens -> Back must not loop
+  // L4b-2a: Open Lens's Back returns to the room it was opened from. A page opened
+  // FROM Open Lens (a book, a note) is not a room, so coming back keeps the origin.
+  if (parts[0] === 'lens' && olRoomRoute(olPrev)) { olFrom = olPrev; }
+  if (parts[0] === 'lens' && olPrev !== rest) { olSt.fresh = true; }   // arrived from another route: transient page state resets
+  olPrev = rest || 'home';
   if (lxSheetOpen && location.hash !== lxSheetRoute) { lxSheetOpen(true); }   // a route CHANGE closes an open L4 sheet
 
   // UMBER dual-ground: tag <body> with the active route's ground so the
@@ -616,7 +622,7 @@ function renderRoute() {
   // walker, permission/failure) use the --ink family, which on a dark ground resolves
   // to LIGHT ink and renders ghost-faint on their light fill (the F3 title defect).
   // A bright ground gives those cards full dark ink; the camera chrome is unaffected.
-  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1, artifact: 1, 'yumi-sees': 1, lenses: 1 };   // L4.3: #lenses sits on Home's ground
+  var umberGroundDark = { home: 1, books: 1, arcs: 1, arc: 1, account: 1, book: 1, subtheory: 1, notebook: 1, profile: 1, commons: 1, reader: 1, walk: 1, search: 1, about: 1, artifact: 1, 'yumi-sees': 1, lenses: 1, lens: 1 };   // L4.3: #lenses sits on Home's ground (L4b-2a: so does #lens/<id>)
   document.body.setAttribute('data-ground',
     umberGroundDark[parts[0]] ? 'dark' : 'bright');
 
@@ -638,7 +644,7 @@ function renderRoute() {
   } else if (parts[0] === 'book' || parts[0] === 'artifact' ||
       parts[0] === 'books') {
     activeRoute = 'books';
-  } else if (parts[0] === 'home' || parts[0] === 'lenses') {   // L4.3: the Lenses page keeps Home lit (it is reached from Home)
+  } else if (parts[0] === 'home' || parts[0] === 'lenses' || parts[0] === 'lens') {   // L4.3: the Lenses page keeps Home lit (it is reached from Home)
     // Batch 4A: Home is its own top-nav surface (landing route).
     activeRoute = 'home';
   } else if (parts[0] === 'account' || parts[0] === 'profile' ||
@@ -923,6 +929,16 @@ function renderRoute() {
   // L4.3 (ruling 86): the Lenses page (#lenses) -- Yumi's reading and her offers,
   // Later, your lenses, the remembered fold. Symmetric pointer clear; placed
   // BEFORE the notebook fallthrough so #lenses is caught here.
+  // L4b-2a (r90): Open Lens, the page (#lens/<id>). A bare #lens goes to the Lenses page.
+  if (parts[0] === 'lens') {
+    if (!parts[1]) { location.replace('#lenses'); return; }
+    state.currentBookId = null;
+    state.currentArcId  = null;
+    state.currentSubTheoryId = null;
+    saveState();
+    renderOpenLens(parts[1]);
+    return;
+  }
   if (parts[0] === 'lenses') {
     state.currentBookId = null;
     state.currentArcId  = null;
@@ -26810,6 +26826,9 @@ var lxNotNow = false;         // "Not now" on the no-yes card, this visit only
 var lxToastTimer = null;
 var lxSheetOpen = null;       // the one open L4 sheet's close()
 var lxSheetRoute = '';        // the hash it was opened on
+var olFrom = 'home';          // L4b-2a: the room Open Lens was opened from (its Back, its tab)
+var olPrev = '';              // the route rendered before this one (set by renderRoute)
+var olSt = { id: null };      // Open Lens page state, kept across its own re-renders
 
 function lxUid() {
   var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
@@ -27435,6 +27454,7 @@ function lxLaterSheet(uid, id) {
 function lxAfterLensWrite() {
   var r = location.hash.replace(/^#/, '').split('/')[0];
   if (r === 'lenses') { renderLensesPage(); }
+  else if (r === 'lens') { renderRoute(); }   // L4b-2a: Open Lens re-reads the lens
   else if (r === 'books' && typeof renderShelf === 'function') { renderShelf(); }
   else if ((r === 'home' || r === 'profile') && ls('praxis_sky', true) !== false) { renderRoute(); }
 }
@@ -27553,7 +27573,7 @@ function openLensSheet(themeId) {
       sh.appendChild(sd);
     }
     var a1 = lxEl('div', 'lx-acts');
-    a1.appendChild(lxBtn('pill', 'Open lens', function () { lxToast('Open Lens — one page for this lens — opens with the Day Three rooms.'); }));
+    a1.appendChild(lxBtn('pill', 'Open lens', function () { api.close(true); location.hash = '#lens/' + themeId; }));   // L4b-2a: the page
     if (read && floorOk) {
       a1.appendChild(lxBtn('ghost', 'Not quite — talk it through', function () {
         api.close(true);
@@ -27584,6 +27604,421 @@ function openLensSheet(themeId) {
       sh.appendChild(qc);
     }
   });
+}
+
+// ---- OPEN LENS, THE PAGE (#lens/<id>) -- L4b-2a, ruling r90 (Open Lens 4) ----
+// One page for one kept lens: the lens in a band of sky (today's sky + that
+// lens's own colour glow; the blue arrives with LC2), Yumi's question as the
+// largest line, Yours (the why line, what you said back), her reading with the
+// covers, and the notes on its books. It WRITES ONLY through the state.js
+// functions the lens sheet already uses (renameUserTheme, lensLeaveOut,
+// lensPutBack, lensSetWhy, lensForgetSaid, letGoLens) -- no new field, no new
+// storage key. Reached from the lens sheet's "Open lens" pill. Page state
+// (olSt) survives the page's own re-renders; renderRoute marks it fresh when the
+// page is arrived at from another route, and it resets when the lens changes.
+function olRoomRoute(r) {
+  var p0 = (r || '').split('/')[0];
+  return p0 === 'home' || p0 === 'books' || p0 === 'profile' || p0 === 'lenses' ||
+    p0 === 'search' || p0 === 'notebook' || p0 === 'category';
+}
+function olFromLabel() {
+  var p0 = (olFrom || 'home').split('/')[0];
+  if (p0 === 'books') { return 'Shelf'; }
+  if (p0 === 'profile') { return 'You'; }
+  if (p0 === 'lenses') { return 'Lenses'; }
+  if (p0 === 'search') { return 'Search'; }
+  if (p0 === 'notebook') { return 'Notebook'; }
+  if (p0 === 'category') { return 'Category'; }
+  return 'Home';
+}
+// The notes on a lens's books, newest first. The Journal is never listed.
+function olNotes(uid, ids) {
+  var out = [], set = {}, k, e, j;
+  for (j = 0; j < ids.length; j++) { set[ids[j]] = true; }
+  if (!state.notebookEntries) { return out; }
+  for (k in state.notebookEntries) {
+    if (!state.notebookEntries.hasOwnProperty(k)) { continue; }
+    e = state.notebookEntries[k];
+    if (!e || e.userId !== uid || e.register === 'journal' || !(e.bookIds instanceof Array)) { continue; }
+    for (j = 0; j < e.bookIds.length; j++) { if (set[e.bookIds[j]]) { out.push(e); break; } }
+  }
+  out.sort(function (a, b) { return ((b.createdAt || 0) - (a.createdAt || 0)) || ((a.id < b.id) ? -1 : 1); });
+  return out;
+}
+function olNotesOf(list, reg) {
+  var out = [], i;
+  for (i = 0; i < list.length; i++) { if (reg === 'all' || list[i].register === reg) { out.push(list[i]); } }
+  return out;
+}
+function olSect(title, actionBtn) {
+  var s = lxEl('div', 'ol-sec');
+  var sh = lxEl('div', 'ol-sh');
+  sh.appendChild(lxEl('h3', '', title));
+  if (actionBtn) { sh.appendChild(actionBtn); }
+  s.appendChild(sh);
+  return s;
+}
+// The books at size: a row to swipe. In Edit each kept cover carries a minus
+// (disabled at the floor of two); a left-out cover stays, dimmed.
+function olCovers(ids, outIds, pick, edit, canOut, onPick, onOut) {
+  var row = lxEl('div', 'ol-covers'), i;
+  row.setAttribute('role', 'group');
+  row.setAttribute('aria-label', 'The books in this lens');
+  for (i = 0; i < ids.length; i++) {
+    (function (id) {
+      var b = state.books[id], out = outIds.indexOf(id) !== -1;
+      var slot = lxEl('div', 'ol-cslot');
+      var btn = lxBtn('ol-cvb' + (out ? ' out' : ''), '', function () { onPick(id); });
+      btn.setAttribute('aria-pressed', pick === id ? 'true' : 'false');
+      btn.setAttribute('aria-label', (b.title || '') + ', ' + (b.author || '') + (out ? '. Left out of this lens.' : ''));
+      if (b.coverUrl) {
+        var im = lxEl('img'); im.src = b.coverUrl; im.alt = ''; im.setAttribute('loading', 'lazy');
+        btn.appendChild(im);
+      } else {
+        btn.appendChild(lxEl('b', '', b.title || ''));
+        btn.appendChild(lxEl('small', '', b.author || ''));
+      }
+      slot.appendChild(btn);
+      if (edit && !out) {
+        var m = lxBtn('ol-minus', '', function () { onOut(id); });
+        m.setAttribute('aria-label', 'Leave ' + (b.title || 'this book') + ' out of this lens');
+        m.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M7.5 12h9"/></svg>';
+        if (!canOut) { m.disabled = true; }
+        slot.appendChild(m);
+      }
+      row.appendChild(slot);
+    })(ids[i]);
+  }
+  return row;
+}
+function olBar(moreBtn) {
+  var bar = lxEl('div', 'ol-bar');
+  var back = lxBtn('ol-back', '', function () { location.hash = '#' + (olFrom || 'home'); });
+  back.setAttribute('aria-label', 'Back to ' + olFromLabel());
+  back.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  back.appendChild(lxEl('span', '', olFromLabel()));
+  bar.appendChild(back);
+  if (moreBtn) { bar.appendChild(moreBtn); }
+  return bar;
+}
+function renderOpenLens(themeId) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  host.innerHTML = '';
+  if (olSt.id !== themeId || olSt.fresh) {   // a new visit: only the picked cover is remembered
+    olSt = { id: themeId, pick: (olSt.id === themeId) ? olSt.pick : null, edit: false, menu: false, rename: false, confirm: false, reg: 'all', all: false, why: false, asking: false };
+  }
+  var page = lxEl('section', 'lx lx-page ol');
+  var col = lxEl('div', 'ol-col');
+  page.appendChild(col);
+  host.appendChild(page);
+  function rerender() {
+    var r = location.hash.replace(/^#/, '').split('/');
+    if (r[0] === 'lens' && r[1] === themeId) { renderOpenLens(themeId); }
+  }
+  var uid = lxUid(), plain;
+  if (!uid) {
+    plain = lxEl('div', 'ol-plain');
+    plain.appendChild(olBar(null));
+    plain.appendChild(buildSignedOutPrompt('Your lenses are private', 'Sign in to see the lenses on your shelf, and Yumi’s offers.'));
+    col.appendChild(plain);
+    return;
+  }
+  if (typeof ensureLensLooks === 'function') { ensureLensLooks(uid); }
+  var t = lensThemeById(themeId);
+  if (!t || t.userId !== uid) {
+    plain = lxEl('div', 'ol-plain');
+    plain.appendChild(olBar(null));
+    plain.appendChild(lxEl('h2', 'ol-gone', 'This lens isn’t on your shelf.'));
+    plain.appendChild(lxEl('p', 'lx-fine', 'It may have been let go. Its books stay on your shelf.'));
+    var pa = lxEl('div', 'lx-acts');
+    pa.appendChild(lxBtn('ghost', 'See your lenses', function () { location.hash = '#lenses'; }));
+    plain.appendChild(pa);
+    col.appendChild(plain);
+    return;
+  }
+  var hers = t.origin === 'hers', read = !!t.lead, n = t.bookIds.length, rested = n < 2, i;
+  var all = t.bookIds.concat(t.leftOuts), shown = [];
+  for (i = 0; i < all.length; i++) { if (state.books && state.books[all[i]]) { shown.push(all[i]); } }
+  var notes = olNotes(uid, all);
+  var floorN = lensShelfCount(uid), floorOk = floorN >= LENS_OFFER_FLOOR;
+  if (olSt.pick === null || shown.indexOf(olSt.pick) === -1) { olSt.pick = shown.length ? shown[0] : null; }
+  var pick = olSt.pick;
+
+  // ---- the left column: the band of sky, her question, Yours ----
+  var left = lxEl('div', 'ol-left');
+  var band = lxEl('div', 'ol-band');
+  if (t.look && t.look.c && typeof t.look.c[0] === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(t.look.c[0])) {
+    band.style.setProperty('--ol-lens', t.look.c[0]);
+  }
+  var more = lxBtn('ol-more', '', function () { olSt.menu = !(olSt.menu || olSt.confirm); olSt.confirm = false; rerender(); });
+  more.setAttribute('aria-label', 'More for this lens');
+  more.setAttribute('aria-haspopup', 'menu');
+  more.setAttribute('aria-expanded', (olSt.menu || olSt.confirm) ? 'true' : 'false');
+  more.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
+  band.appendChild(olBar(more));
+  if (olSt.menu || olSt.confirm) {
+    var menu = lxEl('div', 'ol-menu');
+    if (olSt.confirm) {
+      var cf = lxEl('div', 'ol-cf');
+      cf.setAttribute('role', 'group');
+      cf.setAttribute('aria-label', 'Let this lens go?');
+      cf.appendChild(lxEl('b', '', 'Let this lens go?'));
+      cf.appendChild(lxEl('p', '', 'Its ' + lxPlural(n, 'book') + ' stay on your shelf.' +
+        ((t.said.length && isYumiYesGranted(uid)) ? ' Your words to this lens stay in Yumi’s memory. You can forget them on What Yumi Sees.' : '')));
+      var two = lxEl('div', 'ol-two');
+      two.appendChild(lxBtn('', 'Keep it', function () { olSt.confirm = false; rerender(); }));
+      two.appendChild(lxBtn('go', 'Let it go', function () {
+        var tok = letGoLens(themeId);
+        olSt = { id: null };
+        lxToast('Let go. Its books stay on your shelf.', function () { undoLetGoLens(tok); lxAfterLensWrite(); });
+        location.hash = '#' + (olFrom || 'home');
+      }));
+      cf.appendChild(two);
+      menu.appendChild(cf);
+    } else {
+      menu.setAttribute('role', 'menu');
+      var mi = function (label, fn) {
+        var b = lxBtn('', label, fn);
+        b.setAttribute('role', 'menuitem');
+        menu.appendChild(b);
+      };
+      mi('Rename', function () { olSt.menu = false; olSt.rename = true; rerender(); });
+      mi('See on the shelf', function () {
+        var books = [], j;
+        for (j = 0; j < t.bookIds.length; j++) { if (state.books[t.bookIds[j]]) { books.push(state.books[t.bookIds[j]]); } }
+        sv('praxis_shelf_grouping', 'lenses');
+        var once = function () {
+          window.removeEventListener('hashchange', once);
+          window.setTimeout(function () { openShelfFocusedBand('lens:' + themeId, books, t.name, t.name); }, 0);
+        };
+        window.addEventListener('hashchange', once);
+        location.hash = '#books';
+      });
+      mi('Let it go', function () { olSt.menu = false; olSt.confirm = true; rerender(); });
+    }
+    band.appendChild(menu);
+  }
+  var mk = lxEl('span', 'mark ol-mark');
+  mk.setAttribute('role', 'img');
+  mk.setAttribute('aria-label', 'The mark of this lens');
+  if (t.look && window.PraxisHand && typeof window.PraxisHand.formSvg === 'function') {
+    mk.innerHTML = window.PraxisHand.formSvg(t.look, window.PraxisHand.hash(t.name || ''), '-50 -50 100 100');
+  }
+  band.appendChild(mk);
+  if (olSt.rename) {
+    var line = lxEl('div', 'lx-line');
+    var inp = lxEl('input');
+    inp.type = 'text'; inp.maxLength = 60;
+    inp.value = t.name;
+    inp.setAttribute('aria-label', 'Rename this lens');
+    inp.setAttribute('placeholder', t.hersName || t.name);
+    var commitRename = function () {
+      var v = inp.value.replace(/^\s+|\s+$/g, '');
+      olSt.rename = false;
+      if (v && v !== t.name) { renameUserTheme(themeId, v); }
+      rerender();
+    };
+    var ok = lxBtn('', '', commitRename);
+    ok.setAttribute('aria-label', 'Keep this name');
+    ok.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); commitRename(); }
+      if (e.key === 'Escape') { e.preventDefault(); olSt.rename = false; rerender(); }
+    });
+    line.appendChild(inp);
+    line.appendChild(ok);
+    band.appendChild(line);
+    var rn = lxEl('div', 'ol-rn');
+    if (hers && t.hersName && t.hersName !== t.name) {
+      rn.appendChild(lxBtn('ol-lnk', 'Use her words', function () { inp.value = t.hersName; inp.focus(); }));
+    }
+    rn.appendChild(lxBtn('ol-lnk', 'Cancel', function () { olSt.rename = false; rerender(); }));
+    band.appendChild(rn);
+    window.setTimeout(function () { if (document.body.contains(inp)) { inp.focus(); } }, 0);
+  } else {
+    var h2 = lxEl('h2', '', t.name);
+    h2.setAttribute('dir', 'auto');
+    band.appendChild(h2);
+    band.appendChild(lxEl('p', 'ol-sub', (hers ? 'From Yumi' : 'Yours') + ' · ' + lxPlural(n, 'book') + ' · ' + lxPlural(notes.length, 'note')));
+  }
+  left.appendChild(band);
+
+  // Her question, the largest line on the page; one button to Yumi.
+  if (t.q || !rested) {
+    var top = lxEl('div', 'ol-top');
+    if (t.q) {
+      var q = lxEl('div', 'ol-q');
+      q.appendChild(lxEl('span', 'ol-lbl', 'Yumi’s question'));
+      q.appendChild(lxEl('em', '', t.q));
+      top.appendChild(q);
+    }
+    if (!rested && read && floorOk) {
+      var ya = lxBtn('ol-yask', '', function () {
+        if (window.YumiUI && typeof window.YumiUI.openLensSayBack === 'function') {
+          window.YumiUI.openLensSayBack({ kind: 'theme', uid: uid, id: themeId, onDone: function () { lxAfterLensWrite(); } });
+        }
+      });
+      ya.appendChild(lxSeed());
+      var yt = lxEl('span', 'ol-tx');
+      yt.appendChild(lxEl('b', '', 'Think it through with Yumi'));
+      yt.appendChild(lxEl('small', '', 'She re-reads this lens through what you say'));
+      ya.appendChild(yt);
+      ya.appendChild(lxEl('span', 'ol-chev', '›'));
+      top.appendChild(ya);
+    } else if (!rested && !read) {
+      top.appendChild(lxEl('p', 'ol-foot', 'She hasn’t read this one. It is yours as you named it.'));
+      if (!floorOk) {
+        top.appendChild(lxEl('p', 'ol-foot', 'Lenses come once your shelf holds five books. It holds ' + floorN + '.'));
+      } else {
+        var ask = lxBtn('ghost', olSt.asking ? 'Reading across these books…' : 'Ask Yumi to read it', function () {
+          olSt.asking = true; rerender();
+          lxAskToRead(themeId, function () { if (olSt.id === themeId) { olSt.asking = false; } rerender(); });
+        });
+        if (olSt.asking) { ask.disabled = true; }
+        top.appendChild(ask);
+      }
+    }
+    if (top.firstChild) { left.appendChild(top); }
+  }
+
+  // Yours: why you keep returning to it, what you said back.
+  var yours = olSect('Yours', null);
+  var grp = lxEl('div', 'ol-grp');
+  if (olSt.why) {
+    var wr = lxEl('div', 'ol-rw ol-why');
+    wr.appendChild(lxEl('span', 'ol-s', 'Why you keep returning to it'));
+    var ta = lxEl('textarea');
+    ta.maxLength = LENS_WHY_LEN; ta.rows = 3;
+    ta.value = t.why || '';
+    ta.setAttribute('aria-label', 'Why you keep returning to it');
+    wr.appendChild(ta);
+    wr.appendChild(lxEl('p', 'ol-foot', 'One line, up to ' + LENS_WHY_LEN + ' characters, kept with the lens.'));
+    var wa = lxEl('div', 'lx-acts');
+    wa.appendChild(lxBtn('pill', 'Keep', function () { lensSetWhy(themeId, ta.value); olSt.why = false; rerender(); }));
+    wa.appendChild(lxBtn('quiet', 'Cancel', function () { olSt.why = false; rerender(); }));
+    wr.appendChild(wa);
+    grp.appendChild(wr);
+    window.setTimeout(function () { if (document.body.contains(ta)) { ta.focus(); } }, 0);
+  } else {
+    var wb = lxBtn('ol-rw', '', function () { olSt.why = true; rerender(); });
+    var wt = lxEl('span', 'ol-tx');
+    wt.appendChild(lxEl('span', 'ol-s', 'Why you keep returning to it'));
+    wt.appendChild(lxEl('span', t.why ? 'ol-c' : 'ol-act', t.why ? t.why : 'Add a line'));
+    wb.appendChild(wt);
+    wb.appendChild(lxEl('span', 'ol-chev', '›'));
+    grp.appendChild(wb);
+  }
+  for (i = 0; i < t.said.length; i++) {
+    var sr = lxEl('div', 'ol-rw');
+    var st = lxEl('span', 'ol-tx');
+    st.appendChild(lxEl('span', 'ol-s', 'You said back'));
+    st.appendChild(lxEl('span', 'ol-c', '“' + (t.said[i].t || '') + '”'));
+    sr.appendChild(st);
+    grp.appendChild(sr);
+  }
+  if (t.said.length) {
+    var fb = lxBtn('ol-rw', '', function () {
+      var prev = lensForgetSaid(themeId);
+      rerender();
+      lxToast('Forgotten. She no longer quotes what you said to this lens.', function () { lensRestoreSaid(themeId, prev); rerender(); });
+    });
+    fb.appendChild(lxEl('span', 'ol-act', 'Let her forget this'));
+    grp.appendChild(fb);
+  }
+  yours.appendChild(grp);
+  left.appendChild(yours);
+  col.appendChild(left);
+
+  // ---- the right column: her reading and the books, then the notes ----
+  var right = lxEl('div', 'ol-right');
+  var full = read && !rested;
+  var editBtn = null;
+  if (n > 0 && !rested) {
+    editBtn = lxBtn('ol-lnk', olSt.edit ? 'Done' : 'Edit', function () { olSt.edit = !olSt.edit; rerender(); });
+    editBtn.setAttribute('aria-pressed', olSt.edit ? 'true' : 'false');
+  }
+  var bk = olSect(full ? 'Her reading' : 'Books', editBtn);
+  bk.id = 'ol-books';
+  if (rested) {
+    bk.appendChild(lxEl('p', 'ol-prose', 'A lens rests on at least two books, so her reading isn’t shown until it holds two again.'));
+  } else if (full) {
+    bk.appendChild(lxEl('p', 'ol-passage', t.lead));
+  }
+  if (shown.length) {
+    bk.appendChild(olCovers(shown, t.leftOuts, pick, olSt.edit, n > 2,
+      function (bid) { olSt.pick = bid; rerender(); },
+      function (bid) {
+        if (lensLeaveOut(themeId, bid)) {
+          rerender();
+          lxToast('Left out. ' + ((state.books[bid] && state.books[bid].title) || 'It') + ' stays on your shelf; the lens rests on the rest.', function () {
+            lensPutBack(themeId, bid); rerender();
+          });
+        }
+      }));
+  }
+  if (pick && state.books[pick]) {
+    var pb = state.books[pick], isOut = t.leftOuts.indexOf(pick) !== -1;
+    var sp = lxEl('div', 'ol-spoken');
+    sp.setAttribute('aria-live', 'polite');
+    sp.appendChild(lxEl('span', 'ol-t', pb.title || ''));
+    sp.appendChild(lxEl('span', 'ol-s', (pb.author ? pb.author + ' · ' : '') + (isOut ? 'left out, still on your shelf' : (pb.status === 'read' ? 'read' : 'unread'))));
+    if (full && t.clauses && t.clauses[pick] && !isOut) { sp.appendChild(lxEl('p', 'ol-c', t.clauses[pick])); }
+    else if (!isOut && !(t.clauses && t.clauses[pick])) { sp.appendChild(lxEl('p', 'ol-c ol-plainc', 'In this lens because you put it there.')); }
+    var sa = lxEl('div', 'ol-acts');
+    sa.appendChild(lxBtn('ol-lnk', 'Open the book', function () { location.hash = '#book/' + pick; }));
+    if (isOut) { sa.appendChild(lxBtn('ol-lnk', 'Put it back', function () { lensPutBack(themeId, pick); rerender(); })); }
+    sp.appendChild(sa);
+    bk.appendChild(sp);
+  }
+  if (olSt.edit) {
+    bk.appendChild(lxEl('p', 'ol-foot', n > 2 ? 'Leaving a book out takes it from this lens. It stays on your shelf.' : 'A lens rests on at least two books.'));
+  }
+  if (full) {
+    if (t.close) { bk.appendChild(lxEl('p', 'ol-passage', t.close)); }
+    bk.appendChild(lxEl('p', 'ol-foot', 'Yumi read these from their titles, authors and categories only — never from inside your books.'));
+  }
+  right.appendChild(bk);
+
+  var list = olNotesOf(notes, olSt.reg), cut = olSt.all ? list.length : Math.min(4, list.length), seeAll = null;
+  if (list.length > cut) { seeAll = lxBtn('ol-lnk', 'See all ' + list.length, function () { olSt.all = true; rerender(); }); }
+  var nt = olSect('Notes', seeAll);
+  nt.id = 'ol-notes';
+  if (!notes.length) {
+    nt.appendChild(lxEl('p', 'ol-foot', 'No notes on these books yet. Catch a thought from any of them and it lands here too.'));
+  } else {
+    var seg = lxEl('div', 'ol-seg');
+    seg.setAttribute('role', 'group');
+    seg.setAttribute('aria-label', 'Filter notes');
+    var chip = function (reg, label) {
+      var c = lxBtn('', label + ' ' + olNotesOf(notes, reg).length, function () { olSt.reg = reg; olSt.all = false; rerender(); });
+      c.setAttribute('aria-pressed', olSt.reg === reg ? 'true' : 'false');
+      seg.appendChild(c);
+    };
+    chip('all', 'All'); chip('marginalia', 'Marginalia'); chip('question', 'Questions');
+    nt.appendChild(seg);
+    if (!list.length) {
+      nt.appendChild(lxEl('p', 'ol-foot', 'None of that kind on these books.'));
+    } else {
+      var ng = lxEl('div', 'ol-grp');
+      for (i = 0; i < cut; i++) {
+        (function (en) {
+          var bt = '', j;
+          for (j = 0; j < en.bookIds.length; j++) { if (state.books[en.bookIds[j]] && all.indexOf(en.bookIds[j]) !== -1) { bt = state.books[en.bookIds[j]].title || ''; break; } }
+          var row = lxBtn('ol-rw', '', function () { location.hash = '#note/' + en.id; });
+          var tx = lxEl('span', 'ol-tx');
+          tx.appendChild(lxEl('span', 'ol-n', (typeof en.body === 'string' && en.body.replace(/\s+/g, ' ').replace(/^ | $/g, '')) || 'Note'));
+          tx.appendChild(lxEl('span', 'ol-s', notebookRegisterLabel(en.register) + (bt ? ' · ' + bt : '') + ' · ' + lxAgo(en.createdAt)));
+          row.appendChild(tx);
+          row.appendChild(lxEl('span', 'ol-chev', '›'));
+          ng.appendChild(row);
+        })(list[i]);
+      }
+      nt.appendChild(ng);
+    }
+  }
+  right.appendChild(nt);
+  col.appendChild(right);
 }
 
 // "Ask Yumi to read it" (S12): ONE call through the Stage 1 path on this lens's

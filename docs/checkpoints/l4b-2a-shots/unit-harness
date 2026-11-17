@@ -1,0 +1,158 @@
+// docs/checkpoints/l4b-2a-shots/unit-harness -- L4b-2a (Open Lens, #lens/<id>) unit proofs.
+// cscript JScript (Node is blocked), the l4b-1-hotfix unit-harness pattern: the pure parts
+// are EXTRACTED BY TEXT from the real bytes of js/views.js and run in one scope against a
+// stubbed state:
+//   U1 olRoomRoute         -- which routes count as a room Open Lens can be opened from
+//   U2 olFromLabel         -- the Back label for each origin
+//   U3 olNotes             -- the notes on a lens's books (Journal never; another reader
+//                             never; a left-out book's note listed; newest first; edge shapes)
+//   U4 olNotesOf           -- the register filter
+//   U5 tabbarTabFor        -- #lens/<id> lights the origin's tab; a bare #lens falls through
+//   U6 renderRoute's L4b-2a bookkeeping block (lxLastRoute / olFrom / olSt.fresh / olPrev),
+//      extracted by text and driven through route sequences (red-team R2 and walk iv/v).
+// Note fixtures carry the exact field set captureNote() writes (views.js), plus the edge
+// shapes the live store can hold (a stale book id, a duplicate id, a blank body, no
+// createdAt, a Journal entry that somehow carries a bookId).
+// EXTENSIONLESS on purpose (see tools/parse-check). ASCII-only: cscript reads it as ANSI.
+//
+// Usage:  cscript //nologo //E:jscript docs/checkpoints/l4b-2a-shots/unit-harness [root]
+// Exit:   0 = every case passed . 1 = a case failed . 2 = could not load
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName))));
+if (WScript.Arguments.length > 0) { root = String(WScript.Arguments(0)); }
+function readFile(p) { var s = fso.OpenTextFile(p, 1, false); var t = s.ReadAll(); s.Close(); return t; }
+if (typeof Array.prototype.indexOf !== 'function') { Array.prototype.indexOf = function (v) { var i; for (i = 0; i < this.length; i++) { if (this[i] === v) { return i; } } return -1; }; }
+
+var failures = 0, total = 0;
+function check(name, got, want) { total++; if (got === want) { WScript.Echo('  PASS  ' + name + '  = ' + got); } else { failures++; WScript.Echo('  FAIL  ' + name + '\n        got  ' + got + '\n        want ' + want); } }
+(function () { var b = failures; check('self-check (expected to FAIL)', 1, 2); if (failures - b !== 1) { WScript.Echo('HARNESS SELF-CHECK FAILED'); WScript.Quit(2); } failures = b; total--; })();
+
+function between(src, a, b) {
+  var i = src.indexOf(a), j = src.indexOf(b, i + 1);
+  if (i < 0 || j < 0) { throw new Error('anchor not found: ' + a + ' .. ' + b); }
+  if (src.indexOf(a, i + 1) !== -1) { throw new Error('anchor not unique: ' + a); }
+  return src.slice(i, j);
+}
+
+// ---------------------------------------------------------------- load
+var vsrc, M;
+try { vsrc = readFile(fso.BuildPath(root, 'js\\views.js')).replace(/\r/g, ''); }
+catch (e) { WScript.Echo('LOAD FAIL (read): ' + e.message); WScript.Quit(2); }
+try {
+  var tabSrc  = between(vsrc, 'function tabbarTabFor(parts) {', 'function tabbarMark() {');
+  var pureSrc = between(vsrc, 'function olRoomRoute(r) {', 'function olSect(title, actionBtn) {');
+  var bkSrc   = between(vsrc, "if (parts[0] !== 'lenses' && parts[0] !== 'lens')", 'if (lxSheetOpen && location.hash');
+  M = new Function('state',
+    "var olFrom = 'home', olPrev = '', olSt = { id: null }, tabbarSearchFrom = null, lxLastRoute = 'home';\n" +
+    tabSrc + '\n' + pureSrc + '\n' +
+    'function nav(rest) { var parts = rest.split("/");\n' + bkSrc + '\n}\n' +
+    'return { room: olRoomRoute, label: olFromLabel, notes: olNotes, of: olNotesOf, tab: tabbarTabFor, nav: nav,' +
+    ' setFrom: function (v) { olFrom = v; }, setSearchFrom: function (v) { tabbarSearchFrom = v; },' +
+    ' setSt: function (v) { olSt = v; },' +
+    ' st: function () { return { from: olFrom, prev: olPrev, fresh: olSt.fresh === true, last: lxLastRoute }; },' +
+    ' clearFresh: function () { olSt.fresh = false; } };');
+} catch (e) { WScript.Echo('LOAD FAIL: ' + e.message); WScript.Quit(2); }
+
+var ST = { notebookEntries: {}, books: {} };
+var X = M(ST);
+
+// ================================================================ U1
+WScript.Echo('\nU1 olRoomRoute');
+var rooms = ['home', 'books', 'profile', 'lenses', 'search', 'notebook', 'category/c1', 'books/x'];
+var notRooms = ['book/b1', 'note/n1', 'lens/t1', 'lens', 'arcs', 'arc/a1', 'account', 'artifact/b1', 'subtheory/s1', 'yumi-sees', 'about', '', 'homex'];
+var i;
+for (i = 0; i < rooms.length; i++) { check('room: ' + rooms[i], X.room(rooms[i]), true); }
+for (i = 0; i < notRooms.length; i++) { check('not a room: "' + notRooms[i] + '"', X.room(notRooms[i]), false); }
+check('null/undefined is not a room', X.room(null) || X.room(undefined), false);
+
+// ================================================================ U2
+WScript.Echo('\nU2 olFromLabel');
+var labels = [['books', 'Shelf'], ['profile', 'You'], ['lenses', 'Lenses'], ['search', 'Search'], ['notebook', 'Notebook'],
+  ['category/c1', 'Category'], ['home', 'Home'], ['', 'Home'], ['books/x', 'Shelf']];
+for (i = 0; i < labels.length; i++) { X.setFrom(labels[i][0]); check('label for olFrom "' + labels[i][0] + '"', X.label(), labels[i][1]); }
+X.setFrom(null); check('label for olFrom null', X.label(), 'Home');
+
+// ================================================================ U3
+WScript.Echo('\nU3 olNotes');
+function note(id, uid, reg, bookIds, at, body) {   // the field set captureNote() writes
+  ST.notebookEntries[id] = { id: id, userId: uid, register: reg, isPrivate: true, body: body === undefined ? ('body ' + id) : body,
+    bookIds: bookIds, arcIds: [], images: [], filed: bookIds.length > 0, createdAt: at, updatedAt: at };
+}
+var U = 'u_me', O = 'u_other';
+note('n1', U, 'marginalia', ['b1'], 1000);
+note('n2', U, 'question',   ['b2'], 3000);
+note('n3', U, 'journal',    ['b1'], 9000);          // a Journal entry carrying a book id: never listed
+note('n4', O, 'marginalia', ['b1'], 8000);          // another reader's: never listed
+note('n5', U, 'marginalia', ['bOut'], 2000);        // on a left-out book: listed (ids passed = bookIds + leftOuts)
+note('n6', U, 'marginalia', ['bElse'], 7000);       // on a book outside the lens: not listed
+note('n7', U, 'question',   ['b9', 'b2', 'b2'], 5000);   // stale id first, duplicate id: listed ONCE
+note('n8', U, 'marginalia', [], 6000);              // bookless (Inbox): not listed
+note('n9', U, 'marginalia', ['b1'], undefined, ''); // no createdAt, blank body: listed, sorts last
+ST.notebookEntries.n10 = { id: 'n10', userId: U, register: 'marginalia', body: 'x', bookIds: 'b1', createdAt: 4000 };   // malformed bookIds
+ST.notebookEntries.n11 = null;
+var got = X.notes(U, ['b1', 'b2', 'bOut']);
+var ids = []; for (i = 0; i < got.length; i++) { ids.push(got[i].id); }
+check('listed ids, newest first', ids.join(','), 'n7,n2,n5,n1,n9');
+check('Journal never listed', ids.indexOf('n3'), -1);
+check('another reader never listed', ids.indexOf('n4'), -1);
+check('left-out book note listed', ids.indexOf('n5') !== -1, true);
+check('outside-the-lens note not listed', ids.indexOf('n6'), -1);
+check('duplicate book id lists the note once', (ids.join(',').match(/n7/g) || []).length, 1);
+check('bookless note not listed', ids.indexOf('n8'), -1);
+check('malformed bookIds skipped, no throw', ids.indexOf('n10'), -1);
+check('another uid sees only its own', X.notes(O, ['b1']).length + ':' + X.notes(O, ['b1'])[0].id, '1:n4');
+check('empty id list -> none', X.notes(U, []).length, 0);
+note('t1', U, 'marginalia', ['b1'], 4000); note('t0', U, 'marginalia', ['b1'], 4000);
+got = X.notes(U, ['b1']); ids = []; for (i = 0; i < got.length; i++) { ids.push(got[i].id); }
+check('equal createdAt ties break by id ascending', ids.join(','), 't0,t1,n1,n9');
+var saved = ST.notebookEntries; ST.notebookEntries = null;
+check('no notebookEntries -> [] (no throw)', X.notes(U, ['b1']).length, 0);
+ST.notebookEntries = saved;
+
+// ================================================================ U4
+WScript.Echo('\nU4 olNotesOf');
+got = X.notes(U, ['b1', 'b2', 'bOut']);
+check('all', X.of(got, 'all').length, 7);
+check('marginalia', X.of(got, 'marginalia').length, 5);
+check('question', X.of(got, 'question').length, 2);
+check('journal filter is empty (never listed)', X.of(got, 'journal').length, 0);
+check('order kept by the filter', X.of(got, 'question')[0].id + ',' + X.of(got, 'question')[1].id, 'n7,n2');
+
+// ================================================================ U5
+WScript.Echo('\nU5 tabbarTabFor for lens routes');
+var tabs = [['books', 'shelf'], ['books/x', 'shelf'], ['profile', 'you'], ['lenses', 'home'], ['home', 'home'], ['notebook', 'notebook']];
+for (i = 0; i < tabs.length; i++) { X.setFrom(tabs[i][0]); check('#lens/t1 from ' + tabs[i][0], X.tab(['lens', 't1']), tabs[i][1]); }
+X.setFrom('search'); X.setSearchFrom('shelf'); check('#lens/t1 from search (searchFrom shelf)', X.tab(['lens', 't1']), 'shelf');
+X.setSearchFrom(null); check('#lens/t1 from search (no searchFrom)', X.tab(['lens', 't1']), 'home');
+X.setFrom(null); check('#lens/t1 with olFrom null -> home', X.tab(['lens', 't1']), 'home');
+X.setFrom('books'); check('bare #lens falls through (not the lens line)', X.tab(['lens']), 'notebook');
+check('#lenses unchanged', X.tab(['lenses']), 'home');
+X.setFrom('category/c1'); check('#lens/t1 from category (L4b-2b owes its line) -> falls through', X.tab(['lens', 't1']), 'notebook');
+
+// ================================================================ U6
+WScript.Echo('\nU6 renderRoute bookkeeping (lxLastRoute / olFrom / olSt.fresh / olPrev)');
+X.setFrom('home'); X.setSt({ id: null });
+X.nav('books'); X.clearFresh();
+check('on #books: lxLastRoute books, olPrev books', X.st().last + '|' + X.st().prev, 'books|books');
+X.nav('lens/t1');
+check('Shelf -> lens: olFrom books, fresh, lxLastRoute NOT lens', X.st().from + '|' + X.st().fresh + '|' + X.st().last, 'books|true|books');
+X.clearFresh(); X.nav('lens/t1');
+check('same-route re-render: fresh stays false, olFrom kept', X.st().fresh + '|' + X.st().from, 'false|books');
+X.nav('book/b1'); X.nav('lens/t1');
+check('lens -> book -> Back: olFrom still books (a book is not a room), fresh', X.st().from + '|' + X.st().fresh, 'books|true');
+X.clearFresh(); X.nav('note/n1'); X.nav('lens/t1');
+check('lens -> note -> Back: olFrom still books', X.st().from, 'books');
+X.clearFresh(); X.nav('lenses'); X.nav('lens/t1');
+check('Lenses -> lens: olFrom lenses, lxLastRoute not overwritten by either', X.st().from + '|' + X.st().last, 'lenses|note/n1');
+X.nav('lenses');
+check('lens -> Back -> #lenses: lxLastRoute is not a lens route', X.st().last.split('/')[0] !== 'lens', true);
+X.nav('home'); X.nav('lens/t2');
+check('Home -> another lens: olFrom home', X.st().from, 'home');
+X.clearFresh(); X.nav('lens/t1');
+check('lens t2 -> lens t1 directly: olFrom kept (lens is not a room), fresh', X.st().from + '|' + X.st().fresh, 'home|true');
+X.nav('');
+check('empty hash records olPrev home', X.st().prev, 'home');
+
+WScript.Echo('\n' + (total - failures) + '/' + total + ' passed');
+WScript.Quit(failures ? 1 : 0);

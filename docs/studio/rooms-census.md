@@ -23,8 +23,8 @@ Read against `praxis-app` **main at v3.316** (GitHub zip, tree dated 30 Oct 2026
 | `#yumi-sees` | `renderWhatYumiSeesPage` :20519 | paintSees | Redrawn (the yes, three plain rows, said-back, her portrait) | L4b-3 |
 | `#about` | `renderAbout` :24822 | paintAbout | Redrawn (lead, the covenant as rows, where your words go) | L4b-3 |
 | `#scan` | `renderScan` :11692 | door mode "Scan" | Reskin only. The capture dial's Scan wedge is its door (ledger N2) | LC1 |
-| `#lens/<id>` | **none** (fifteenth r46) | paintLens | **New.** Open Lens, the page (Open Lens 4) | L4b-2 |
-| `#category/<id>` | **none** (fifteenth r47) | paintCat | **New.** Category page | L4b-2 |
+| `#lens/<id>` | `renderOpenLens` (L4b-2a; was **none**, fifteenth r46) | paintLens | **Built at v3.329** (L4b-2a, 17 Nov 2026, `docs/checkpoints/l4b-2a.md`; was *New*). Open Lens, the page (Open Lens 4, r90): band of today's sky + the lens's glow, her question, Yours, her reading + covers, notes. Opened from the lens sheet's "Open lens" pill | L4b-2a |
+| `#category/<id>` | **none** (fifteenth r47) | paintCat | **New.** Category page | L4b-2b (v3.330; doors: the Shelf's category heading and the You-sky category orb) |
 | `#arcs`, `#arc/<id>` | `renderArcsPage` :4301, `renderArcDetail` :17197 | "open in the next release" | Untouched. They share the day token block (`.arcs.lum-amber-deep, .arcfield`, theme.css :377), so LC1 changes their ink and gold values (ledger C3) | LC1 (measure only) |
 | `#subtheory/<id>`, `/build` | `renderSubTheoryPage` :14604, `renderSubTheoryBuild` :14972 | — | Untouched | — |
 | `#value/<id>` | `renderValuePage` :19096 | — | Untouched | — |

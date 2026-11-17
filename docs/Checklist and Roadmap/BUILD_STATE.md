@@ -6,10 +6,10 @@
 > commits its state as diff-reviewable text and is updated in the **same commit**
 > that finalizes each checkpoint, so it can never go stale on the desktop again.
 
-**Authoritative as of:** 2026-11-17 (refreshed at the L4b-1 hotfix; before that at L4b-1, the L4c flip, L4c, LC1 hotfix 1 and LC1)
+**Authoritative as of:** 2026-11-17 (refreshed at L4b-2a; before that at the L4b-1 hotfix, L4b-1, the L4c flip, L4c, LC1 hotfix 1 and LC1)
 **Live:** https://praxis-reading.netlify.app (Netlify's primary URL for the site is now https://praxisreader.com)
-**Live CACHE_VERSION:** `praxis-v3.327` (L4b-1, pushed 3d722db; Preston's phone look PASS, lane closed); the L4b-1 hotfix ships v3.328
-**HEAD == origin/main:** `3d722db` (L4b-1); the L4b-1 hotfix is built on it, local, awaiting the commit
+**Live CACHE_VERSION:** `praxis-v3.328` (the L4b-1 hotfix, pushed 6c31f48; Preston's phone check owed); L4b-2a ships v3.329
+**HEAD == origin/main:** `6c31f48` (the L4b-1 hotfix); L4b-2a (Open Lens, `#lens/<id>`) is built on it, local, awaiting the commit
 **Coverage board:** per-surface coverage now lives in `BOARD.md` at the repo root. The body and
 appendix below reflect detailed state as of `praxis-v3.123` (2026-06-19) and have **not** been
 retro-filled to current HEAD — treat them as historical beyond that point.
@@ -365,4 +365,5 @@ the very end (after this list).
 | v3.325 | L4c — the two-step lens read, built dark behind `praxis_lens2` (default off): NAMES (400, up to three) + one READING per offer on screen (600); switch off = the one-call read — pushed 6b7b30e; Preston's timed read PASS (names 5.6 s, the reading 7.5 s) |
 | v3.326 | L4c — the flip: the two-step read is the lens read for every reader, the switch removed, F1 fixed (a failed offers load shows the failure line with Try again; the load redraws only when the device holds offers) — pushed 111b741 |
 | v3.327 | L4b-1 — the tab bar and the Search pill (phones): Home · Shelf · Notebook · Capture · You fixed at the bottom ≤759px, the current tab brown (--gold-ink); the Search pill where the hamburger was; About Praxis as the last row of You; the gold + retired on phones; the flower, the Add button, Yumi's panel and the toast lift above the bar; 760+ unchanged — **pushed 3d722db, current live; Preston's phone look PASS (17 Nov, Day and Night), lane closed** |
-| v3.328 | L4b-1 hotfix — the phone walk's four findings: a new page opens at its top (tab / nav taps; browser Back left alone; a page's own back link returns to the depth left); the capture sheet rides above the software keyboard (visualViewport); a first-visit card sits above the tab bar; a value broken into `[object Object]` healed on read and write — built local, awaiting commit; Preston's phone check owed (`docs/checkpoints/l4b-1-hotfix.md`) |
+| v3.328 | L4b-1 hotfix — the phone walk's four findings: a new page opens at its top (tab / nav taps; browser Back left alone; a page's own back link returns to the depth left); the capture sheet rides above the software keyboard (visualViewport); a first-visit card sits above the tab bar; a value broken into `[object Object]` healed on read and write — pushed 6c31f48; Preston's phone check owed (`docs/checkpoints/l4b-1-hotfix.md`) |
+| v3.329 | L4b-2a — Open Lens, the page (`#lens/<id>`, ruling r90): the lens in a band of today's sky with its own colour glow, her question, Yours (why / said back), her reading with the covers (Edit leaves a book out, at least two), the notes on its books; the sheet's "Open lens" pill opens it; writes only through the sheet's existing state.js functions; the red-team's F1/F2 CSS defects fixed in the same commit (Preston's ruling) — built local, awaiting commit; Preston's look owed (`docs/checkpoints/l4b-2a.md`) |
