@@ -210,8 +210,10 @@ assert('LENS_GEN_SYSTEM === contract sec.1 quoted prompt, character for characte
   CONTRACT_PROMPT.length > 2000 && LENS_GEN_SYSTEM === CONTRACT_PROMPT,
   function () { var d = firstDiff(LENS_GEN_SYSTEM, CONTRACT_PROMPT); return 'lengths ' + LENS_GEN_SYSTEM.length + ' / ' + CONTRACT_PROMPT.length + '; first diff at ' + d + ': code [' + LENS_GEN_SYSTEM.substr(d, 40) + '] contract [' + CONTRACT_PROMPT.substr(d, 40) + ']'; });
 assert('LENS_GEN_SYSTEM is the contract text (2,639 chars, ban list quotes the live phrase)',
-  LENS_GEN_SYSTEM.length === 2639 && LENS_GEN_SYSTEM.indexOf('never "you keep circling"') !== -1 && LENS_GEN_SYSTEM.indexOf('marked "You told me: ' + ELL + '"') !== -1,
-  function () { return 'length ' + LENS_GEN_SYSTEM.length + ', ban-list at ' + LENS_GEN_SYSTEM.indexOf('never "you keep circling"') + ', exemption at ' + LENS_GEN_SYSTEM.indexOf('marked "You told me: ' + ELL + '"'); });
+  LENS_GEN_SYSTEM.length === 2639 && LENS_GEN_SYSTEM.indexOf('never "you keep circling"') !== -1 && LENS_GEN_SYSTEM.indexOf('marked ' + LDQ + 'You told me: ' + ELL + RDQ) !== -1,
+  function () { return 'length ' + LENS_GEN_SYSTEM.length + ', ban-list at ' + LENS_GEN_SYSTEM.indexOf('never "you keep circling"') + ', exemption at ' + LENS_GEN_SYSTEM.indexOf('marked ' + LDQ + 'You told me: ' + ELL + RDQ); });
+assert('L4c flip: neither system prompt wraps "You told me" in straight quotes',
+  LENS_GEN_SYSTEM.indexOf('"You told me') === -1 && LENS2_SYSTEM.indexOf('"You told me') === -1 && LENS_GEN_SYSTEM.indexOf('A quoted ' + LDQ + 'You told me: ' + ELL + RDQ + ' sentence') !== -1);
 // metadata-only payload: build a real meta and look for every id
 state.userBooks = { u_test: { bookIds: [] } }; state.books = {};
 for (ii = 0; ii < LIB.length; ii++) {

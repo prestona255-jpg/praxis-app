@@ -64,6 +64,7 @@ var themesLoadOk       = false;
 // absent load -- never on an error -- so a failed read can never let a .set() of
 // a partial local copy overwrite the cloud doc (the themes latch opens on error).
 var lensOffersLoaded   = false;
+var lensOffersLoadFailed = false;   // L4c flip (F1): the last offers load ERRORED (views.js lxReadOffer)
 var artifactsLoaded    = false;
 var booksLoaded        = false;   // F-DL2: books' outgoing latch (beside pendingBookSync).
 // F-DL3: profile + readerModel are single-doc writes fired DIRECTLY (no dirty flag), so
@@ -100,6 +101,7 @@ function resetSyncLatches() {
   themesLoaded            = false;
   themesLoadOk            = false;   // L4 hotfix R4
   lensOffersLoaded        = false;   // L4.2
+  lensOffersLoadFailed    = false;   // L4c flip (F1)
   artifactsLoaded         = false;
   booksLoaded             = false;
   profileLoaded           = false;
@@ -1974,6 +1976,18 @@ function loadLensOffersFromFirestore(uid, callback) {
 function applyLensOffersLoad(uid, loResult) {
   if (!uid || !loResult || (loResult.status !== 'found' && loResult.status !== 'absent')) {
     console.warn('loadLensOffersFromFirestore: fetch failed; offers stay local, writes held (rule 4)', loResult ? loResult.error : null);
+    // L4c flip (F1): an ERRORED load for the reader signed in now is remembered, and -- only when
+    // this device holds offers to redraw -- the page is drawn again, so an unread offer shows the
+    // failure line with Try again instead of the waiting line. The latch stays shut (rule 4).
+    if (uid && loResult && loResult.status === 'error') {
+      var loErrCur = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+      if (loErrCur && loErrCur.uid === uid) {
+        lensOffersLoadFailed = true;
+        var loErrDoc = lensOffersDoc(uid), loErrAny = false, le;
+        for (le in loErrDoc.offers) { if (loErrDoc.offers.hasOwnProperty(le)) { loErrAny = true; break; } }
+        if (loErrAny && window.views && window.views.renderRoute) { window.views.renderRoute(); }
+      }
+    }
     return false;
   }
   // A stale in-flight read for a PREVIOUS account (the F-DL5 family) must never open this
@@ -2028,10 +2042,12 @@ function applyLensOffersLoad(uid, loResult) {
     }
   }
   lensOffersLoaded = true;
+  lensOffersLoadFailed = false;   // L4c flip (F1)
   if (loKeptLocal) { markLensOffersDirty(); }   // push what the cloud has not got yet (now the latch is open)
   pruneDeclinedOffers(uid);
   saveState();
-  if (loResult.status === 'found' && window.views && window.views.renderRoute) { window.views.renderRoute(); }
+  // L4c flip (F1): on 'absent' too, but only when local offers were kept (something to redraw).
+  if ((loResult.status === 'found' || loKeptLocal) && window.views && window.views.renderRoute) { window.views.renderRoute(); }
   console.log('loadLensOffersFromFirestore: ' + loResult.status);
   return true;
 }

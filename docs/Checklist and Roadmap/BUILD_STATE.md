@@ -6,10 +6,10 @@
 > commits its state as diff-reviewable text and is updated in the **same commit**
 > that finalizes each checkpoint, so it can never go stale on the desktop again.
 
-**Authoritative as of:** 2026-11-16 (refreshed at L4c; before that at LC1 hotfix 1 and LC1, the same day)
+**Authoritative as of:** 2026-11-17 (refreshed at the L4c flip; before that at L4c, LC1 hotfix 1 and LC1, 16 Nov)
 **Live:** https://praxis-reading.netlify.app (Netlify's primary URL for the site is now https://praxisreader.com)
-**Live CACHE_VERSION:** `praxis-v3.324` (LC1 hotfix 1, pushed 2d7b7b7); L4c ships v3.325
-**HEAD == origin/main:** `2d7b7b7` (LC1 hotfix 1); L4c is built on it, local, awaiting the commit
+**Live CACHE_VERSION:** `praxis-v3.325` (L4c, pushed 6b7b30e); the L4c flip ships v3.326
+**HEAD == origin/main:** `6b7b30e` (L4c); the flip is built on it, local, awaiting the commit
 **Coverage board:** per-surface coverage now lives in `BOARD.md` at the repo root. The body and
 appendix below reflect detailed state as of `praxis-v3.123` (2026-06-19) and have **not** been
 retro-filled to current HEAD — treat them as historical beyond that point.
@@ -361,5 +361,6 @@ the very end (after this list).
 | v3.321 | L4 hotfix 4 — the say-back's reply is readable again (curly quotes asked for; a bare-quoted "You told me" repaired on the re-reading path) — pushed fdcbc7b |
 | v3.322 | L4 Stage 6 — the sky is on by default (Home and You); You's mode switch cleared from under the name row; the motion gate OWED before the beta — pushed 50d419d |
 | v3.323 | LC1 — the colours: canon amendment 1.5, tokens only (35 theme.css values, the two generator sources, five literals; byte-neutral) — pushed 1739253 |
-| **v3.324** | **LC1 hotfix 1 — the day grain: the day and auto `--grain-op` .32 → .08 (Preston's ruling, 16 Nov 2026; three lines, byte-neutral) — pushed 2d7b7b7, current live; LC1 closed on Preston's felt pass (Day, 16 Nov)** |
-| v3.325 | L4c — the two-step lens read, built dark behind `praxis_lens2` (default off): NAMES (400, up to three) + one READING per offer on screen (600); switch off = the one-call read — built local, awaiting commit |
+| v3.324 | LC1 hotfix 1 — the day grain: the day and auto `--grain-op` .32 → .08 (Preston's ruling, 16 Nov 2026; three lines, byte-neutral) — pushed 2d7b7b7; LC1 closed on Preston's felt pass (Day, 16 Nov) |
+| **v3.325** | **L4c — the two-step lens read, built dark behind `praxis_lens2` (default off): NAMES (400, up to three) + one READING per offer on screen (600); switch off = the one-call read — pushed 6b7b30e, current live; Preston's timed read PASS (names 5.6 s, the reading 7.5 s)** |
+| v3.326 | L4c — the flip: the two-step read is the lens read for every reader, the switch removed, F1 fixed (a failed offers load shows the failure line with Try again; the load redraws only when the device holds offers) — built local, awaiting commit |

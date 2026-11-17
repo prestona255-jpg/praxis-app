@@ -10,7 +10,13 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
-**L4c (2026-11-16, v3.325, local) — the two-step lens read, built dark.** Behind the per-device switch `praxis_lens2`
+**L4c — the flip (2026-11-17, v3.326, local) — the two-step lens read is the read.** Preston's timed read on v3.325 passed
+(names 5.6 s, the reading 7.5 s; two proxy calls). Every lens read is now NAMES (400) + one READING per offer on screen (600);
+the switch `praxis_lens2` and `?lens2` are gone (a stored key is ignored). F1 fixed: a failed offers load shows an unread offer's
+failure line with Try again, and the load redraws only when this device holds offers. No cell's STRUCTURE changed: the Lenses
+page with read offers is pixel-identical to v3.325 at 1360 and 390 (Night, 0 px). Record: `docs/checkpoints/l4.md` "L4c — the flip".
+
+**L4c (2026-11-16, v3.325, pushed 6b7b30e) — the two-step lens read, built dark.** Behind the per-device switch `praxis_lens2`
 (default OFF; `?lens2=on|off`): one NAMES call (max_tokens 400, up to three lenses as name, question and books) creates UNREAD
 offers; each offer's READING (max_tokens 600) is fetched when the offer is on screen (the Lenses card or the Later sheet) and
 fills in under "Reading these together…" — or "I couldn’t finish this reading just now." + Try again. Until it is written only

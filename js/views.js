@@ -26643,7 +26643,7 @@ function capHandleShareTarget() {
 // =====================================================================
 var lxGen = { uid: null, status: 'idle', err: null, survived: -1, autoTried: false };
 // L4c: each unread offer's READING, in memory only (never stored), per uid:
-// by[offerId] = { st: 'loading'|'failed'|'done', tried: true }. tried = this
+// by[offerId] = { st: 'loading'|'failed'|'done', tried: true|false }. tried = this
 // session's one automatic attempt is spent. lxReadTime = the last READING call
 // for the ?lenstime=on line. lxLaterLive = the open Later sheet, to re-render.
 var lxReads = { uid: null, by: {} };
@@ -26850,12 +26850,10 @@ function lensRunGeneration(uid) {
   var g = lxGenFor(uid);
   if (!uid || g.status === 'loading') { return false; }
   if (!isYumiYesGranted(uid) || lensShelfCount(uid) < LENS_OFFER_FLOOR) { return false; }
-  if (!(window.YumiBrain && window.YumiBrain.generateLenses && window.YumiBrain.evalLensResponse)) { return false; }
-  // L4c: behind praxis_lens2 the read is the two-step NAMES call (its survivors are
+  if (!(window.YumiBrain && window.YumiBrain.generateLensNames && window.YumiBrain.evalLensNames)) { return false; }
+  // L4c flip (v3.326): every lens read is the two-step NAMES call (its survivors are
   // unread offers; each READING is fetched when its offer is on screen).
-  var two = lxLens2On();
-  if (two && !(window.YumiBrain.generateLensNames && window.YumiBrain.evalLensNames)) { return false; }
-  g.status = 'loading'; g.err = null; g.two = two;
+  g.status = 'loading'; g.err = null;
   var meta = window.YumiBrain.gatherLensMetadata();
   var titles = [], i, t0 = Date.now();
   for (i = 0; i < meta.books.length; i++) { titles.push(meta.books[i].title); }
@@ -26864,10 +26862,8 @@ function lensRunGeneration(uid) {
     g.time = { ms: Date.now() - t0, ok: ok, err: err || null, made: made,
                usage: (window.YumiBrain.lensLastUsage ? window.YumiBrain.lensLastUsage() : null) };
   }
-  (two ? window.YumiBrain.generateLensNames(meta) : window.YumiBrain.generateLenses(meta)).then(function (raw) {
-    var surv = two
-      ? window.YumiBrain.evalLensNames(raw, titles, meta.valueNames, { titleToId: meta.titleToId, against: lensAgainstList(uid) })
-      : window.YumiBrain.evalLensResponse(raw, titles, meta.valueNames, { titleToId: meta.titleToId, against: lensAgainstList(uid) });
+  window.YumiBrain.generateLensNames(meta).then(function (raw) {
+    var surv = window.YumiBrain.evalLensNames(raw, titles, meta.valueNames, { titleToId: meta.titleToId, against: lensAgainstList(uid) });
     var made = createLensOffers(uid, surv);
     markLensRead(uid);
     g.status = 'done'; g.survived = made.length;
@@ -26907,8 +26903,6 @@ function lxLensTimeLine(g) {
 }
 
 // ---- L4c: THE READING, fetched when an unread offer is on screen --------------
-// The switch: praxis_lens2, default OFF (set by ?lens2=on|off in app.js).
-function lxLens2On() { return ls('praxis_lens2', false) === true; }
 function lxReadsFor(uid) {
   if (lxReads.uid !== uid) { lxReads = { uid: uid, by: {} }; }
   return lxReads.by;
@@ -26935,7 +26929,12 @@ function lxReadOffer(uid, id, manual) {
   // Never automatically before the offers doc has loaded (mayAutoReRead's own rule): a
   // cold open renders from the local store before sign-in settles, and a call then is
   // refused and would spend the one attempt. Unspent, it waits; the load re-renders.
-  if (!manual && typeof lensOffersLoaded !== 'undefined' && !lensOffersLoaded) { return false; }
+  if (!manual && typeof lensOffersLoaded !== 'undefined' && !lensOffersLoaded) {
+    // L4c flip (F1): the offers load ERRORED -> the failure line with Try again, not the
+    // waiting line. The automatic attempt stays unspent, so a later good load still reads once.
+    if (typeof lensOffersLoadFailed !== 'undefined' && lensOffersLoadFailed) { by[id] = { st: 'failed', tried: false }; }
+    return false;
+  }
   by[id] = { st: 'failed', tried: true };
   if (!isYumiYesGranted(uid)) { if (manual) { openYumiYesSheet('lenses'); } return false; }
   n = lensShelfCount(uid);
@@ -27069,7 +27068,7 @@ function renderLensesPage() {
     body.appendChild(lxStateBand(lxErrLine(g.err), '', lxAskAgainBtn(uid)));
   } else if (open.length) {
     sect = lxSect('From Yumi', lxPlural(open.length, 'offer'));
-    if (g.status === 'done' && g.survived >= 1 && g.survived < (g.two ? LENS_NAMES_CAP : LENS_EVAL_CAP)) {   // L4 hotfix 2 (D-2): never at a full read; L4c: a two-step read's cap is three
+    if (g.status === 'done' && g.survived >= 1 && g.survived < LENS_NAMES_CAP) {   // L4 hotfix 2 (D-2): never at a full read; L4c: a read's cap is three
       sect.appendChild(lxEl('p', 'lx-fine', g.survived === 1
         ? 'One clear thread so far — more will surface as your shelf grows.'
         : 'A couple of threads so far — more will surface as your shelf grows.'));

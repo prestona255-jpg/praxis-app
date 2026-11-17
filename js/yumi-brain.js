@@ -899,7 +899,7 @@ var LENS_GEN_SYSTEM =
   + 'life, habits, feelings or motives: never "you keep circling", "you seem '
   + 'drawn to", "you love", "you tend to", "you have been". The one exception '
   + 'is quoting their own words back when they are given to you under "The '
-  + 'reader said", marked "You told me: …".\n\n'
+  + 'reader said", marked “You told me: …”.\n\n'
   + 'For each lens return: name (a few words, precise, in the spirit of '
   + 'critical pedagogy); lead (one sentence, sure about the shelf, about what '
   + 'these books do together); clauses (one short clause per cited book, by '
@@ -911,7 +911,7 @@ var LENS_GEN_SYSTEM =
   + '5, only numbers from the list).\n\n'
   + 'Keep every line short. The app drops a whole lens when one line runs long: '
   + 'lead at most 180 characters, each clause at most 100, close at most 130, q '
-  + 'at most 100. A quoted "You told me: …" sentence does not count toward the '
+  + 'at most 100. A quoted “You told me: …” sentence does not count toward the '
   + 'lead. Each theme key is one to three words.\n\n'
   + 'Never propose a lens that duplicates or lightly rephrases a value they '
   + 'have declared, a lens they keep, or one they set aside or declined. If '
@@ -921,10 +921,10 @@ var LENS_GEN_SYSTEM =
   + '[{"name":"…","lead":"…","clauses":[{"i":3,"c":"…"}],"close":"…","q":"…?"'
   + ',"themes":[{"k":"…","t":"…"}],"books":[3,17]}]';
 
-// L4c (16 Nov 2026): the TWO-STEP read's system prompt -- LENS_GEN_SYSTEM by six
-// ruled edits (engine contract §1, the two-step block): up to THREE lenses, the
-// curly "You told me" quotes, the NAMES / READING paragraph, "The parts of a
-// lens:", and the two return shapes. Runs only behind praxis_lens2 until the flip.
+// L4c (16 Nov 2026): the TWO-STEP read's system prompt (engine contract §1, the
+// two-step block). It differs from LENS_GEN_SYSTEM in four places: up to THREE
+// lenses, the NAMES / READING paragraph, "The parts of a lens:", and the two
+// return shapes. Since the flip (v3.326) every lens read sends it.
 var LENS2_SYSTEM =
   'You are Yumi, a reading companion inside Praxis. You are grounded in '
   + 'critical pedagogy — Freire, hooks, Lorde — and you hold that a reader '
@@ -1217,11 +1217,11 @@ function generateLensReReading(meta, lens, line) {
   });
 }
 
-// ---- L4c (16 Nov 2026): THE TWO-STEP READ, built dark behind praxis_lens2 ----
+// ---- L4c (16 Nov 2026): THE TWO-STEP READ -- every lens read since the flip (v3.326) ----
 // NAMES: one short call returns up to three lenses as name, question and books
 // only. READING: one call per lens, made when its offer is on screen, returns
-// that lens's lead, clauses, close and themes. Both send LENS2_SYSTEM. The
-// one-call path above (generateLenses) is untouched and stays the default.
+// that lens's lead, clauses, close and themes. Both send LENS2_SYSTEM.
+// generateLenses above stays for "Ask Yumi to read it" (views.js lxAskToRead) only.
 
 // The NAMES user message: the one-call message, one blank line, the instruction.
 function buildLensNamesMessage(meta) {
@@ -3741,7 +3741,7 @@ window.YumiBrain = {
   lensBookMeta:       lensBookMeta,
   lensLastUsage:      function () { return lensLastUsageVal; },   // L4 hotfix: ?lenstime=on
   sameLens:           sameLens,
-  generateLensNames:     generateLensNames,     // L4c: the two-step read (behind praxis_lens2)
+  generateLensNames:     generateLensNames,     // L4c: the two-step read
   evalLensNames:         evalLensNames,
   generateLensReading:   generateLensReading,
   evalLensReading:       evalLensReading,

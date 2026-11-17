@@ -1481,7 +1481,7 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   Hotfix 1 (16 Nov 2026, v3.324): the day and auto `--grain-op` .32 → .08 (Preston's ruling — the multiply grain greyed
   the 1.5 day paper); three lines, byte-neutral; record in `docs/checkpoints/lc1.md` "Hotfix 1 — the day grain".
   touches: [cross-cutting, global-shell]
-- [~] **L4c — THE TWO-STEP LENS READ (L4 hotfix 2 R5, ruled by Preston 14 Nov 2026; after LC1 -- R1, 15 Nov 2026) — BUILT DARK at v3.325 (16 Nov 2026); the flip is owed after Preston's timed read** —
+- [x] **L4c — THE TWO-STEP LENS READ (L4 hotfix 2 R5, ruled by Preston 14 Nov 2026; after LC1 -- R1, 15 Nov 2026) — CLOSED: proved on Preston's timed read, 16 Nov 2026, at v3.325; the flip at v3.326** —
   names and questions first in one short call; each lens's full reading (lead, clauses, close, themes) fetched when its
   sheet opens. Replaces the stopgap read (two lenses, max_tokens 800, keep what arrives -- v3.319). Proved with one real,
   timed call before it ships. (Moved out of L4b. R1, 15 Nov 2026: the order is the sky flip → LC1 → L4c, because L4c
@@ -1492,6 +1492,10 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   600); rulings R1-R7, where R2 replaces "fetched when its sheet opens" (the offer card shows the reading). With the switch
   off the read is the one-call read of v3.324. Owed: Preston's one timed read on his phone (names < 12 s, the reading < 20 s),
   then a small flip build makes it the default and retires the one-call path. Record: `docs/checkpoints/l4.md` "L4c".
+  The flip (16-17 Nov 2026, v3.326): Preston's timed read passed (names 5.6 s, the reading 7.5 s, two proxy calls); the
+  two-step read is the lens read for every reader, the switch is removed, F1 is fixed (a failed offers load shows the failure
+  line with Try again; the load redraws only when the device holds offers), F2 closed without code. Record:
+  `docs/checkpoints/l4.md` "L4c — the flip".
   touches: [lenses, yumi]
 - [~] **P2 SHAPE — the onboarding shape session (LEAD, opened 2026-09-19; census `f4490e3`; brief v3 LANDED 2026-09-27; spine mockup + card LANDED 2026-10-09)** — 8 deltas
   RULED + brief v3 LANDED (`docs/studio/onboarding-brief.md`) → spine mockup LANDED (`design/praxis-spine-v1.html`) + mockup-stage acceptance card LANDED (`docs/checkpoints/onboarding-acceptance-mockup.md`; 9 OWNER rows open, 6 debts named) → Preston's felt pass on the changed frames → stranger walks the mockup. Hygiene fork RULED split: render gap + seed leak → P3 Stage 0, rest → H-1.

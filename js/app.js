@@ -47,18 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
       try { history.replaceState(null, '', location.pathname + (rest === '?' ? '' : rest) + location.hash); } catch (e) {}
     }
   })();
-  // L4c: the two-step lens read's switch, the same way. ?lens2=on|off sets the
-  // per-device key praxis_lens2 (default OFF, read only by views.js lxLens2On)
-  // before the first render; only that one query parameter is stripped.
-  (function () {
-    var m = /[?&]lens2=(on|off)\b/.exec(location.search || '');
-    if (!m) { return; }
-    sv('praxis_lens2', m[1] === 'on');
-    if (window.history && history.replaceState) {
-      var rest = (location.search || '').replace(/[?&]lens2=(on|off)\b/, '').replace(/^&/, '?');
-      try { history.replaceState(null, '', location.pathname + (rest === '?' ? '' : rest) + location.hash); } catch (e) {}
-    }
-  })();
   if (location.hash === '') {
     location.hash = '#home';
   }
