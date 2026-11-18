@@ -17950,3 +17950,23 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
   .lx.ol.cp .cp-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 /* === L4b-2b THE CATEGORY PAGE — end === */
+/* === L4b-2b HOTFIX 1 — the category names under the You sky — begin (docs/checkpoints/l4b-2b.md) ===
+   A list of the categories under the You sky in Categories mode, or small names by every orb; the reader
+   switches. Scoped under .lx.lx-catnames and .sky.lx-orbnames. Tokens only. */
+.lx.lx-catnames{box-sizing:border-box;display:flex;flex-direction:column;gap:12px;width:100%;max-width:680px;margin:0 auto;padding:14px 20px 4px}
+.lx.lx-catnames[hidden]{display:none}
+.lx.lx-catnames button{appearance:none;-webkit-appearance:none;border:0;background:none;margin:0;font-family:inherit;cursor:pointer;text-align:left}
+.lx.lx-catnames button:focus-visible{outline:2px solid var(--gold-ink);outline-offset:2px}
+.lx.lx-catnames .lx-cn-seg{display:flex;gap:2px;padding:2px;border-radius:12px;background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line);align-self:flex-start}
+.lx.lx-catnames .lx-cn-seg button{min-height:44px;min-width:96px;border-radius:10px;text-align:center;font:500 14.5px var(--font-body);color:var(--ink-2);padding:0 14px}
+.lx.lx-catnames .lx-cn-seg button[aria-pressed="true"]{background:var(--card-2);color:var(--ink);font-weight:600}
+.lx.lx-catnames .lx-cn-list{background:var(--card-1);border-radius:14px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line);display:flex;flex-direction:column}
+.lx.lx-catnames .lx-cn-row{box-sizing:border-box;display:flex;gap:12px;align-items:center;width:100%;min-height:52px;padding:8px 14px;position:relative;color:var(--ink)}
+.lx.lx-catnames .lx-cn-row + .lx-cn-row::before{content:"";position:absolute;top:0;right:14px;left:14px;height:1px;background:var(--line)}
+.lx.lx-catnames .lx-cn-row .mark{width:34px;height:34px;flex:none}
+.lx.lx-catnames .lx-cn-n{flex:1;min-width:0;font:500 16px/1.3 var(--font-body);color:var(--ink);overflow-wrap:anywhere}
+.lx.lx-catnames .lx-cn-c{flex:none;font:400 13.5px/1.3 var(--font-body);color:var(--ink-2)}
+.lx.lx-catnames .lx-cn-chev{flex:none;color:var(--ink-2);font-size:20px}
+.sky.lx-orbnames .field.many:not(.nonames) .orb .l,.sky.lx-orbnames .field.tight:not(.nonames) .orb .l{display:block;font-size:11px;line-height:13px;max-width:96px}
+.pf-sky-host.lx-you-host:has(> .lx-catnames:not([hidden])){max-height:none}
+/* === L4b-2b HOTFIX 1 — end === */

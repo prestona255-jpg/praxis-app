@@ -1518,7 +1518,7 @@ var ACCOUNT_GLOBAL_KEYS = [
   'praxis_publish_identity', 'praxis_sanitized_arcs', 'praxis_arc_tidy', 'praxis_commons_exits',
   'praxis_constellation_palette', 'praxis_shelf_view',
   // L4.4: the sky's per-device keys (the switch, its two toggles, the gate readout)
-  'praxis_sky', 'praxis_sky_threads', 'praxis_sky_names', 'praxis_sky_stats',
+  'praxis_sky', 'praxis_sky_threads', 'praxis_sky_names', 'praxis_sky_stats', 'praxis_you_catnames',
   'praxis_shelf_grouping', 'praxis_arcs_sort', 'praxis_arc_view_mode', 'praxis_st_marginalia_on',
   'praxis_st_faint_on', 'praxis_state',
   // red-team-found globals with no uid in their name: account-linked dismissals,

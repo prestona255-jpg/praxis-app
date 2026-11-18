@@ -5,7 +5,7 @@
 lane L4b-2 (`p2-eighteenth-sitting-rulings.md` §C), fifteenth r47. Preston's go-ahead included "run fix-red-team on this",
 which lifted the agent bar for this round.
 
-**Status: built and committed locally (not pushed).** fix-red-team: no BLOCK, no MAJOR. praxis-reviewer: CLEARED TO COMMIT
+**Status: pushed at `84d0c64` (v3.331); Preston's phone check PASS on every step, 17 Nov (Hotfix 1's R1, below).** Built and committed locally first: fix-red-team: no BLOCK, no MAJOR. praxis-reviewer: CLEARED TO COMMIT
 (re-checked after the R1 fold). Preston, 17 Nov: "Fold in R1 first … If everything still passes, commit … Do not push."
 
 ## What was built
@@ -316,3 +316,178 @@ On Preston's phone at v3.331: Shelf, switch to Categories, tap a category's name
 count. Tap "+ N more" and "See all". Tap a lens row, then Back. Tap a note row, then Back. From You, switch the sky to
 Categories and tap an orb. Say PASS, or name what is wrong. (This machine cannot reach the live origin; confirm v3.331 on the
 About version line or `#diag` first.)
+
+## Hotfix 1, 17 Nov 2026 (the category names under the You sky, v3.332)
+
+18 Nov 2026 · Opus 5.5 executing the review chat's written patch on main at `84d0c64` (v3.331) == origin/main, plus two
+lines on Preston's rulings (R6, and the ≥1200 un-cap). Preston's go-ahead included "run fix-red-team on this".
+**Status: built, staged, NOT committed.** fix-red-team: no BLOCK, no MAJOR (3 MINOR, 5 NIT, 1 residual). praxis-reviewer: CLEARED WITH NOTES.
+
+### Rulings, worded as given
+
+- **R1** My phone check of L4b-2b at v3.331 is a PASS on every step. One finding, older than that build: in the You sky's
+  Categories mode only one of my 17 category orbs shows its name on a phone, so I cannot tell which category I am tapping.
+- **R2** Under the You sky, in Categories mode only, a switch with two choices: "List" and "By the orbs". List is the default.
+- **R3** List: every category in the sky, in the sky's own order, each row carrying that category's own mark, its name and its
+  book count. A row opens the category's page.
+- **R4** By the orbs: every category orb may show its name, small. The sky's own rule still hides a name that would run over
+  another orb or another name, so on a phone about half show at a time and they change as the sky turns. I have seen this and
+  accept it. The sky's own "names" setting, when off, still hides them all.
+- **R5** The choice is remembered on this device.
+- **R6** (18 Nov 2026) Account delete also clears praxis_you_catnames from this device, the same way it clears the sky's own
+  keys. Sign-out and export stay as they are.
+- **The ≥1200 un-cap** (18 Nov 2026, Preston: "Yes, fold it in"): the rig found the list clipped at 1360 (Stage 2.4); the one
+  line `.pf-sky-host.lx-you-host:has(> .lx-catnames:not([hidden])){max-height:none}` is folded in before the block's end marker.
+
+### What was built
+
+- `js/views.js` (+46): `lxCatNamesMode()` reads `praxis_you_catnames` ('orbs', else 'list'); `lxFillCatNames(rec, items)`
+  builds `rec.below`, a `div.lx.lx-catnames` — hidden (and `lx-orbnames` removed from the sky host) unless Categories mode has
+  categories; else the switch (`role=group`, "Where the category names show", two `aria-pressed` buttons) and, in List mode,
+  one button row per sky item in `rec.S.items` order: `lxMark(look)`, the name, `lxPlural(books, 'book')`, a chevron, the orb's
+  own `aria-label`; a row calls `lxOrbOpen(it.src)`, the door an orb calls. A switch press stores the choice (only if it
+  changes), refills, and re-lays the sky (`sig=''`, `build()`). Called from `lxFillYouSky` (Lenses → null; Categories → its
+  items; Marks → null); `renderProfilePage` mounts `lxYou.below` after the sky host.
+- `assets/components.css` (+20): the block "L4b-2b HOTFIX 1" — every rule under `.lx.lx-catnames`, plus
+  `.sky.lx-orbnames .field.many:not(.nonames) .orb .l` / `.tight` (names shown, 11px / 13px line, max 96px) and the un-cap line.
+  Tokens only, no hex.
+- `js/integrations.js` (1/1, R6): `'praxis_you_catnames'` joins `ACCOUNT_GLOBAL_KEYS` beside the sky's keys.
+- `sw.js`: `praxis-v3.331` → `praxis-v3.332`.
+
+### Stage 0 — pre-flight: PASS (after one STOP)
+
+The prompt's pasted diff arrived mangled (the `+` prefixes and `*` characters lost in the paste): STOPPED, no hand repair. The
+file `Downloads\L4B-2B-HF1.diff`: 111 lines, 6,273 B, md5 `106217a7ca780f07881fc584b2d45df4`, CR 0, no BOM — MATCH.
+HEAD `84d0c64` == origin/main, CACHE_VERSION v3.331, tracked tree clean, hook ARMED, FIX-PROTOCOL v1.3, 7 agents, all ten
+protocol docs found. Before-numbers MATCH (below). Anchors once each: views.js :23926 / :28525 / :28585, components.css :17952,
+integrations.js :1521. `git apply --check` passes; scratch after-md5s MATCH. v3.332 and every new name: 0 hits at HEAD.
+Export reads no device preference; sign-out clears only the user; account delete clears `ACCOUNT_GLOBAL_KEYS`, where the sky's
+keys were and the new key was not → R6. Another worktree, `praxis-sky-perf` (sky-perf-lane at 84d0c64), holds uncommitted
+edits to `js/hand.js` and a comment in `js/views.js` (:28349); left untouched (separate task H-S3).
+(This machine's system gitconfig sets `core.autocrlf=true`, so `git apply` OUTSIDE a repo writes CRLF; the scratch dry apply
+needs `-c core.autocrlf=false` to reproduce the LF md5s.)
+
+### Stage 1 — apply: PASS
+
+| file (LF, staged blob) | before (84d0c64) | the patch alone (expected) | final (with the un-cap) | numstat |
+|---|---|---|---|---|
+| js/views.js | 1,404,577 `372c16f0…` | 1,406,872 `5b17578bd5c5cc0cd1a3470bde22265f` | same | 46 / 0 |
+| assets/components.css | 948,638 `651142b7…` | 950,832 `df6ed0296defc44ab793eb91fa05baa3` | **950,908 (+76) `7311ec5b0244470fad63befaffab8911`** | 20 / 0 |
+| sw.js | 6,894 `541fd172…` | 6,894 `902e8692427e01b14985e1322349ea2e` | same | 1 / 1 |
+| js/integrations.js | 221,755 `ce40d6e0…` | 221,778 `2d86b8593f83cc5ad2cd679a6c02e757` (R6) | same | 1 / 1 |
+
+EOL `i/lf w/crlf` on all four. Parse: all 19 `js/*.js`, sw.js and assets/marks.js PARSE OK. Added lines (68): `const ` /
+`let ` / `=>` / `class ` / backtick 0, hex 0. Unchanged: hand.js `fd51ca7e`, state.js `b8cdafb5`, theme.css `571e0ccc`,
+lumen-amber `631bc2aa`, marks.js `772886c0`.
+
+### Stage 2 — test and look: PASS (after one FAIL, fixed on Preston's ruling)
+
+**2.1 suites** (each must print its own total — S-1): lens-eval 68/68 · lens-data 101/101 · export 58/58 · delete 58/58 (no
+case counts `ACCOUNT_GLOBAL_KEYS`) · ceiling-core 36/36 · fx1c-sim 60/60 · L4b-1 hotfix 46/46 · L4b-2a unit 71/71 · L4b-2a
+hotfix 1 74/74 · L4b-2b unit 120/120. Re-run after the un-cap: identical.
+
+**2.2 `docs/checkpoints/l4b-2b-shots/hotfix1-unit-harness` — 74/74**, exit 0; against 84d0c64 it refuses (exit 2). It extracts
+`lxEl`…`lxMark`, `cpHash`, `lxOrbOpen`, `lxFillYouSky`…`lxFillCatNames`, `lxYouSky` and the mount block of `renderProfilePage`
+(views.js), `SHELF_CATEGORIES`…`isValidCategoryLabel` and `classifyBookLocal` (state.js), and `ACCOUNT_GLOBAL_KEYS`,
+`accountLocalKeysFor`, `wipeAccountLocal` and `signOut` (integrations.js; `.catch(` neutralized as tools/parse-check does) by
+text from the live bytes. H1 hidden in Lenses, in Marks, and with no categories · H2 the switch, "List" pressed by default ·
+H3 17 rows in `rec.S.items` order, each with its own drawn mark, name, "N books" / "1 book", chevron and the orb's aria-label ·
+H4 a row calls `lxOrbOpen` with the orb's own src object; "Theory & Philosophy" → `#category/Theory%20%26%20Philosophy` · H5
+"By the orbs" stores 'orbs', adds `lx-orbnames`, removes the list, one build after `sig=''`; "List" reverses it · H6 the
+pressed choice writes and builds nothing · H7 the stored choice read on the next render; 'banana' and `true` → list · H8
+leaving Categories removes `lx-orbnames` · H9 a name carrying HTML shown as text · H10 three re-renders → one box in the live
+host, none in the old, one listener per button, `rec.below` reused; the visitor preview mounts nothing · H11 no key but
+`praxis_you_catnames` written · H12 R6: the key once in `ACCOUNT_GLOBAL_KEYS`; the account-delete wipe removes it (and another
+reader's uid key stays); sign-out leaves it. It can fail — five one-line mutants: no pressed-guard 71/74 · the key out of the
+list 72/74 · the name through innerHTML 68/74 · `lx-orbnames` kept on leaving 72/74 · no `sig` reset 73/74.
+
+**2.3 captures** — `docs/checkpoints/l4b-2b-shots/hotfix1-<state>-<390|1360>-<night|day>.jpg`, states `cats-list`, `cats-orbs`,
+`lenses`, `marks`, `orbs-nonames`: 20 JPGs (≈15 MB; the You page is ~8,000 css px tall at 390), every one a FULL FRAME (390 →
+780 px wide at dpr 2, e.g. 780×16180; 1360 → 1360 px wide at dpr 1, e.g. 1360×6156), re-taken fresh 18 Nov 2026 14:23 against
+the final bytes (served sw `praxis-v3.332`), 0 page errors. Rig (untracked): `.claude/rig/captures/l4b2bhf1/` — `serve-root.ps1`
+(a no-store server; 8862 the working tree, 8863 a `git archive` of 84d0c64), `hf1-rig.js` (the l4 fixture + books in the seven
+missing categories → 38 books, 17 categories, 3 kept lenses), `hf1-shots.ps1` (headless Chrome over CDP, fresh profile).
+Full-page frames hide the position:fixed chrome below the nav, as at L4b-2b.
+
+**2.4 measurements**
+
+- **The FAIL, and its fix.** At ≥1200 `.pf-sky-host{max-height:600px}` (components.css:15440) still applied under
+  `.pf-sky-host.lx-you-host{height:auto}` (:17716), and `.pf-hero{overflow:hidden}` (:15143) clipped the host: with the 962 px
+  list, **4 of 19 controls were visible at 1360** (both buttons + 2 rows; the rest under `.pf-counts` / `.pf-thesis` or clipped;
+  hit-tested with the hero unscrolled). The review chat's "no row past the viewport" was true sideways only. With the un-cap:
+  **19/19 visible at 390 and 1360, Night and Day**; host 1486 px at 1360 (List), 590 px (By the orbs, unchanged), 464 px in
+  Lenses and Marks with the 600 px cap kept; 390 unchanged (host 1503 / 607 / 481).
+- Switch buttons 96×44 and 106–108×44; every row ≥ 44 (smallest 44); nothing past the viewport (390: x 20..370; 1360: the box
+  340..1020, 680 wide).
+- Contrast (worst ground pixel, the L4b-2b method; Night / Day, the same at 390 and 1360): row name 13.63 / 16.57 · count 7.99
+  / 6.93 · chevron 7.99 / 6.93 · switch pressed 11.05 / 13.70 · unpressed 7.99 / 6.93. Floor 4.5.
+- By the orbs, names showing at once (8 samples 0.7 s apart): **9–11 of 17 at 390, 13–15 at 1360** (11 px); names off → 0 of 17
+  (`.field.nonames`); List → the sky's own 3 "named". The smallest names' contrast on the sky, worst pixel: 1.39–13.3:1; at 390,
+  4 of 11 fall under 4.5 where a gold streak or a bright orb passes behind; at 1360 every one ≥ 5.88. The sky's OWN 12.5 px names
+  in Lenses and Marks fail the same test (1.27–2.32:1 at 390) under 84d0c64's rules — pre-existing (H-S1).
+- Scroll width on You: 390 = 390 and 1360 = 1360, before (84d0c64 tree) and after, Lenses and Categories. The review chat's 394
+  at 84d0c64 was NOT reproduced on this fixture (H-S2).
+
+**2.5 the walk** (real hit-tested CDP clicks, prefers-reduced-motion emulated so an orb holds still under the pointer) — **PASS
+at 390 and at 1360**, Night: You → Categories (17 rows, 17 marks) → a row → `#category/Science%20%26%20Nature`, Back "You", tab
+you → Back → the list still shown → By the orbs → reload → still By the orbs (stored "orbs"; the rig's seed is re-applied after
+the reload without touching the choice) → Lenses → Categories → kept → a category orb → `#category/Psychology%20%26%20Mind`,
+Back "You" → Back → List → the same orb → its page. 0 page errors.
+
+**What the rig cannot show:** a real iPhone (WebKit, the notch, touch), signed-in persistence (the rig is signed out with a
+stub user; the one write is a device preference), 760–1199 px (not measured; the cap exists only ≥1200), a browser without
+`:has()`.
+
+### Stage 3 — the red-team and the reviewer
+
+**fix-red-team (Sonnet): no BLOCK, no MAJOR.** Its answers: (1) the box cannot outlive the sky, duplicate, or show under the
+visitor preview or another reader — `rec.below` is one node on the cached 'you' record, mounted only under `!vis && lxSkyOn()`,
+rebuilt from the current uid's items on every render. (2) Re-render leaves one box and one listener per button; the sky's
+delegated listeners are bound once and rows sit outside the sky host. (3) The `:not(.nonames)` guard keeps a names-off sky
+off; `.l.hid` (opacity) still wins; the collision pass measures the new labels because the class lands before every build.
+(4) `sig=''; build()` is the mode switch's own pattern; it does not touch the rAF loop; `build()` returns early when unlaid.
+(5) The one write is `sv('praxis_you_catnames', m)`, only on a change. (6) The list reads as a group of pressed buttons and
+rows whose labels start with the visible name. (7) R6 runs only at the delete flow's `phase('local')`, after reauth, the cloud
+delete and `authUser.delete()`; sign-out and export never touch the key. (8) The `:has()` line un-caps only while the box
+shows. Findings:
+
+| # | Sev | Finding | Disposition |
+|---|---|---|---|
+| T1 | MINOR | A row's focus ring is clipped: rows sit in `.lx-cn-list{overflow:hidden}` and the shared `:focus-visible` outline has `outline-offset:2px` | its smallest fix `.lx.lx-catnames .lx-cn-row:focus-visible{outline-offset:-2px}` — not applied, not rig-tested; ledger H-L1 |
+| T2 | MINOR | A switch press rebuilds the switch (`innerHTML=''`), so keyboard focus drops to the body; the existing Lenses · Categories · Marks buttons do the same | ledger H-L2 |
+| T3 | MINOR | With the sky's Names off, "By the orbs" visibly does nothing (no hint) — as R4 rules | ledger H-L3 |
+| T4 | residual | Without `:has()` (iOS < 15.4, Chrome < 105) at ≥1200 the list clips as before the fold; the repo already relies on `:has()` (components.css:17718) | ledger H-L4 |
+| T5 | NIT | The block comment says "Scoped under .lx.lx-catnames and .sky.lx-orbnames"; the un-cap line is scoped to `.pf-sky-host.lx-you-host` | ledger H-L5 |
+| T6 | NIT | integrations.js:1520's comment ("the sky's per-device keys (the switch, its two toggles, the gate readout)") does not name the new key | ledger H-L5 |
+| T7 | NIT | Each category is announced twice to a screen reader (the orb and the row) — inherent to a list beside the orbs | recorded |
+| T8 | NIT | With 7–12 orbs at ≥560 px nothing is `.many` / `.tight`, so "By the orbs" changes nothing there (names already show) | recorded |
+| T9 | NIT | `docs/checkpoints/l4b-2b.md` was modified but unstaged at review time | staged with the commit (docs ride with the diff) |
+
+**praxis-reviewer (Sonnet): CLEARED WITH NOTES — no blocking finding.** It re-derived every staged size and md5, numstat 46/0 · 20/0 · 1/1 · 1/1, EOL `i/lf w/crlf`, the locked files, `git diff --cached --check` clean, the ES3 sweep (0), the two `*/` in the CSS block (its own comment ends only), the `ls` / `sv` calls (one key, no Firestore, no schema), the call chain (renderProfilePage → lxYouSky → lxFillYouSky → lxFillCatNames, mounted at :23926; the mode switch :28405 re-fills; a row calls lxOrbOpen :28419), the empty and signed-out states, the 20 captures' full-frame sizes, and the docs against the code. It re-ran all eleven suites (each printed its total, the counts above) and the new harness's exit 2 against `git archive HEAD js`. Notes: N1 this placeholder (replaced here); N2 stage by name, never `.claude/rig/**`; N3 = H-L5; N4 the red-team's T1–T4 accepted. Not verified by it: the pixel measures (it checked the image sizes only), WebKit, signed-in persistence, 760–1199 px, the live deploy, builder.html mid-regen.
+
+### Ledger (recorded, not fixed here)
+
+- **H-L1** (T1) the row focus ring is clipped by the list's `overflow:hidden`.
+- **H-L2** (T2) focus drops to the body after a switch press (shared with the sky's mode buttons).
+- **H-L3** (T3) "By the orbs" with Names off shows nothing new.
+- **H-L4** (T4) no `:has()` → the ≥1200 clip returns.
+- **H-L5** (T5, T6) two comments no longer cover the new rule / key.
+- **H-L6** The harness reads the box through a fake DOM; the real-DOM proof is the rig walk and the hit-tested visibility probe.
+
+### Separate tasks (pre-existing, not this build's)
+
+- **H-S1** Sky names (12.5 px, `--on-night`) fall under 4.5:1 on the worst pixel where the sky's gold streaks or a bright orb
+  pass behind them — Lenses and Marks at 84d0c64 already (1.27–2.32:1 at 390); By the orbs inherits it at 11 px.
+- **H-S2** The review chat measured You's scroll width 394 vs 390 at 84d0c64 (`.pf-field` reaches 394); this rig's fixture
+  shows 390 = 390 before and after. Unconfirmed here; worth one check on the real library.
+- **H-S3** The `praxis-sky-perf` worktree holds uncommitted edits to the byte-locked `js/hand.js` (label measurement every 6th
+  frame) and a comment in `js/views.js`. Not touched. If it ever lands, re-check By the orbs: it changes how often the names'
+  collision pass runs.
+- **H-S4** S-1 still stands: cscript exits 0 on a runtime error; every suite here was read by its printed total.
+
+### Owed after the push
+
+On Preston's phone at v3.332: You → Categories. A switch and a list should sit under the sky. Tap a row: its category page
+opens, and Back returns to You. Tap "By the orbs": small names appear beside about half the orbs. Close and reopen the app: it
+should still be on "By the orbs". Say PASS, or name what is wrong. (This machine cannot reach the live origin; confirm v3.332
+on the About version line or `#diag` first.)

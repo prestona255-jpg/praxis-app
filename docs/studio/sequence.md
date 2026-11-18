@@ -31,6 +31,11 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-18 (L4b-2b PASSED on Preston's phone; L4b-2b hotfix 1 BUILT at v3.332)** — L4b-2b (v3.331) is pushed at
+  84d0c64 and Preston's phone check PASSED on every step (17 Nov). Its one finding, older than that build (only one of 17
+  category names shows on a phone), is L4b-2b hotfix 1, built at v3.332, local until pushed: a List · By the orbs switch
+  under the You sky in Categories mode (rulings R1–R6), with the ≥1200 un-cap folded in on Preston's ruling. A fix to a
+  ruled lane, nothing retired or reordered, so no `PROPOSED:` flag. Record: `docs/checkpoints/l4b-2b.md` § Hotfix 1.
 - **2026-11-17 (L4b-2a hotfix 1 PASSED on Preston's phone; L4b-2b BUILT at v3.331)** — hotfix 1 (v3.330) is pushed at
   096269a and Preston's phone check PASSED (17 Nov, all four fixes). L4b-2b, the category page (`#category/<label>`), is
   built at v3.331, local until pushed: the second half of L4b-2 as ruled, nothing retired or reordered, so no `PROPOSED:`
@@ -1628,8 +1633,11 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   `docs/checkpoints/l4b-2a.md`); a lens tap still opens the sheet and its "Open lens" pill opens the page; the band is today's
   sky (`--sky`) + the lens's glow, blue with LC2. Preston's phone check PASSED; its five findings are **L4b-2a hotfix 1**,
   SHIPPED v3.330 (pushed 096269a); his phone check PASSED (17 Nov, all four fixes). **L4b-2b** — the category page
-  (`#category/<label>`), BUILT at v3.331 (local until pushed, `docs/checkpoints/l4b-2b.md`); its doors are the Shelf's
-  category band name and the You-sky category orb, and it has its own line in `tabbarTabFor`. Preston's phone check owed.
+  (`#category/<label>`), SHIPPED v3.331 (pushed 84d0c64, `docs/checkpoints/l4b-2b.md`); its doors are the Shelf's
+  category band name and the You-sky category orb, and it has its own line in `tabbarTabFor`. Preston's phone check PASSED
+  (17 Nov, every step). Its one finding is **L4b-2b hotfix 1** — the category names under the You sky (a List · By the orbs
+  switch in Categories mode), BUILT at v3.332 (local until pushed, `docs/checkpoints/l4b-2b.md` § Hotfix 1); Preston's
+  phone check owed.
   · **L4b-3** — the redrawn rooms, a few per build: Home body, Shelf, book, Notebook, note, You, artifact, the pages under
   You, Search. Needs L4b-1. Large; split by room.
   · **L4b-4** — the capture dial, the hold menu, status behind the cover, the hint. Needs L4b-3 (book). Medium.

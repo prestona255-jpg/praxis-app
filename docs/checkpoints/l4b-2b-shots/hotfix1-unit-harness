@@ -1,0 +1,360 @@
+// docs/checkpoints/l4b-2b-shots/hotfix1-unit-harness -- L4b-2b hotfix 1 (the category names under the
+// You sky, v3.332) unit proofs. cscript JScript (Node is blocked), the l4b-2b unit-harness pattern: every
+// function under test is EXTRACTED BY TEXT from the real bytes of js/views.js, js/state.js and
+// js/integrations.js and run in one scope against a stubbed state, a stubbed sky (rec.S) and a small fake
+// DOM (appendChild moves a node, innerHTML = '' clears, classList, querySelector by class). Against a tree
+// without the hotfix (HEAD 84d0c64) it refuses to load: exit 2.
+//   H1  the box is hidden in Lenses mode, in Marks mode, and in Categories mode with no categories
+//   H2  Categories mode: the switch (role=group, aria-label), "List" pressed by default, both buttons
+//   H3  List: one row per category in the sky's own order (rec.S.items), each with a mark, its name, its
+//       book count ("1 book" / "N books"), a chevron and the orb's own aria-label
+//   H4  a row calls the same door a category orb calls (lxOrbOpen with the orb's own src object);
+//       "Theory & Philosophy" -> #category/Theory%20%26%20Philosophy
+//   H5  "By the orbs": stores 'orbs', adds lx-orbnames to the sky host, removes the list, re-lays the sky
+//       once (sig reset, one build); "List": stores 'list', removes the class, the list returns
+//   H6  pressing the already-pressed choice writes nothing and builds nothing
+//   H7  the stored choice is read on the next render; an unknown stored value is treated as 'list'
+//   H8  leaving Categories mode removes lx-orbnames (to Lenses, to Marks)
+//   H9  a category name carrying HTML is shown as text, never markup
+//   H10 the You page mount (renderProfilePage's block): one box under the sky after any number of
+//       re-renders, the old host keeps none, each switch button has one listener; the visitor preview
+//       mounts no box
+//   H11 storage: no key other than praxis_you_catnames is ever written by the views code
+//   H12 R6: ACCOUNT_GLOBAL_KEYS holds praxis_you_catnames exactly once; the account-delete local wipe
+//       removes it (and another reader's uid key stays); a sign-out alone leaves it
+// EXTENSIONLESS on purpose (see tools/parse-check). ASCII-only: cscript reads it as ANSI, so the page's
+// chevron arrives as several characters; texts are compared with every non-ASCII run folded to "|".
+// The extracted integrations.js text has `.catch(` rewritten to `['catch'](` before it is compiled -- the
+// same neutralization tools/parse-check applies (JScript reserves the word); nothing else is changed.
+//
+// Usage:  cscript //nologo //E:jscript docs/checkpoints/l4b-2b-shots/hotfix1-unit-harness [root]
+// Exit:   0 = every case passed . 1 = a case failed . 2 = could not load
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName))));
+if (WScript.Arguments.length > 0) { root = String(WScript.Arguments(0)); }
+function readFile(p) { var s = fso.OpenTextFile(p, 1, false); var t = s.ReadAll(); s.Close(); return t; }
+if (typeof Array.prototype.indexOf !== 'function') { Array.prototype.indexOf = function (v) { var i; for (i = 0; i < this.length; i++) { if (this[i] === v) { return i; } } return -1; }; }
+
+var failures = 0, total = 0;
+function check(name, got, want) { total++; if (got === want) { WScript.Echo('  PASS  ' + name + '  = ' + got); } else { failures++; WScript.Echo('  FAIL  ' + name + '\n        got  ' + got + '\n        want ' + want); } }
+(function () { var b = failures; check('self-check (expected to FAIL)', 1, 2); if (failures - b !== 1) { WScript.Echo('HARNESS SELF-CHECK FAILED'); WScript.Quit(2); } failures = b; total--; })();
+
+function between(src, a, b) {
+  var i = src.indexOf(a), j = src.indexOf(b, i + 1);
+  if (i < 0 || j < 0) { throw new Error('anchor not found: ' + a + ' .. ' + b); }
+  if (src.indexOf(a, i + 1) !== -1) { throw new Error('anchor not unique: ' + a); }
+  return src.slice(i, j);
+}
+
+// ---------------------------------------------------------------- the fake DOM
+function El(tag) {
+  var self = this;
+  this.tagName = String(tag).toUpperCase(); this.children = []; this.parentNode = null; this.attrs = {}; this.className = ''; this.textContent = ''; this.ls = {};
+  this.classList = {
+    contains: function (c) { return (' ' + self.className + ' ').indexOf(' ' + c + ' ') !== -1; },
+    add: function (c) { if (!this.contains(c)) { self.className = self.className ? (self.className + ' ' + c) : c; } },
+    remove: function (c) { var p = self.className.split(' '), o = [], i; for (i = 0; i < p.length; i++) { if (p[i] && p[i] !== c) { o.push(p[i]); } } self.className = o.join(' '); }
+  };
+}
+El.prototype.appendChild = function (c) {
+  if (c.parentNode) { c.parentNode.removeChild(c); }          // the DOM moves a node, never copies it
+  if (this.innerHTML === '') { this.children = []; this.innerHTML = undefined; }
+  c.parentNode = this; this.children.push(c); return c;
+};
+El.prototype.removeChild = function (c) { var i, o = []; for (i = 0; i < this.children.length; i++) { if (this.children[i] !== c) { o.push(this.children[i]); } } this.children = o; c.parentNode = null; return c; };
+El.prototype.setAttribute = function (k, v) { this.attrs[k] = String(v); };
+El.prototype.getAttribute = function (k) { return this.attrs.hasOwnProperty(k) ? this.attrs[k] : null; };
+El.prototype.addEventListener = function (t, fn) { if (!this.ls[t]) { this.ls[t] = []; } this.ls[t].push(fn); };
+El.prototype.fire = function (t) { var a = this.ls[t] || [], i; for (i = 0; i < a.length; i++) { a[i].call(this, {}); } };
+El.prototype.querySelector = function (sel) { var a = all(this), i; for (i = 0; i < a.length; i++) { if (a[i].classList.contains(sel.substring(1))) { return a[i]; } } return null; };
+function kids(el) { return (el.innerHTML === '') ? [] : el.children; }   // innerHTML = '' cleared them
+function all(el, out) { var i, k = kids(el); out = out || []; for (i = 0; i < k.length; i++) { out.push(k[i]); all(k[i], out); } return out; }
+function byCls(cls, rootEl) { var a = all(rootEl), o = [], i; for (i = 0; i < a.length; i++) { if (a[i].classList.contains(cls)) { o.push(a[i]); } } return o; }
+function txt(el) { var s = el.textContent || '', i, k = kids(el); for (i = 0; i < k.length; i++) { s += txt(k[i]); } return s; }
+function fold(s) { return String(s).replace(/[^\x20-\x7e]+/g, '|'); }
+function btnIn(rootEl, label) { var a = all(rootEl), i; for (i = 0; i < a.length; i++) { if (a[i].tagName === 'BUTTON' && fold(txt(a[i])) === label) { return a[i]; } } return null; }
+function markupIn(rootEl) { var a = all(rootEl), o = [], i; for (i = 0; i < a.length; i++) { if (typeof a[i].innerHTML === 'string' && a[i].innerHTML !== '' && !a[i].classList.contains('mark')) { o.push(a[i].tagName + ':' + a[i].innerHTML); } } return o.join(' ; '); }
+
+var DOC = { createElement: function (t) { return new El(t); } };
+var HAND = {
+  makeLook: function (name, others) { return { name: name }; },
+  gardenColour: function (i) { return { c: 'g' + i }; },
+  mix: function (a, b, t) { return 'mix'; }, LIGHT: 'L',
+  hash: function (n) { return 1; },
+  formSvg: function (look, h, vb) { return '<svg data-look="' + (look && look.name) + '"></svg>'; }
+};
+var WIN = { PraxisHand: HAND };
+var LOC = { hash: '#profile' };
+var STORE = {}, WRITES = [];
+
+// ---------------------------------------------------------------- load
+var vsrc, ssrc, isrc, M, I;
+try {
+  vsrc = readFile(fso.BuildPath(root, 'js\\views.js')).replace(/\r/g, '');
+  ssrc = readFile(fso.BuildPath(root, 'js\\state.js')).replace(/\r/g, '');
+  isrc = readFile(fso.BuildPath(root, 'js\\integrations.js')).replace(/\r/g, '');
+} catch (e) { WScript.Echo('LOAD FAIL (read): ' + e.message); WScript.Quit(2); }
+try {
+  var lxSrc    = between(vsrc, 'function lxEl(tag, cls, text) {', 'function lxSeed() {');
+  var fillSrc  = between(vsrc, 'function lxFillYouSky(rec, uid) {', 'function lxYouSky(uid) {');
+  var youSrc   = between(vsrc, 'function lxYouSky(uid) {', '// After the host is in the DOM');
+  var orbSrc   = between(vsrc, 'function lxOrbOpen(src) {', '// Categories mode: the Shelf, filtered');
+  var hashSrc  = between(vsrc, 'function cpHash(label) {', '\n');
+  var mountSrc = between(vsrc, '  if (!vis && lxSkyOn()) {', '  _pfDockInviteSoon(wrap);');
+  var catSrc   = between(ssrc, 'var SHELF_CATEGORIES = [', '// Ordered, identity-first keyword map');
+  var clsSrc   = between(ssrc, 'function classifyBookLocal(book) {', '// ensureSubTheoryFields');
+  if (fillSrc.indexOf('function lxFillCatNames(rec, items) {') === -1) { throw new Error('lxFillCatNames not in js/views.js (a tree without the hotfix)'); }
+  if (mountSrc.indexOf('lxYou.below') === -1) { throw new Error('the mount does not append lxYou.below (a tree without the hotfix)'); }
+  M = new Function('state', 'document', 'window', 'location', 'STORE', 'WRITES',
+    "var lxYouMode = 'lenses', REC = null;\n" +
+    'var calls = { orb: [], sheet: [], shelfCat: [], mounted: 0, lines: 0 };\n' +
+    'function ls(k, d) { return STORE.hasOwnProperty(k) ? STORE[k] : d; }\n' +
+    'function sv(k, v) { WRITES.push(k + "=" + v); STORE[k] = v; return true; }\n' +
+    'function rawCategoryToShelf(r) { return null; }\n' +
+    'function lensKeptThemes(uid) { return []; }\n' +
+    'function lxSkyToggles() { return { threads: true, names: true }; }\n' +
+    'function lxLensItems(uid) { return { items: [{ name: "A lens", books: 2, state: "kept", src: { kind: "lens", id: "t1" } }], shares: [], looks: [] }; }\n' +
+    'function lxFillLines(rec, uid, n, s) { calls.lines++; }\n' +
+    'function openLensSheet(id) { calls.sheet.push(id); }\n' +
+    'function lxOpenShelfCategory(l) { calls.shelfCat.push(l); }\n' +
+    'function lxSkyHost(key) { return REC; }\n' +
+    'function lxSkyOn() { return true; }\n' +
+    'function lxSkyMounted(rec) { calls.mounted++; }\n' +
+    catSrc + '\n' + clsSrc + '\n' + lxSrc + '\n' + hashSrc + '\n' + orbSrc + '\n' + fillSrc + '\n' + youSrc + '\n' +
+    'var realOrbOpen = lxOrbOpen; lxOrbOpen = function (src) { calls.orb.push(src); realOrbOpen(src); };\n' +
+    'function mount(wrap, vis, uid) {\n' + mountSrc + '\n}\n' +
+    'return { fill: lxFillYouSky, fillCat: lxFillCatNames, mode: lxCatNamesMode, mount: mount, calls: calls, cats: SHELF_CATEGORIES,' +
+    ' setMode: function (m) { lxYouMode = m; }, setRec: function (r) { REC = r; } };');
+} catch (e) { WScript.Echo('LOAD FAIL: ' + e.message); WScript.Quit(2); }
+try {
+  var keysSrc = between(isrc, 'var ACCOUNT_GLOBAL_KEYS = [', '// Resolves when every local trace is gone.');
+  var wipeSrc = between(isrc, 'function wipeAccountLocal(uid) {', '// Stage 14.1a (workspace sync)');
+  var signSrc = between(isrc, 'function signOut() {', 'function getCurrentUser() {').replace(/\.catch\(/g, "['catch'](");
+  I = new Function('localStorage', 'state', 'STORE',
+    'var cleared = 0;\n' +
+    'function Promise(fn) { fn(function (v) {}, function (e) {}); }\n' +
+    'function ls(k, d) { return d; }\n' +
+    'function sv(k, v) { if (v === null) { localStorage.removeItem(k); } else { localStorage.setItem(k, String(v)); } }\n' +
+    'function clearUserState() { cleared++; }\n' +
+    'var console = { log: function () {}, warn: function () {} };\n' +
+    'var firebase = { auth: function () { return { signOut: function () { return { then: function (ok, bad) { ok(); return { "catch": function () {} }; } }; } }; } };\n' +
+    keysSrc + '\n' + wipeSrc + '\n' + signSrc + '\n' +
+    'return { keys: ACCOUNT_GLOBAL_KEYS, wipe: wipeAccountLocal, signOut: signOut, cleared: function () { return cleared; } };');
+} catch (e) { WScript.Echo('LOAD FAIL (integrations): ' + e.message); WScript.Quit(2); }
+
+var ST = { books: {}, userBooks: {}, userThemes: {}, notebookEntries: {} };
+var X = M(ST, DOC, WIN, LOC, STORE, WRITES);
+var U = 'u_me', i, j, rows, box;
+
+// ---------------------------------------------------------------- the sky record (lxSkyHost's shape)
+function makeRec() {
+  var host = new El('div'); host.className = 'sky lx lx-sky lx-sky-you';
+  var parts = ['lx-skyhead', 'field', 'honest', 'hint', 'homecnt', 'door'];
+  for (i = 0; i < parts.length; i++) { var p = new El(parts[i] === 'hint' ? 'p' : 'div'); p.className = parts[i]; host.appendChild(p); }
+  var S = { items: [], sig: 'old', builds: 0, sigAtBuild: null, tog: null,
+    set: function (it, sh, lk) { this.items = it; }, toggles: function (t) { this.tog = t; },
+    build: function () { this.builds++; this.sigAtBuild = this.sig; } };
+  return { host: host, S: S, key: 'you', uid: null };
+}
+var R = makeRec();
+X.setRec(R);
+
+// ---------------------------------------------------------------- fixtures: 17 categories, distinct counts
+// SHELF_CATEGORIES[k] gets (k + 1) books, so the sky's order (most books first) is the list reversed;
+// one Uncategorized book and one with no category at all are never listed.
+ST.userBooks[U] = { bookIds: [] };
+var n = 0, k;
+for (k = 0; k < X.cats.length; k++) {
+  for (j = 0; j <= k; j++) { n++; ST.books['b' + n] = { id: 'b' + n, title: 'T' + n, category: X.cats[k] }; ST.userBooks[U].bookIds.push('b' + n); }
+}
+ST.books.bu = { id: 'bu', title: 'U', category: 'Uncategorized' }; ST.userBooks[U].bookIds.push('bu');
+ST.books.bn = { id: 'bn', title: 'N' }; ST.userBooks[U].bookIds.push('bn');
+ST.notebookEntries.n1 = { id: 'n1', userId: U, register: 'marginalia', bookIds: ['b1'], createdAt: 1 };   // Marks mode has one book
+R.uid = U;
+function boxOf() { return R.below; }
+function shown() { return !!(R.below && R.below.hidden === false); }
+function orbnames() { return R.host.classList.contains('lx-orbnames'); }
+
+// ================================================================ H1
+WScript.Echo('\nH1 the box is hidden outside Categories mode');
+X.setMode('lenses'); X.fill(R, U);
+check('Lenses mode: box made, hidden', (!!R.below) + ' ' + R.below.hidden, 'true true');
+check('  no children, no lx-orbnames', all(R.below).length + ' ' + orbnames(), '0 false');
+X.setMode('marks'); X.fill(R, U);
+check('Marks mode (one book orb): hidden', R.S.items.length + ' ' + R.below.hidden, '1 true');
+var keepIds = ST.userBooks[U].bookIds; ST.userBooks[U].bookIds = ['bu', 'bn'];
+X.setMode('cats'); X.fill(R, U);
+check('Categories mode, no categories: hidden', R.S.items.length + ' ' + R.below.hidden + ' ' + orbnames(), '0 true false');
+ST.userBooks[U].bookIds = keepIds;
+
+// ================================================================ H2
+WScript.Echo('\nH2 Categories mode: the switch');
+X.setMode('cats'); X.fill(R, U); box = boxOf();
+check('box shown', shown(), true);
+var seg = byCls('lx-cn-seg', box)[0];
+check('switch present, role=group', !!seg + ' ' + (seg && seg.getAttribute('role')), 'true group');
+check('  aria-label', seg.getAttribute('aria-label'), 'Where the category names show');
+var bL = btnIn(box, 'List'), bO = btnIn(box, 'By the orbs');
+check('two buttons: "List", "By the orbs"', (!!bL) + ' ' + (!!bO) + ' ' + seg.children.length, 'true true 2');
+check('default: "List" pressed, "By the orbs" not', bL.getAttribute('aria-pressed') + ' ' + bO.getAttribute('aria-pressed'), 'true false');
+check('  both type=button', bL.type + ' ' + bO.type, 'button button');
+check('default mode reads list with nothing stored', X.mode() + ' ' + STORE.hasOwnProperty('praxis_you_catnames'), 'list false');
+check('no lx-orbnames in List', orbnames(), false);
+
+// ================================================================ H3
+WScript.Echo('\nH3 List: one row per category, the sky\'s order');
+rows = byCls('lx-cn-row', box);
+check('17 rows for 17 categories (Uncategorized and none not listed)', rows.length + ' ' + R.S.items.length, '17 17');
+var ordOk = 0, markOk = 0, cntOk = 0, ariaOk = 0, chevOk = 0, nm, ct;
+for (i = 0; i < rows.length; i++) {
+  nm = byCls('lx-cn-n', rows[i])[0]; ct = byCls('lx-cn-c', rows[i])[0];
+  if (nm && nm.textContent === R.S.items[i].name) { ordOk++; }
+  if (byCls('mark', rows[i]).length === 1 && byCls('mark', rows[i])[0].innerHTML === '<svg data-look="' + R.S.items[i].name + '"></svg>') { markOk++; }
+  if (ct && ct.textContent === R.S.items[i].books + (R.S.items[i].books === 1 ? ' book' : ' books')) { cntOk++; }
+  if (rows[i].getAttribute('aria-label') === R.S.items[i].aria) { ariaOk++; }
+  if (byCls('lx-cn-chev', rows[i]).length === 1) { chevOk++; }
+}
+check('row i names rec.S.items[i] (the sky\'s own order)', ordOk, 17);
+check('every row carries that category\'s own mark', markOk, 17);
+check('every row carries its book count', cntOk, 17);
+check('every row\'s aria-label is the orb\'s own', ariaOk, 17);
+check('every row has a chevron', chevOk, 17);
+check('first row: most books', fold(txt(rows[0])), X.cats[16] + '17 books|');
+check('last row: "1 book"', byCls('lx-cn-c', rows[16])[0].textContent + ' / ' + byCls('lx-cn-n', rows[16])[0].textContent, '1 book / ' + X.cats[0]);
+check('row aria-label wording', rows[16].getAttribute('aria-label'), X.cats[0] + '. 1 book on your shelf. Opens the category.');
+check('rows are buttons, type=button', rows[0].tagName + ' ' + rows[0].type, 'BUTTON button');
+check('no markup written in the box but the marks', markupIn(box), '');
+
+// ================================================================ H4
+WScript.Echo('\nH4 a row calls the category orb\'s own door');
+X.calls.orb = []; rows[3].fire('click');
+check('row 4 -> lxOrbOpen with the orb\'s own src object', X.calls.orb.length + ' ' + (X.calls.orb[0] === R.S.items[3].src), '1 true');
+check('  -> the category page', LOC.hash, '#category/' + encodeURIComponent(R.S.items[3].name));
+var tpi = -1; for (i = 0; i < R.S.items.length; i++) { if (R.S.items[i].name === 'Theory & Philosophy') { tpi = i; } }
+check('"Theory & Philosophy" is in the sky', tpi >= 0, true);
+rows[tpi].fire('click');
+check('  its row -> #category/Theory%20%26%20Philosophy', LOC.hash, '#category/Theory%20%26%20Philosophy');
+check('  no lens sheet, no filtered-shelf fallback', X.calls.sheet.length + ' ' + X.calls.shelfCat.length, '0 0');
+check('  a row click writes nothing', WRITES.length, 0);
+
+// ================================================================ H5
+WScript.Echo('\nH5 "By the orbs", then "List"');
+R.S.builds = 0; R.S.sig = 'old';
+btnIn(boxOf(), 'By the orbs').fire('click');
+check('stores praxis_you_catnames=orbs (one write)', WRITES.join(','), 'praxis_you_catnames=orbs');
+check('sky host gains lx-orbnames', orbnames(), true);
+check('the list is gone; the switch stays', byCls('lx-cn-list', boxOf()).length + ' ' + byCls('lx-cn-row', boxOf()).length + ' ' + byCls('lx-cn-seg', boxOf()).length, '0 0 1');
+check('"By the orbs" now pressed, "List" not', btnIn(boxOf(), 'By the orbs').getAttribute('aria-pressed') + ' ' + btnIn(boxOf(), 'List').getAttribute('aria-pressed'), 'true false');
+check('the sky re-lays out once, its sig reset first', R.S.builds + ' "' + R.S.sigAtBuild + '"', '1 ""');
+check('box still shown', shown(), true);
+WRITES.length = 0; R.S.builds = 0;
+btnIn(boxOf(), 'List').fire('click');
+check('"List" stores praxis_you_catnames=list', WRITES.join(','), 'praxis_you_catnames=list');
+check('  lx-orbnames removed', orbnames(), false);
+check('  the 17 rows return', byCls('lx-cn-row', boxOf()).length, 17);
+check('  one build', R.S.builds, 1);
+
+// ================================================================ H6
+WScript.Echo('\nH6 pressing the pressed choice');
+WRITES.length = 0; R.S.builds = 0;
+btnIn(boxOf(), 'List').fire('click');
+check('"List" while List: no write, no build', WRITES.length + ' ' + R.S.builds, '0 0');
+btnIn(boxOf(), 'By the orbs').fire('click'); WRITES.length = 0; R.S.builds = 0;
+btnIn(boxOf(), 'By the orbs').fire('click');
+check('"By the orbs" while By the orbs: no write, no build', WRITES.length + ' ' + R.S.builds, '0 0');
+
+// ================================================================ H7
+WScript.Echo('\nH7 the stored choice on the next render');
+X.setMode('lenses'); X.fill(R, U); X.setMode('cats'); X.fill(R, U);
+check('stored orbs -> next render opens By the orbs', X.mode() + ' ' + orbnames() + ' ' + btnIn(boxOf(), 'By the orbs').getAttribute('aria-pressed') + ' ' + byCls('lx-cn-row', boxOf()).length, 'orbs true true 0');
+STORE.praxis_you_catnames = 'banana'; X.fill(R, U);
+check('unknown stored value -> List', X.mode() + ' ' + orbnames() + ' ' + byCls('lx-cn-row', boxOf()).length + ' ' + btnIn(boxOf(), 'List').getAttribute('aria-pressed'), 'list false 17 true');
+STORE.praxis_you_catnames = true; X.fill(R, U);
+check('a non-string stored value -> List', X.mode(), 'list');
+STORE.praxis_you_catnames = 'orbs'; X.fill(R, U);
+check('stored orbs again -> By the orbs', X.mode() + ' ' + orbnames(), 'orbs true');
+
+// ================================================================ H8
+WScript.Echo('\nH8 leaving Categories mode');
+X.setMode('lenses'); X.fill(R, U);
+check('-> Lenses: lx-orbnames removed, box hidden', orbnames() + ' ' + R.below.hidden, 'false true');
+X.setMode('cats'); X.fill(R, U);
+check('back to Categories: the choice kept', orbnames() + ' ' + shown(), 'true true');
+X.setMode('marks'); X.fill(R, U);
+check('-> Marks: lx-orbnames removed, box hidden', orbnames() + ' ' + R.below.hidden, 'false true');
+check('  leaving writes nothing', WRITES.length, 0);
+
+// ================================================================ H9
+WScript.Echo('\nH9 a name carrying HTML');
+STORE.praxis_you_catnames = 'list';
+var evil = '<img src=x onerror=alert(1)>';
+X.fillCat(R, [{ name: evil, look: { name: 'q' }, books: 2, aria: '', src: { kind: 'cat', label: evil } }]);
+rows = byCls('lx-cn-row', boxOf());
+check('one row; the name is text', rows.length + ' ' + (byCls('lx-cn-n', rows[0])[0].textContent === evil), '1 true');
+check('  no markup but the mark', markupIn(boxOf()), '');
+check('  empty aria falls back to the name', rows[0].getAttribute('aria-label') === evil, true);
+X.calls.orb = []; X.calls.shelfCat = []; rows[0].fire('click');
+check('  its click: not a category -> the filtered-shelf fallback, not a hash', X.calls.shelfCat.length + ' ' + (LOC.hash.indexOf('<') === -1), '1 true');
+
+// ================================================================ H10
+WScript.Echo('\nH10 the You page mount');
+function makeWrap() { var w = new El('section'), h = new El('div'); h.className = 'pf-sky-host'; w.appendChild(h); return w; }
+X.setMode('cats'); STORE.praxis_you_catnames = 'list';
+var w1 = makeWrap(), w2 = makeWrap(), w3 = makeWrap(), h1, h3;
+X.mount(w1, false, U); h1 = w1.querySelector('.pf-sky-host');
+check('first render: host then box under it', h1.children.length + ' ' + (h1.children[0] === R.host) + ' ' + (h1.children[1] === R.below), '2 true true');
+check('  host class', h1.className, 'pf-sky-host lx-you-host');
+X.mount(w2, false, U); X.mount(w3, false, U); h3 = w3.querySelector('.pf-sky-host');
+check('after two more renders: one box in the live host', byCls('lx-catnames', w3).length + ' ' + h3.children.length, '1 2');
+check('  the old hosts keep none', byCls('lx-catnames', w1).length + byCls('lx-catnames', w2).length, 0);
+check('  the box itself carries no listener', (function () { var c = 0, t; for (t in R.below.ls) { if (R.below.ls.hasOwnProperty(t)) { c += R.below.ls[t].length; } } return c; })(), 0);
+var lc = 0, segB = byCls('lx-cn-seg', w3)[0].children;
+for (i = 0; i < segB.length; i++) { lc += (segB[i].ls.click || []).length; }
+check('  each switch button has one click listener', segB.length + ' ' + lc, '2 2');
+check('  one box element across renders (rec.below reused)', byCls('lx-catnames', w3)[0] === R.below, true);
+check('  lxSkyMounted once per render', X.calls.mounted, 3);
+var w4 = makeWrap();
+X.mount(w4, true, U);
+check('visitor preview: nothing mounted, no box', w4.querySelector('.pf-sky-host').children.length + ' ' + byCls('lx-catnames', w4).length, '0 0');
+check('  the owner\'s live host still has its one box', byCls('lx-catnames', w3).length, 1);
+
+// ================================================================ H11
+WScript.Echo('\nH11 storage');
+var other = 0;
+for (i = 0; i < WRITES.length; i++) { if (WRITES[i].indexOf('praxis_you_catnames=') !== 0) { other++; } }
+check('the views code wrote no other key in the whole run', other, 0);
+check('  and only the two values', (function () { var b = 0, q; for (q = 0; q < WRITES.length; q++) { if (WRITES[q] !== 'praxis_you_catnames=list' && WRITES[q] !== 'praxis_you_catnames=orbs') { b++; } } return b; })(), 0);
+
+// ================================================================ H12
+WScript.Echo('\nH12 R6: account delete clears the key; sign-out leaves it');
+var LSTORE = {}, LKEYS;
+var LS = {
+  length: 0,
+  key: function (i2) { return LKEYS[i2]; },
+  getItem: function (k2) { return LSTORE.hasOwnProperty(k2) ? LSTORE[k2] : null; },
+  setItem: function (k2, v2) { LSTORE[k2] = String(v2); this.sync(); },
+  removeItem: function (k2) { delete LSTORE[k2]; this.sync(); },
+  sync: function () { var q; LKEYS = []; for (q in LSTORE) { if (LSTORE.hasOwnProperty(q)) { LKEYS.push(q); } } this.length = LKEYS.length; }
+};
+var IS = { notebookEntries: {} };
+var Y = I(LS, IS, LSTORE);
+var hits = 0;
+for (i = 0; i < Y.keys.length; i++) { if (Y.keys[i] === 'praxis_you_catnames') { hits++; } }
+check('ACCOUNT_GLOBAL_KEYS holds praxis_you_catnames exactly once', hits, 1);
+check('  beside the sky\'s own keys', (Y.keys.indexOf('praxis_sky_names') >= 0) + ' ' + (Y.keys.indexOf('praxis_sky_threads') >= 0), 'true true');
+function seed() { LS.setItem('praxis_you_catnames', '"orbs"'); LS.setItem('praxis_sky_names', 'false'); LS.setItem('praxis_books_' + U, '{}'); LS.setItem('praxis_books_u_other', '{}'); LS.setItem('praxis_user', '{"uid":"' + U + '"}'); }
+seed();
+Y.signOut();
+check('sign-out alone: praxis_you_catnames stays', LS.getItem('praxis_you_catnames'), '"orbs"');
+check('  and the sky\'s own key stays (same treatment)', LS.getItem('praxis_sky_names'), 'false');
+check('  sign-out cleared the user', LS.getItem('praxis_user') + ' ' + Y.cleared(), 'null 1');
+seed();
+Y.wipe(U);
+check('account-delete wipe: praxis_you_catnames gone', LS.getItem('praxis_you_catnames'), null);
+check('  praxis_sky_names gone (same treatment)', LS.getItem('praxis_sky_names'), null);
+check('  this reader\'s uid key gone', LS.getItem('praxis_books_' + U), null);
+check('  another reader\'s uid key stays', LS.getItem('praxis_books_u_other'), '{}');
+
+WScript.Echo('\n' + (total - failures) + '/' + total + ' passed');
+WScript.Quit(failures ? 1 : 0);

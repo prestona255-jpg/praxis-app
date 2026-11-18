@@ -23924,6 +23924,7 @@ function renderProfilePage() {
       lxYHost.innerHTML = '';
       lxYHost.className = 'pf-sky-host lx-you-host';
       lxYHost.appendChild(lxYou.host);
+      if (lxYou.below) { lxYHost.appendChild(lxYou.below); }   // L4b-2b hotfix 1: the category names, under the sky
       lxSkyMounted(lxYou);
     }
   }
@@ -28523,6 +28524,7 @@ function lxFillYouSky(rec, uid) {
     rec.S.set(L.items, L.shares, L.looks);
     rec.S.toggles(lxSkyToggles());
     lxFillLines(rec, uid, L.items.length, 'you');
+    lxFillCatNames(rec, null);
     return;
   }
   var kept = lensKeptThemes(uid), looks = [], items = [], ids = (state.userBooks[uid] ? state.userBooks[uid].bookIds : []), b, k, lk, g;
@@ -28583,6 +28585,50 @@ function lxFillYouSky(rec, uid) {
   rec.host.querySelector('.door').hidden = true;
   rec.S.set(items, [], looks);                       // no threads in the statistics modes
   rec.S.toggles({ threads: false, names: lxSkyToggles().names });
+  lxFillCatNames(rec, lxYouMode === 'cats' ? items : null);
+}
+// L4b-2b hotfix 1: the category names. With more than eight orbs on a phone the sky
+// shows one name only (hand.js's "many"), so under the You sky in Categories mode the
+// reader chooses where the names go: a list (each row carries that category's own
+// mark and opens its page), or small names by every orb. The choice is one stored
+// preference (praxis_you_catnames: 'list' | 'orbs'); nothing else is written.
+function lxCatNamesMode() { return ls('praxis_you_catnames', 'list') === 'orbs' ? 'orbs' : 'list'; }
+function lxFillCatNames(rec, items) {
+  if (!rec.below) { rec.below = lxEl('div', 'lx lx-catnames'); }
+  var box = rec.below, mode = lxCatNamesMode(), i;
+  box.innerHTML = '';
+  if (!items || !items.length) { box.hidden = true; rec.host.classList.remove('lx-orbnames'); return; }
+  box.hidden = false;
+  if (mode === 'orbs') { rec.host.classList.add('lx-orbnames'); } else { rec.host.classList.remove('lx-orbnames'); }
+  var seg = lxEl('div', 'lx-cn-seg');
+  seg.setAttribute('role', 'group');
+  seg.setAttribute('aria-label', 'Where the category names show');
+  var opt = function (m, label) {
+    var bt = lxBtn('', label, function () {
+      if (lxCatNamesMode() === m) { return; }
+      sv('praxis_you_catnames', m);
+      lxFillCatNames(rec, items);
+      rec.S.sig = ''; rec.S.build();
+    });
+    bt.setAttribute('aria-pressed', mode === m ? 'true' : 'false');
+    seg.appendChild(bt);
+  };
+  opt('list', 'List'); opt('orbs', 'By the orbs');
+  box.appendChild(seg);
+  if (mode !== 'list') { return; }
+  var grp = lxEl('div', 'lx-cn-list');
+  for (i = 0; i < items.length; i++) {
+    (function (it) {
+      var row = lxBtn('lx-cn-row', '', function () { lxOrbOpen(it.src); });
+      row.appendChild(lxMark(it.look, it.name));
+      row.appendChild(lxEl('span', 'lx-cn-n', it.name || ''));
+      row.appendChild(lxEl('span', 'lx-cn-c', lxPlural(it.books, 'book')));
+      row.appendChild(lxEl('span', 'lx-cn-chev', '›'));
+      row.setAttribute('aria-label', it.aria || it.name || '');
+      grp.appendChild(row);
+    })(items[i]);
+  }
+  box.appendChild(grp);
 }
 function lxYouSky(uid) {
   var rec = lxSkyHost('you');
