@@ -7,8 +7,8 @@
 //   H3 olOrder / olLeaveOut / olPutBack + state.js lensLeaveOut / lensPutBack(at):
 //      a left-out book keeps its slot; Undo and Put it back return it there; two out, back
 //      in either order; no position -> the end; never in both lists, never in neither
-//   H4 the Shelf band name: a kept lens -> #lens/<id>; a category, a lens with no id, and a
-//      lens gone since -> openShelfFocusedBand, exactly as before
+//   H4 the Shelf band name: a kept lens -> #lens/<id>; a category -> #category/<label> (L4b-2b);
+//      a lens with no id and a lens gone since -> openShelfFocusedBand, exactly as before
 // EXTENSIONLESS on purpose (see tools/parse-check). ASCII-only: cscript reads it as ANSI,
 // so the source's middle dot arrives as two characters; outputs are compared with every
 // non-ASCII run folded to '*'.
@@ -47,12 +47,14 @@ try {
   var bandSrc   = between(vsrc, "labelEl.addEventListener('click', function () {", "  } else {\n    labelEl = document.createElement('span');");
   var statSrc   = between(ssrc, 'function normalizeStatus(s) {', '// Canonical vocabulary in mockup display order');
   var lensSrc   = between(ssrc, 'function lensThemeById(themeId) {', '// "Let her forget this"');
+  var catSrc    = between(ssrc, 'var SHELF_CATEGORIES = [', '// Ordered, identity-first keyword map');   // L4b-2b: the band name's category line reads these
+  var cpHashSrc = between(vsrc, 'function cpHash(label) {', 'function cpLabelOf(raw) {');
   M = new Function('state',
     'var dirty = 0, saved = 0;\n' +
     'function ensureThemeFields(t) {}\n' +
     'function markThemesDirty() { dirty++; }\n' +
     'function saveState() { saved++; }\n' +
-    statSrc + '\n' + lensSrc + '\n' + helperSrc + '\n' +
+    statSrc + '\n' + lensSrc + '\n' + helperSrc + '\n' + catSrc + '\n' + cpHashSrc + '\n' +
     'function lxEl(tag, cls, txt) { return txt; }\n' +
     'function pageLine(pb, isOut) { var out = null, sp = { appendChild: function (x) { out = x; } };\n' + pageSrc + '\n return out; }\n' +
     'function sheetLine(pick, isOut) { var out = null, crow = { appendChild: function (x) { out = x; } };\n' + sheetSrc + '\n return out; }\n' +
@@ -205,7 +207,7 @@ r = X.band('lens:th_k', [{}, {}], 'Love', 'Love');
 check('kept lens band name -> #lens/<id>', r.hash, '#lens/th_k');
 check('  focused view not opened', r.focused, '');
 r = X.band('cat:History', [{}], 'History', null);
-check('category band -> openShelfFocusedBand', r.hash + ' ' + r.focused, '#books cat:History|History|null');
+check('category band -> #category/<label> (L4b-2b)', r.hash + ' ' + r.focused, '#category/History ');
 r = X.band('lens:', [{}], 'Untitled', 'Untitled');
 check('lens band without an id -> openShelfFocusedBand', r.hash + ' ' + r.focused, '#books lens:|Untitled|Untitled');
 r = X.band('lens:th_gone', [{}], 'Gone', 'Gone');

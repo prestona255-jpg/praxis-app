@@ -43,12 +43,13 @@ try {
   var tabSrc  = between(vsrc, 'function tabbarTabFor(parts) {', 'function tabbarMark() {');
   var pureSrc = between(vsrc, 'function olRoomRoute(r) {', 'function olSect(title, actionBtn) {');
   var bkSrc   = between(vsrc, "if (parts[0] !== 'lenses' && parts[0] !== 'lens')", 'if (lxSheetOpen && location.hash');
+  var cpSrc   = between(vsrc, 'function cpRoomRoute(r) {', 'function cpFromLabel() {');   // L4b-2b: names its lines in tabbarTabFor and the bookkeeping now read
   M = new Function('state',
-    "var olFrom = 'home', olPrev = '', olSt = { id: null }, tabbarSearchFrom = null, lxLastRoute = 'home';\n" +
-    tabSrc + '\n' + pureSrc + '\n' +
+    "var olFrom = 'home', olPrev = '', olSt = { id: null }, tabbarSearchFrom = null, lxLastRoute = 'home', cpFrom = 'books', cpSt = { id: null };\n" +
+    tabSrc + '\n' + pureSrc + '\n' + cpSrc + '\n' +
     'function nav(rest) { var parts = rest.split("/");\n' + bkSrc + '\n}\n' +
     'return { room: olRoomRoute, label: olFromLabel, notes: olNotes, of: olNotesOf, tab: tabbarTabFor, nav: nav,' +
-    ' setFrom: function (v) { olFrom = v; }, setSearchFrom: function (v) { tabbarSearchFrom = v; },' +
+    ' setFrom: function (v) { olFrom = v; }, setCpFrom: function (v) { cpFrom = v; }, setSearchFrom: function (v) { tabbarSearchFrom = v; },' +
     ' setSt: function (v) { olSt = v; },' +
     ' st: function () { return { from: olFrom, prev: olPrev, fresh: olSt.fresh === true, last: lxLastRoute }; },' +
     ' clearFresh: function () { olSt.fresh = false; } };');
@@ -128,7 +129,7 @@ X.setSearchFrom(null); check('#lens/t1 from search (no searchFrom)', X.tab(['len
 X.setFrom(null); check('#lens/t1 with olFrom null -> home', X.tab(['lens', 't1']), 'home');
 X.setFrom('books'); check('bare #lens falls through (not the lens line)', X.tab(['lens']), 'notebook');
 check('#lenses unchanged', X.tab(['lenses']), 'home');
-X.setFrom('category/c1'); check('#lens/t1 from category (L4b-2b owes its line) -> falls through', X.tab(['lens', 't1']), 'notebook');
+X.setFrom('category/c1'); X.setCpFrom('profile'); check('#lens/t1 from a category opened from You -> the category\'s tab (L4b-2b)', X.tab(['lens', 't1']), 'you'); X.setCpFrom('books');
 
 // ================================================================ U6
 WScript.Echo('\nU6 renderRoute bookkeeping (lxLastRoute / olFrom / olSt.fresh / olPrev)');

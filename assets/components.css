@@ -17925,3 +17925,28 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
 .lx.ol .pill{background:var(--gold)}.lx.ol .ghost{border:1px solid var(--line)}.lx.ol .btn-primary{background:var(--grad)}
 .lx.ol .ol-rw,.lx.ol .ol-why textarea{box-sizing:border-box}
 /* === L4b-2a OPEN LENS — end === */
+/* === L4b-2b THE CATEGORY PAGE — begin (docs/checkpoints/l4b-2b.md) ===
+   The page #category/<label> (the Style Study's "a category"). It reuses Open Lens's column, sections, rows
+   and links (.lx.ol); every rule here is scoped under .lx.ol.cp, so nothing reaches another surface.
+   Tokens only. One column is the base; two equal columns from 1000. */
+.lx.ol.cp .cp-head{box-sizing:border-box;display:flex;flex-direction:column;gap:4px;width:100%;max-width:680px;margin:0 auto;padding:6px 20px 22px}
+.lx.ol.cp .cp-head .ol-back{color:var(--gold-ink);margin-left:-4px}
+.lx.ol.cp .cp-kick{font:500 13.5px/1.2 var(--font-body);color:var(--ink-2);margin-top:6px}
+.lx.ol.cp .cp-name{margin:2px 0 0;font:500 36px/1.05 var(--font-serif);letter-spacing:-.025em;color:var(--ink);overflow-wrap:anywhere;text-wrap:balance}
+.lx.ol.cp .cp-au{margin:6px 0 0;font:400 15px/1.4 var(--font-body);color:var(--ink-2)}
+.lx.ol.cp .cp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 12px}
+.lx.ol.cp .cp-cv,.lx.ol.cp .cp-more{box-sizing:border-box;width:100%;aspect-ratio:2/3;border-radius:6px;position:relative;overflow:hidden}
+.lx.ol.cp .cp-cv{display:flex;flex-direction:column;justify-content:flex-end;gap:4px;padding:12px 10px;background:var(--card-2);color:var(--ink);box-shadow:inset 5px 0 0 rgba(0,0,0,.14),inset 0 0 0 1px rgba(0,0,0,.12),0 6px 14px rgba(0,0,0,.22)}
+.lx.ol.cp .cp-cv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.lx.ol.cp .cp-cv b{font:500 15px/1.14 var(--font-serif);letter-spacing:-.01em;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.lx.ol.cp .cp-cv small{font:13px/1.15 var(--font-body);color:var(--ink-2)}
+.lx.ol.cp .cp-more{display:grid;place-items:center;text-align:center;padding:8px;font:500 15px/1.2 var(--font-body);color:var(--gold-ink);background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line)}
+.lx.ol.cp .ol-rw .mark{width:38px;height:38px;flex:none}
+.lx.ol.cp .ol-plain{width:100%}
+@media (min-width: 1000px){
+  .lx.ol.cp .cp-head{max-width:1140px;padding:32px 40px 0}
+  .lx.ol.cp .ol-col{padding-top:28px}
+  .lx.ol.cp .ol-left{width:auto;flex:1;position:static;gap:44px}
+  .lx.ol.cp .cp-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+/* === L4b-2b THE CATEGORY PAGE — end === */

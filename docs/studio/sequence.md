@@ -31,6 +31,11 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-17 (L4b-2a hotfix 1 PASSED on Preston's phone; L4b-2b BUILT at v3.331)** — hotfix 1 (v3.330) is pushed at
+  096269a and Preston's phone check PASSED (17 Nov, all four fixes). L4b-2b, the category page (`#category/<label>`), is
+  built at v3.331, local until pushed: the second half of L4b-2 as ruled, nothing retired or reordered, so no `PROPOSED:`
+  flag. On Preston's rulings it also carries the You sky's two category-orb phrases and the `ensureLensLooks` call (the
+  recon gate's MINOR). Record: `docs/checkpoints/l4b-2b.md`.
 - **2026-11-17 (L4b-2a PASSED on Preston's phone; L4b-2a hotfix 1 BUILT at v3.330; the category page moves to v3.331)** —
   Preston's phone check of v3.329 (pushed 28dafd6; Night, signed in) PASSED. Its five findings are one hotfix build, v3.330,
   ahead of L4b-2b (rulings R1–R5): status words, the Undo toast below the status bar and 10s, left-out books keep their slots
@@ -1622,8 +1627,9 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   two (Preston, 17 Nov 2026): **L4b-2a** — Open Lens, the page (`#lens/<id>`), SHIPPED v3.329 (pushed 28dafd6,
   `docs/checkpoints/l4b-2a.md`); a lens tap still opens the sheet and its "Open lens" pill opens the page; the band is today's
   sky (`--sky`) + the lens's glow, blue with LC2. Preston's phone check PASSED; its five findings are **L4b-2a hotfix 1**,
-  BUILT at v3.330 (local; his phone check owed). **L4b-2b** — the category page (`#category/<id>`), v3.331; its doors are the
-  Shelf's category heading and the You-sky category orb, and it owes its own line in `tabbarTabFor`.
+  SHIPPED v3.330 (pushed 096269a); his phone check PASSED (17 Nov, all four fixes). **L4b-2b** — the category page
+  (`#category/<label>`), BUILT at v3.331 (local until pushed, `docs/checkpoints/l4b-2b.md`); its doors are the Shelf's
+  category band name and the You-sky category orb, and it has its own line in `tabbarTabFor`. Preston's phone check owed.
   · **L4b-3** — the redrawn rooms, a few per build: Home body, Shelf, book, Notebook, note, You, artifact, the pages under
   You, Search. Needs L4b-1. Large; split by room.
   · **L4b-4** — the capture dial, the hold menu, status behind the cover, the hint. Needs L4b-3 (book). Medium.

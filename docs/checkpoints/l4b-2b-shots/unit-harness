@@ -1,0 +1,392 @@
+// docs/checkpoints/l4b-2b-shots/unit-harness -- L4b-2b (the category page, #category/<label>) unit proofs.
+// cscript JScript (Node is blocked), the l4b-2a unit-harness pattern: every function under test is
+// EXTRACTED BY TEXT from the real bytes of js/views.js and js/state.js and run in one scope against a
+// stubbed state and a small fake DOM (createElement / appendChild / setAttribute / addEventListener;
+// textContent and innerHTML are plain properties, so every innerHTML the page writes is visible to the
+// scan). Against a tree without the category page (HEAD 096269a) it refuses to load: exit 2.
+//   C1  cpRoomRoute / cpFromLabel / cpHash / cpLabelOf (every category round-trips; bad labels refused)
+//   C2  the head: counts line (read = read + finished only), lens rows (order, other reader, none shared),
+//       notes (newest first, Journal never, another reader never)
+//   C3  the grid: 6 / 7 at 390; 8 / 12 from 1000
+//   C4  "+ N more" and "See all N" open in place and survive a same-route re-render
+//   C5  page state resets on arrival from another route and on a category change
+//   C6  text never reaches markup: a title / author / lens name / note body carrying HTML
+//   C7  the empty state: unknown, script-bearing and malformed labels; a category with none of mine
+//   C8  the route branch: bare #category -> #books; a label renders
+//   C9  Back and the tab: from the Shelf, You, Home, Search; a lens / book / note opened from the page
+//   C10 the doors: the Shelf band name (category / lens / other) and lxOrbOpen; the orb copy
+//   C11 signed out: the Shelf's own words
+//   C12 writes: books / userBooks / userThemes / notebookEntries byte-identical after every step,
+//       no ls / sv call; ensureLensLooks once per signed-in render (the fold)
+//   C13 a cover whose image fails draws its title and author instead (red-team R1, folded in)
+// EXTENSIONLESS on purpose (see tools/parse-check). ASCII-only: cscript reads it as ANSI, so the page's
+// middle dot arrives as two characters; texts are compared with every non-ASCII run folded to "|".
+//
+// Usage:  cscript //nologo //E:jscript docs/checkpoints/l4b-2b-shots/unit-harness [root]
+// Exit:   0 = every case passed . 1 = a case failed . 2 = could not load
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName))));
+if (WScript.Arguments.length > 0) { root = String(WScript.Arguments(0)); }
+function readFile(p) { var s = fso.OpenTextFile(p, 1, false); var t = s.ReadAll(); s.Close(); return t; }
+if (typeof Array.prototype.indexOf !== 'function') { Array.prototype.indexOf = function (v) { var i; for (i = 0; i < this.length; i++) { if (this[i] === v) { return i; } } return -1; }; }
+if (!Date.now) { Date.now = function () { return (new Date()).getTime(); }; }
+
+var failures = 0, total = 0;
+function check(name, got, want) { total++; if (got === want) { WScript.Echo('  PASS  ' + name + '  = ' + got); } else { failures++; WScript.Echo('  FAIL  ' + name + '\n        got  ' + got + '\n        want ' + want); } }
+(function () { var b = failures; check('self-check (expected to FAIL)', 1, 2); if (failures - b !== 1) { WScript.Echo('HARNESS SELF-CHECK FAILED'); WScript.Quit(2); } failures = b; total--; })();
+
+function between(src, a, b) {
+  var i = src.indexOf(a), j = src.indexOf(b, i + 1);
+  if (i < 0 || j < 0) { throw new Error('anchor not found: ' + a + ' .. ' + b); }
+  if (src.indexOf(a, i + 1) !== -1) { throw new Error('anchor not unique: ' + a); }
+  return src.slice(i, j);
+}
+
+// ---------------------------------------------------------------- the fake DOM
+function El(tag) { this.tagName = String(tag).toUpperCase(); this.children = []; this.parentNode = null; this.attrs = {}; this.className = ''; this.textContent = ''; this.ls = {}; }
+El.prototype.appendChild = function (c) {
+  if (this.isHost && this.innerHTML === '') { this.children = []; this.innerHTML = undefined; }   // host.innerHTML = '' clears
+  c.parentNode = this; this.children.push(c); return c;
+};
+El.prototype.removeChild = function (c) { var i, o = []; for (i = 0; i < this.children.length; i++) { if (this.children[i] !== c) { o.push(this.children[i]); } } this.children = o; c.parentNode = null; return c; };
+El.prototype.setAttribute = function (k, v) { this.attrs[k] = String(v); };
+El.prototype.getAttribute = function (k) { return this.attrs.hasOwnProperty(k) ? this.attrs[k] : null; };
+El.prototype.addEventListener = function (t, fn) { if (!this.ls[t]) { this.ls[t] = []; } this.ls[t].push(fn); };
+El.prototype.fire = function (t) { var a = this.ls[t] || [], i; for (i = 0; i < a.length; i++) { a[i].call(this, {}); } };
+var HOST = new El('div'); HOST.isHost = true;
+var DOC = { createElement: function (t) { return new El(t); }, getElementById: function (id) { return id === 'app' ? HOST : null; } };
+var WIDE = false;
+var WIN = { matchMedia: function (q) { return { matches: WIDE && q === '(min-width: 1000px)' }; }, PraxisHand: null };
+var LOC = { hash: '#books', replaced: null, replace: function (h) { this.replaced = h; this.hash = h; } };
+
+function all(el, out) { var i; out = out || []; for (i = 0; i < el.children.length; i++) { out.push(el.children[i]); all(el.children[i], out); } return out; }
+function byCls(cls, rootEl) { var a = all(rootEl || HOST), o = [], i; for (i = 0; i < a.length; i++) { if ((' ' + a[i].className + ' ').indexOf(' ' + cls + ' ') !== -1) { o.push(a[i]); } } return o; }
+function one(cls) { var a = byCls(cls); return a.length ? a[0] : null; }
+function txt(el) { var s = el.textContent || '', i; for (i = 0; i < el.children.length; i++) { s += txt(el.children[i]); } return s; }
+function fold(s) { return String(s).replace(/[^\x20-\x7e]+/g, '|'); }
+function btn(label) { var a = all(HOST), i; for (i = 0; i < a.length; i++) { if (a[i].tagName === 'BUTTON' && fold(txt(a[i])) === label) { return a[i]; } } return null; }
+// every innerHTML the page wrote, except the fixed Back chevron
+function markup() {
+  var a = all(HOST), o = [], i;
+  for (i = 0; i < a.length; i++) {
+    if (typeof a[i].innerHTML === 'string' && a[i].innerHTML !== '' && a[i].innerHTML !== '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>') { o.push(a[i].tagName + ':' + a[i].innerHTML); }
+  }
+  return o.join(' ; ');
+}
+
+// ---------------------------------------------------------------- load
+var vsrc, ssrc, M;
+try {
+  vsrc = readFile(fso.BuildPath(root, 'js\\views.js')).replace(/\r/g, '');
+  ssrc = readFile(fso.BuildPath(root, 'js\\state.js')).replace(/\r/g, '');
+} catch (e) { WScript.Echo('LOAD FAIL (read): ' + e.message); WScript.Quit(2); }
+try {
+  var cpSrc    = between(vsrc, 'function cpRoomRoute(r) {', '// "Ask Yumi to read it" (S12)');
+  var routeSrc = between(vsrc, '// L4b-2b: the category page (#category/<label>). A bare #category goes to the Shelf.', "  if (parts[0] === 'lenses') {");
+  var tabSrc   = between(vsrc, 'function tabbarTabFor(parts) {', 'function tabbarMark() {');
+  var bkSrc    = between(vsrc, "if (parts[0] !== 'lenses' && parts[0] !== 'lens')", 'if (lxSheetOpen && location.hash');
+  var olSrc    = between(vsrc, 'function olRoomRoute(r) {', '// The books at size: a row to swipe.');
+  var lxSrc    = between(vsrc, 'function lxUid() {', 'function lxSeed() {');
+  var agoSrc   = between(vsrc, 'function lxAgo(ms) {', 'function lxErrLine(err) {');
+  var regSrc   = between(vsrc, 'function notebookRegisterLabel(reg) {', 'function arrHas(');
+  var bandSrc  = between(vsrc, "labelEl.addEventListener('click', function () {", "  } else {\n    labelEl = document.createElement('span');");
+  var orbSrc   = between(vsrc, 'function lxOrbOpen(src) {', '// Categories mode: the Shelf, filtered');
+  var catSrc   = between(ssrc, 'var SHELF_CATEGORIES = [', '// Ordered, identity-first keyword map');
+  var statSrc  = between(ssrc, 'function normalizeStatus(s) {', '// Canonical status -> human label');
+  var clsSrc   = between(ssrc, 'function classifyBookLocal(book) {', '// ensureSubTheoryFields');
+  var keptSrc  = between(ssrc, 'function lensKeptThemes(uid) {', '// The sameLens set for the eval');
+  M = new Function('state', 'document', 'window', 'location', 'ST_USER',
+    "var APP_EL_ID = 'app', olFrom = 'home', olPrev = '', olSt = { id: null }, tabbarSearchFrom = null, lxLastRoute = 'home', cpFrom = 'books', cpSt = { id: null };\n" +
+    'var calls = { saved: 0, looks: [], ls: 0, sv: 0, focused: [], sheet: [], shelfCat: [], signedOut: [], render: 0 };\n' +
+    'function getCurrentUser() { return ST_USER.u; }\n' +
+    'function ensureThemeFields(t) {}\n' +
+    'function ensureLensLooks(uid) { calls.looks.push(uid); return false; }\n' +
+    'function rawCategoryToShelf(r) { return null; }\n' +
+    'function saveState() { calls.saved++; }\n' +
+    'function ls(k, d) { calls.ls++; return d; }\n' +
+    'function sv(k, v) { calls.sv++; return true; }\n' +
+    'function openLensSheet(id) { calls.sheet.push(id); }\n' +
+    'function lxOpenShelfCategory(l) { calls.shelfCat.push(l); }\n' +
+    'function openShelfFocusedBand(k, b, l, n) { calls.focused.push(k + "|" + l + "|" + n); }\n' +
+    'function buildSignedOutPrompt(h, c) { calls.signedOut.push(h + " / " + c); var e = document.createElement("div"); e.className = "empty-state"; e.textContent = h; return e; }\n' +
+    catSrc + '\n' + statSrc + '\n' + clsSrc + '\n' + keptSrc + '\n' +
+    lxSrc + '\n' + agoSrc + '\n' + regSrc + '\n' + olSrc + '\n' + cpSrc + '\n' + tabSrc + '\n' + orbSrc + '\n' +
+    'function nav(rest) { var parts = rest.split("/");\n' + bkSrc + '\n}\n' +
+    'function countingRender(r) { calls.render++; renderCategoryPage(r); }\n' +
+    'function route(rest) { var parts = rest.split("/"); var renderCategoryPage = countingRender;\n' + routeSrc + '\n}\n' +
+    'function band(groupKey, label) {\n' +
+    '  var fn = null, labelEl = { addEventListener: function (ev, f) { fn = f; } }, location = { hash: "#books" }, groupBooks = [{}], lensName = null;\n' +
+    '  calls.focused = [];\n' + bandSrc + '\n' +
+    '  fn(); return location.hash + " " + calls.focused.join(",");\n' +
+    '}\n' +
+    'return { room: cpRoomRoute, label: cpFromLabel, hash: cpHash, labelOf: cpLabelOf, render: renderCategoryPage, nav: nav, route: route,' +
+    ' tab: tabbarTabFor, olLabel: olFromLabel, band: band, orb: lxOrbOpen, calls: calls,' +
+    ' st: function () { return { cpFrom: cpFrom, olFrom: olFrom, fresh: cpSt.fresh === true, all: cpSt.all === true, notes: cpSt.notes === true, id: cpSt.id }; },' +
+    ' setCpFrom: function (v) { cpFrom = v; }, reset: function () { cpSt = { id: null }; olPrev = ""; }, cats: SHELF_CATEGORIES, unc: CATEGORY_UNCATEGORIZED };');
+} catch (e) { WScript.Echo('LOAD FAIL: ' + e.message); WScript.Quit(2); }
+
+var ST = { books: {}, userBooks: {}, userThemes: {}, notebookEntries: {}, currentBookId: 'x', currentArcId: 'x', currentSubTheoryId: 'x' };
+var USER = { u: { uid: 'u_me' } };
+var X = M(ST, DOC, WIN, LOC, USER);
+var U = 'u_me', O = 'u_other', i, j, r;
+
+// ---------------------------------------------------------------- fixtures (the shapes the app writes)
+ST.userBooks[U] = { bookIds: [] };
+ST.userBooks[O] = { bookIds: [] };
+function book(id, cat, status, title, author, mine) {
+  ST.books[id] = { id: id, title: title || ('T ' + id), author: author === undefined ? ('A ' + id) : author, isbn: '', addedAt: 1, status: status, genre: '', coverUrl: null, category: cat };
+  if (mine !== false) { ST.userBooks[U].bookIds.push(id); }
+}
+function lens(id, uid, name, ids) { ST.userThemes[id] = { id: id, userId: uid, name: name, bookIds: ids, leftOuts: [], look: null, createdAt: 10, keptAt: 10 }; }
+function note(id, uid, reg, ids, at, body) {   // captureNote()'s field set
+  ST.notebookEntries[id] = { id: id, userId: uid, register: reg, isPrivate: true, body: body === undefined ? ('body ' + id) : body, bookIds: ids, arcIds: [], images: [], filed: true, createdAt: at, updatedAt: at };
+}
+book('e1', 'Education', 'read'); book('e2', 'Education', 'finished'); book('e3', 'Education', 'reading');
+book('e4', 'Education', 'want'); book('e5', 'Education', 'will-read'); book('e6', 'Education', undefined);
+book('eX', 'Education', 'read', null, null, false);           // in Education but not on my shelf
+book('x1', 'History', 'read');
+ST.userBooks[U].bookIds.push('e1');                             // a duplicate id
+ST.userBooks[U].bookIds.push('gone');                           // a stale id (no record)
+lens('L_beta', U, 'Beta', ['e1', 'e2', 'x1']);                  // shares 2, own size 3
+lens('L_alpha', U, 'Alpha', ['e4', 'e5']);                      // shares 2, own size 2
+lens('L_one', U, 'Gamma', ['e3']);                              // shares 1
+lens('L_other', O, 'Not mine', ['e1', 'e2', 'e3', 'e4']);       // another reader's: never
+lens('L_none', U, 'Elsewhere', ['x1']);                         // holds none of them: never
+note('n1', U, 'marginalia', ['e1'], 5000);
+note('n2', U, 'question', ['e2'], 7000);
+note('n3', U, 'journal', ['e1'], 9000);                         // Journal: never
+note('n4', O, 'marginalia', ['e1'], 8000);                      // another reader: never
+note('n5', U, 'marginalia', ['x1'], 9500);                      // another category: never
+note('n6', U, 'marginalia', ['gone', 'e3'], 6000);              // a stale id first: listed once, titled e3
+
+function ser(o) {
+  var k, ks = [], s, i2;
+  if (o === null) { return 'null'; }
+  if (o instanceof Array) { s = []; for (i2 = 0; i2 < o.length; i2++) { s.push(ser(o[i2])); } return '[' + s.join(',') + ']'; }
+  if (typeof o === 'object') { for (k in o) { if (o.hasOwnProperty(k)) { ks.push(k); } } ks.sort(); s = []; for (i2 = 0; i2 < ks.length; i2++) { s.push(ks[i2] + ':' + ser(o[ks[i2]])); } return '{' + s.join(',') + '}'; }
+  return typeof o + ':' + String(o);
+}
+function snap() { return ser(ST.books) + ser(ST.userBooks) + ser(ST.userThemes) + ser(ST.notebookEntries); }
+var BASE;
+function untouched(step) { check('  no write after: ' + step, (snap() === BASE) + ' ls ' + X.calls.ls + ' sv ' + X.calls.sv, 'true ls 0 sv 0'); }
+function show(raw) { LOC.hash = '#category/' + raw; X.render(raw); }
+
+// ================================================================ C1
+WScript.Echo('\nC1 cpRoomRoute / cpFromLabel / cpHash / cpLabelOf');
+var rooms = ['home', 'books', 'profile', 'search', 'notebook', 'lenses', 'books/x'];
+var notRooms = ['category/Education', 'lens/t1', 'book/b1', 'note/n1', 'artifact/b1', 'arcs', '', 'homex'];
+for (i = 0; i < rooms.length; i++) { check('room: ' + rooms[i], X.room(rooms[i]), true); }
+for (i = 0; i < notRooms.length; i++) { check('not a room: "' + notRooms[i] + '"', X.room(notRooms[i]), false); }
+check('null is not a room', X.room(null), false);
+var labels = [['books', 'Shelf'], ['profile', 'You'], ['home', 'Home'], ['search', 'Search'], ['notebook', 'Notebook'], ['lenses', 'Lenses'], ['', 'Shelf'], [null, 'Shelf']];
+for (i = 0; i < labels.length; i++) { X.setCpFrom(labels[i][0]); check('Back label for cpFrom "' + labels[i][0] + '"', X.label(), labels[i][1]); }
+X.setCpFrom('books');
+var every = X.cats.concat([X.unc]), bad = 0, rt = 0, h;
+for (i = 0; i < every.length; i++) {
+  h = X.hash(every[i]);
+  if (h.indexOf('#category/') !== 0 || /[ &\/]/.test(h.substring(10))) { bad++; }
+  if (X.labelOf(h.substring(10)) === every[i]) { rt++; }
+}
+check('every category (17 + Uncategorized) round-trips through the hash', rt + '/' + every.length, '18/18');
+check('  no raw space, "&" or "/" in any encoded label', bad, 0);
+check('"Theory & Philosophy" -> encoded', X.hash('Theory & Philosophy'), '#category/Theory%20%26%20Philosophy');
+var odd = ['A & B', 'a/b', '100%', 'two words'], oddOk = 0;
+for (i = 0; i < odd.length; i++) { h = X.hash(odd[i]).substring(10); if (h.indexOf('/') === -1 && decodeURIComponent(h) === odd[i]) { oddOk++; } }
+check('"&", "/", "%", space: encode with no "/" and decode back', oddOk, 4);
+check('  but none is a category: cpLabelOf refuses', X.labelOf(encodeURIComponent('A & B')) + '|' + X.labelOf(encodeURIComponent('a/b')), '|');
+check('cpLabelOf unknown label', X.labelOf('Nope'), '');
+check('cpLabelOf script-bearing label', X.labelOf(encodeURIComponent('<script>alert(1)</script>')), '');
+check('cpLabelOf malformed URI (no throw)', X.labelOf('%E0%A4%A'), '');
+check('cpLabelOf undefined', X.labelOf(undefined), '');
+
+// ================================================================ C2
+WScript.Echo('\nC2 the head, the lens rows, the notes (Education: read, finished, reading, want, will-read, none)');
+BASE = snap();
+WIDE = false; X.reset(); show('Education');
+check('kicker', txt(one('cp-kick')), 'Category');
+check('name', txt(one('cp-name')), 'Education');
+check('counts line (read = read + finished)', fold(txt(one('cp-au'))), '6 books | 2 read | 3 notes | in 3 lenses');
+var rows = byCls('ol-rw'), lensRows = [], noteRows = [];
+for (i = 0; i < rows.length; i++) { if (byCls('ol-c', rows[i]).length) { lensRows.push(rows[i]); } else { noteRows.push(rows[i]); } }
+var ln = []; for (i = 0; i < lensRows.length; i++) { ln.push(txt(byCls('ol-c', lensRows[i])[0]) + ':' + txt(byCls('ol-s', lensRows[i])[0])); }
+check('lens rows: most shared, then name; own book count', ln.join(', '), 'Alpha:2 books, Beta:3 books, Gamma:1 book');
+check('  another reader\'s lens never listed', ln.join(',').indexOf('Not mine'), -1);
+check('  a lens holding none of them not listed', ln.join(',').indexOf('Elsewhere'), -1);
+check('  lens row aria', lensRows[0].getAttribute('aria-label'), 'Alpha, 2 books. Opens the lens.');
+var nb = []; for (i = 0; i < noteRows.length; i++) { nb.push(txt(byCls('ol-n', noteRows[i])[0])); }
+check('notes newest first; Journal / other reader / other category never', nb.join(', '), 'body n2, body n6, body n1');
+check('  note sub-line: register, this category\'s book', fold(txt(byCls('ol-s', noteRows[1])[0])).split(' | ').slice(0, 2).join(' | '), 'Marginalia | T e3');
+check('  no "See all" at 3 notes', btn('See all 3'), null);
+check('6 covers at 390, no tile', byCls('cp-cv').length + ' / ' + byCls('cp-more').length, '6 / 0');
+check('  cover aria = title, author', byCls('cp-cv')[0].getAttribute('aria-label'), 'T e1, A e1');
+check('  covers in shelf order, the duplicate once, the stale id skipped', (function () { var a = byCls('cp-cv'), o = []; for (j = 0; j < a.length; j++) { o.push(txt(byCls('cp-cv')[j]).substring(0, 4)); } return o.join(','); })(), 'T e1,T e2,T e3,T e4,T e5,T e6');
+byCls('cp-cv')[2].fire('click'); check('a cover opens the book', LOC.hash, '#book/e3');
+show('Education'); lensRows[0] = null;
+(function () { var a = byCls('ol-rw'); a[0].fire('click'); })();
+check('a lens row opens that lens', LOC.hash, '#lens/L_alpha');
+show('Education');
+(function () { var a = byCls('ol-rw'), k; for (k = 0; k < a.length; k++) { if (byCls('ol-n', a[k]).length) { a[k].fire('click'); return; } } })();
+check('a note row opens the note', LOC.hash, '#note/n2');
+untouched('render + cover / lens / note taps');
+lens('L_off', U, 'Off', []); delete ST.userThemes.L_beta; delete ST.userThemes.L_alpha; delete ST.userThemes.L_one;
+BASE = snap(); show('Education');
+check('D5: no kept lens shares a book -> no "in N lenses", no section', fold(txt(one('cp-au'))) + ' / ' + byCls('ol-c').length, '6 books | 2 read | 3 notes / 0');
+lens('L_beta', U, 'Beta', ['e1', 'e2', 'x1']); lens('L_alpha', U, 'Alpha', ['e4', 'e5']); lens('L_one', U, 'Gamma', ['e3']); delete ST.userThemes.L_off;
+BASE = snap();
+
+// ================================================================ C3
+WScript.Echo('\nC3 the grid: two rows, then "+ N more"');
+function fill(cat, n) { var k; for (k = 0; k < n; k++) { book(cat.substring(0, 2) + n + '_' + k, cat, 'reading'); } }
+fill('Poetry', 0); fill('Psychology & Mind', 7); fill('Science & Nature', 8); fill('Health & Living', 12); fill('Arts & Culture', 6);
+BASE = snap();
+function grid(cat, wide) { WIDE = wide; X.reset(); show(encodeURIComponent(cat)); var m = byCls('cp-more'); return byCls('cp-cv').length + (m.length ? ' + "' + txt(m[0]) + '"' : ''); }
+check('390, exactly six: all shown', grid('Arts & Culture', false), '6');
+check('390, seven: five and "+ 2 more"', grid('Psychology & Mind', false), '5 + "+ 2 more"');
+check('1000+, eight: all shown', grid('Science & Nature', true), '8');
+check('1000+, twelve: seven and "+ 5 more"', grid('Health & Living', true), '7 + "+ 5 more"');
+check('390, twelve: five and "+ 7 more"', grid('Health & Living', false), '5 + "+ 7 more"');
+
+// ================================================================ C4
+WScript.Echo('\nC4 "+ N more" and "See all N" open in place');
+var HL = encodeURIComponent('Health & Living');
+for (i = 0; i < 6; i++) { note('h' + i, U, 'marginalia', ['He12_' + i], 100 + i); }
+BASE = snap();
+WIDE = true; X.reset(); X.nav('books'); X.nav('category/' + HL); show(HL);
+check('six notes: four rows and "See all 6"', byCls('ol-n').length + ' ' + (btn('See all 6') ? 'see-all' : 'none'), '4 see-all');
+one('cp-more').fire('click');
+check('tile -> all twelve, in place', byCls('cp-cv').length + ' ' + byCls('cp-more').length + ' ' + LOC.hash, '12 0 #category/' + HL);
+btn('See all 6').fire('click');
+check('See all -> six rows, in place, link gone', byCls('ol-n').length + ' ' + (btn('See all 6') ? 'link' : 'none') + ' ' + LOC.hash, '6 none #category/' + HL);
+X.nav('category/' + HL); show(HL);
+check('a same-route re-render keeps both open', byCls('cp-cv').length + ' ' + byCls('ol-n').length + ' fresh ' + X.st().fresh, '12 6 fresh false');
+untouched('tile + See all + re-render');
+
+// ================================================================ C5
+WScript.Echo('\nC5 page state resets on arrival');
+X.nav('books'); X.nav('category/' + HL); show(HL);
+check('from the Shelf again: tile and notes closed', byCls('cp-cv').length + ' ' + byCls('ol-n').length, '7 4');
+one('cp-more').fire('click'); X.nav('lens/L_beta'); X.nav('category/' + HL); show(HL);
+check('back from a lens: reset (arrived from another route)', byCls('cp-cv').length, 7);
+one('cp-more').fire('click'); show('Education'); show(HL);
+check('another category in between: reset', byCls('cp-cv').length, 7);
+
+// ================================================================ C6
+WScript.Echo('\nC6 text never reaches markup');
+book('evil1', 'Religion & Spirituality', 'read', '<img src=x onerror=alert(1)>', '<b>bold</b>');
+lens('L_evil', U, '<script>alert(2)</script>', ['evil1']);
+note('nevil', U, 'question', ['evil1'], 50, '<i>it</i>');
+BASE = snap();
+WIDE = false; X.reset(); show(encodeURIComponent('Religion & Spirituality'));
+check('title shown as text', txt(byCls('cp-cv')[0].children[0]), '<img src=x onerror=alert(1)>');
+check('author shown as text', txt(byCls('cp-cv')[0].children[1]), '<b>bold</b>');
+check('lens name shown as text', txt(one('ol-c')), '<script>alert(2)</script>');
+check('note body shown as text', txt(one('ol-n')), '<i>it</i>');
+check('no innerHTML but the Back chevron', markup(), '');
+untouched('HTML-bearing fixtures');
+
+// ================================================================ C7
+WScript.Echo('\nC7 the empty state');
+var empties = [['unknown label', 'Nope'], ['script-bearing label', encodeURIComponent('<script>alert(1)</script>')],
+  ['malformed URI', '%E0%A4%A'], ['a category with none of mine', 'Poetry'], ['a label that is only spaces', '%20%20']];
+for (i = 0; i < empties.length; i++) {
+  X.reset(); show(empties[i][1]);
+  check(empties[i][0] + ': "No books here yet." + "See your shelf", no name, no markup',
+    (one('ol-gone') ? txt(one('ol-gone')) : 'none') + ' / ' + (btn('See your shelf') ? 'btn' : 'nobtn') + ' / ' + byCls('cp-name').length + ' / ' + markup(), 'No books here yet. / btn / 0 / ');
+}
+btn('See your shelf').fire('click'); check('"See your shelf" -> #books', LOC.hash, '#books');
+book('u1', 'Uncategorized', 'read'); BASE = snap();
+X.reset(); show('Uncategorized'); check('D7: Uncategorized gets a page like any other', txt(one('cp-name')) + ' ' + byCls('cp-cv').length, 'Uncategorized 1');
+untouched('empty states');
+
+// ================================================================ C8
+WScript.Echo('\nC8 the route branch');
+X.calls.render = 0; X.calls.saved = 0; LOC.replaced = null; LOC.hash = '#category';
+X.route('category');
+check('bare #category -> location.replace("#books"), nothing rendered', LOC.replaced + ' render ' + X.calls.render, '#books render 0');
+LOC.hash = '#category/Education'; ST.currentBookId = 'x';
+X.route('category/Education');
+check('#category/Education renders once; current ids cleared', X.calls.render + ' ' + ST.currentBookId + ' ' + ST.currentArcId + ' ' + ST.currentSubTheoryId, '1 null null null');
+check('  the route saves as its sibling routes do (no data changed)', X.calls.saved + ' ' + (snap() === BASE), '1 true');
+
+// ================================================================ C9
+WScript.Echo('\nC9 Back and the lit tab');
+function arrive(from, cat) { X.nav(from); X.nav('category/' + cat); show(cat); var b = one('ol-back'); return X.st().cpFrom + ' | ' + txt(b) + ' | ' + b.getAttribute('aria-label') + ' | ' + X.tab(['category', cat]); }
+check('from the Shelf', arrive('books', 'Education'), 'books | Shelf | Back to Shelf | shelf');
+one('ol-back').fire('click'); check('  Back -> #books', LOC.hash, '#books');
+check('from You (a category orb)', arrive('profile', 'Education'), 'profile | You | Back to You | you');
+one('ol-back').fire('click'); check('  Back -> #profile', LOC.hash, '#profile');
+check('from Home', arrive('home', 'Education'), 'home | Home | Back to Home | home');
+check('from Search', arrive('search', 'Education'), 'search | Search | Back to Search | home');
+check('bare #category is not the page: its tab falls through', X.tab(['category']), 'notebook');
+// a lens opened from the page
+arrive('profile', 'Education');
+X.nav('lens/L_beta');
+check('lens from the page: its Back says Category', X.st().olFrom + ' ' + X.olLabel(), 'category/Education Category');
+check('  and it keeps the tab the category was opened from', X.tab(['lens', 'L_beta']), 'you');
+X.nav('category/Education');
+check('  Back from the lens -> the same category, origin kept', X.st().cpFrom + ' ' + X.tab(['category', 'Education']), 'profile you');
+// a book, then a note, opened from the page
+arrive('books', 'Education');
+X.nav('book/e1'); X.nav('category/Education');
+check('book opened from the page, Back: origin kept', X.st().cpFrom, 'books');
+X.nav('note/n1'); X.nav('category/Education');
+check('note opened from the page, Back: origin kept', X.st().cpFrom, 'books');
+X.nav('lens/L_beta'); X.nav('book/e1'); X.nav('lens/L_beta'); X.nav('category/Education');
+check('page -> lens -> book -> lens -> page: no loop, origin kept', X.st().cpFrom + ' ' + X.st().olFrom, 'books category/Education');
+
+// ================================================================ C10
+WScript.Echo('\nC10 the doors');
+ST.userThemes.th_k = { id: 'th_k', userId: U, bookIds: ['e1', 'e2'], leftOuts: [] };
+check('Shelf band name, a category -> its page', X.band('cat:History', 'History'), '#category/History ');
+check('  a category with "&" -> encoded', X.band('cat:Theory & Philosophy', 'Theory & Philosophy'), '#category/Theory%20%26%20Philosophy ');
+check('  a key that is not a category -> the focused view', X.band('cat:Bogus', 'Bogus'), '#books cat:Bogus|Bogus|null');
+check('  a kept lens -> its page (unchanged)', X.band('lens:th_k', 'Love'), '#lens/th_k ');
+check('  a lens gone since -> the focused view (unchanged)', X.band('lens:th_gone', 'Gone'), '#books lens:th_gone|Gone|null');
+check('  the Reading band -> the focused view (unchanged)', X.band('desk-reading', 'Reading'), '#books desk-reading|Reading|null');
+delete ST.userThemes.th_k;
+LOC.hash = '#profile'; X.orb({ kind: 'cat', label: 'History' });
+check('a category orb -> its page', LOC.hash + ' ' + X.calls.shelfCat.length, '#category/History 0');
+LOC.hash = '#profile'; X.orb({ kind: 'cat', label: 'Bogus' });
+check('  an orb whose label is not a category -> the filtered shelf (fallback)', LOC.hash + ' ' + X.calls.shelfCat.join(','), '#profile Bogus');
+X.orb({ kind: 'book', id: 'e1' }); check('a book orb -> the book (unchanged)', LOC.hash, '#book/e1');
+X.orb({ kind: 'lens', id: 'L_beta' }); check('a lens orb -> the sheet (unchanged)', X.calls.sheet.join(','), 'L_beta');
+check('orb copy: "Opens the category." present, old phrase gone', (vsrc.indexOf("' on your shelf. Opens the category.'") !== -1) + ' ' + (vsrc.indexOf('Opens the shelf, filtered.') === -1), 'true true');
+check('orb hint: "tap one to open its page" present, old phrase gone', (vsrc.indexOf("tap one to open its page'") !== -1) + ' ' + (vsrc.indexOf('tap one to open the shelf there') === -1), 'true true');
+
+// ================================================================ C11
+WScript.Echo('\nC11 signed out');
+USER.u = null; X.calls.signedOut = []; X.calls.looks = [];
+X.reset(); show('Education');
+check('the signed-out prompt, no name, no counts', X.calls.signedOut.length + ' ' + byCls('cp-name').length + ' ' + byCls('cp-au').length + ' ' + byCls('cp-cv').length, '1 0 0 0');
+check('  Back still there', one('ol-back') ? 'yes' : 'no', 'yes');
+var soLines = vsrc.match(/buildSignedOutPrompt\('Your shelf is private'[^\n]*/g) || [];
+check('D6: the same words as the Shelf\'s own (2 call sites, identical arguments)', soLines.length + ' ' + (soLines.length === 2 && soLines[0] === soLines[1]), '2 true');
+check('  ensureLensLooks not called signed out', X.calls.looks.length, 0);
+USER.u = { uid: U };
+
+// ================================================================ C12
+WScript.Echo('\nC12 writes');
+X.calls.looks = []; X.reset(); show('Education');
+check('ensureLensLooks once per signed-in render, for this reader', X.calls.looks.join(','), U);
+check('the fold sits before the books are read', cpSrcIdx(), true);
+function cpSrcIdx() { var a = cpSrc.indexOf("if (typeof ensureLensLooks === 'function') { ensureLensLooks(uid); }"), b = cpSrc.indexOf('var ids = cpBooks(uid, label);'), c = cpSrc.indexOf('if (!uid) {'); return a > c && a < b; }
+check('no ls / sv call in the whole run', X.calls.ls + ' ' + X.calls.sv, '0 0');
+check('the new code names no storage key', /\b(ls|sv)\(|localStorage/.test(cpSrc) + ' ' + /\b(ls|sv)\(|localStorage/.test(routeSrc), 'false false');
+
+// ================================================================ C13
+WScript.Echo('\nC13 a cover whose image fails (red-team R1)');
+book('cv1', 'Business & Economics', 'read', 'Broken Cover', 'A. Writer'); ST.books.cv1.coverUrl = 'https://example.invalid/x.jpg';
+book('cv2', 'Business & Economics', 'read', 'Good Cover', 'B. Writer'); ST.books.cv2.coverUrl = 'https://example.invalid/y.jpg';
+BASE = snap(); X.reset(); show(encodeURIComponent('Business & Economics'));
+var cvs = byCls('cp-cv'), im1 = cvs[0].children[0], im2 = cvs[1].children[0];
+check('a cover URL draws an image, no title text', im1.tagName + ' ' + cvs[0].children.length + ' ' + im1.src, 'IMG 1 https://example.invalid/x.jpg');
+check('  the image carries an onerror fallback', typeof im1.onerror, 'function');
+if (typeof im1.onerror === 'function') { im1.onerror(); }   // guarded: cscript exits 0 on a runtime error, so a throw here would hide the failure
+check('the image fails: it is removed and the title + author drawn as text', (function () { var c = cvs[0].children, o = [], k; for (k = 0; k < c.length; k++) { o.push(c[k].tagName + ':' + txt(c[k])); } return o.join(', '); })(), 'B:Broken Cover, SMALL:A. Writer');
+check('a cover that loads keeps its image only', cvs[1].children.length + ' ' + cvs[1].children[0].tagName, '1 IMG');
+check('  no innerHTML but the Back chevron', markup(), '');
+untouched('a failed cover');
+
+WScript.Echo('\n' + (total - failures) + '/' + total + ' passed');
+WScript.Quit(failures ? 1 : 0);
