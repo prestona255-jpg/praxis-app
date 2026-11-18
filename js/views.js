@@ -5727,7 +5727,12 @@ function buildShelfBandHeader(container, label, count, groupKey, groupBooks, len
     labelEl = document.createElement('button');
     labelEl.type = 'button';
     labelEl.className = 'label';
-    labelEl.addEventListener('click', function () { openShelfFocusedBand(groupKey, groupBooks, label, lensName); });
+    labelEl.addEventListener('click', function () {
+      // L4b-2a hotfix 1 (R4): a kept lens's band name opens its page; every other band (and a lens gone since) keeps the focused view
+      var lensTid = (typeof groupKey === 'string' && groupKey.indexOf('lens:') === 0) ? groupKey.substring(5) : '';
+      if (lensTid && state.userThemes && state.userThemes[lensTid]) { location.hash = '#lens/' + lensTid; return; }
+      openShelfFocusedBand(groupKey, groupBooks, label, lensName);
+    });
   } else {
     labelEl = document.createElement('span');
     labelEl.className = 'band-label';
@@ -26829,6 +26834,46 @@ var lxSheetRoute = '';        // the hash it was opened on
 var olFrom = 'home';          // L4b-2a: the room Open Lens was opened from (its Back, its tab)
 var olPrev = '';              // the route rendered before this one (set by renderRoute)
 var olSt = { id: null };      // Open Lens page state, kept across its own re-renders
+var olSlots = {};             // L4b-2a hotfix 1: per lens id, the row's order when a book was first left out (memory only; gone on reload)
+
+// L4b-2a hotfix 1 (R2): a book's status in the lens's own words — the app's label
+// (statusText), lowercase. A status statusText does not know, or none, shows nothing.
+function lxStatusWord(s) {
+  if (s !== 'reading' && s !== 'read' && s !== 'finished' && s !== 'want' && s !== 'will-read') { return ''; }
+  return statusText(s).toLowerCase();
+}
+
+// L4b-2a hotfix 1 (R3): left-out books keep their slots for the visit, on the page
+// and the sheet alike. The order lives only in olSlots, never in storage.
+// olOrder: the row as shown — the remembered order first (books that still belong
+// to the lens), then any book not in it (added since) in bookIds + leftOuts order.
+function olOrder(themeId, t) {
+  var all = t.bookIds.concat(t.leftOuts), mem = olSlots[themeId], out = [], i;
+  if (!t.leftOuts.length) { delete olSlots[themeId]; mem = null; }   // nothing left out: forget the order
+  if (mem) {
+    for (i = 0; i < mem.length; i++) { if (all.indexOf(mem[i]) !== -1 && out.indexOf(mem[i]) === -1) { out.push(mem[i]); } }
+  }
+  for (i = 0; i < all.length; i++) { if (out.indexOf(all[i]) === -1) { out.push(all[i]); } }
+  return out;
+}
+// Leave a book out, remembering the row's order first (once, until nothing is left out).
+function olLeaveOut(themeId, bookId) {
+  var t = lensThemeById(themeId);
+  if (!t) { return false; }
+  if (!olSlots[themeId] || !t.leftOuts.length) { olSlots[themeId] = olOrder(themeId, t); }
+  return lensLeaveOut(themeId, bookId);
+}
+// Put a book back (Undo and "Put it back" both): into bookIds after the kept books
+// that come before it in the remembered order. No memory for it: the end, as before.
+function olPutBack(themeId, bookId) {
+  var t = lensThemeById(themeId), mem = olSlots[themeId], at = -1, i;
+  if (!t) { return false; }
+  if (mem && mem.indexOf(bookId) !== -1) {
+    at = 0;
+    for (i = 0; i < mem.length && mem[i] !== bookId; i++) { if (t.bookIds.indexOf(mem[i]) !== -1) { at++; } }
+  }
+  return lensPutBack(themeId, bookId, at);
+}
 
 function lxUid() {
   var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
@@ -26899,7 +26944,7 @@ function lxToast(msg, onUndo) {
   };
   t.classList.add('is-show');
   if (lxToastTimer) { window.clearTimeout(lxToastTimer); }
-  lxToastTimer = window.setTimeout(function () { t.classList.remove('is-show'); }, onUndo ? 6000 : 2600);
+  lxToastTimer = window.setTimeout(function () { t.classList.remove('is-show'); }, onUndo ? 10000 : 2600);   // L4b-2a hotfix 1: an Undo stays 10s
 }
 
 // ---- the L4 sheet shell: a bottom sheet (docked right at desktop) ------------
@@ -27531,7 +27576,7 @@ function openLensSheet(themeId) {
     sh.appendChild(rd);
     var bk = lxEl('div');
     bk.appendChild(lxQl('The books in it · tap one' + (read ? ' for her clause' : '')));
-    bk.appendChild(lxCovers(t.bookIds.concat(t.leftOuts), t.leftOuts, t.clauses, pick, function (bid) { pick = (pick === bid) ? null : bid; api.rerender(); }));
+    bk.appendChild(lxCovers(olOrder(themeId, t), t.leftOuts, t.clauses, pick, function (bid) { pick = (pick === bid) ? null : bid; api.rerender(); }));
     if (pick && state.books[pick]) {
       var isOut = t.leftOuts.indexOf(pick) !== -1, canOut = isOut || t.bookIds.length > 2;
       var cc = lxEl('div', 'lx-clause');
@@ -27540,15 +27585,16 @@ function openLensSheet(themeId) {
       else { cp.appendChild(lxEl('span', 'lx-quietink', (state.books[pick].title || '') + ' — in this lens because you put it there.')); }
       cc.appendChild(cp);
       var crow = lxEl('div', 'row');
-      crow.appendChild(lxEl('small', '', (state.books[pick].title || '') + ' · ' + (state.books[pick].status === 'read' ? 'read' : 'unread') + (isOut ? ' · left out' : '')));
+      var sw0 = lxStatusWord(state.books[pick].status);
+      crow.appendChild(lxEl('small', '', (state.books[pick].title || '') + (sw0 ? ' · ' + sw0 : '') + (isOut ? ' · left out' : '')));
       var pb = isOut
-        ? lxBtn('txtbtn', 'Put it back', function () { lensPutBack(themeId, pick); api.rerender(); lxAfterLensWrite(); })
+        ? lxBtn('txtbtn', 'Put it back', function () { olPutBack(themeId, pick); api.rerender(); lxAfterLensWrite(); })
         : lxBtn('txtbtn', 'Leave out of this lens', function () {
             var bid = pick;
-            if (lensLeaveOut(themeId, bid)) {
+            if (olLeaveOut(themeId, bid)) {
               api.rerender(); lxAfterLensWrite();
               lxToast('Left out. ' + (state.books[bid].title || 'It') + ' stays on your shelf; the lens rests on the rest.', function () {
-                lensPutBack(themeId, bid); api.rerender(); lxAfterLensWrite();
+                olPutBack(themeId, bid); api.rerender(); lxAfterLensWrite();
               });
             }
           });
@@ -27738,7 +27784,7 @@ function renderOpenLens(themeId) {
     return;
   }
   var hers = t.origin === 'hers', read = !!t.lead, n = t.bookIds.length, rested = n < 2, i;
-  var all = t.bookIds.concat(t.leftOuts), shown = [];
+  var all = olOrder(themeId, t), shown = [];
   for (i = 0; i < all.length; i++) { if (state.books && state.books[all[i]]) { shown.push(all[i]); } }
   var notes = olNotes(uid, all);
   var floorN = lensShelfCount(uid), floorOk = floorN >= LENS_OFFER_FLOOR;
@@ -27949,10 +27995,10 @@ function renderOpenLens(themeId) {
     bk.appendChild(olCovers(shown, t.leftOuts, pick, olSt.edit, n > 2,
       function (bid) { olSt.pick = bid; rerender(); },
       function (bid) {
-        if (lensLeaveOut(themeId, bid)) {
+        if (olLeaveOut(themeId, bid)) {
           rerender();
           lxToast('Left out. ' + ((state.books[bid] && state.books[bid].title) || 'It') + ' stays on your shelf; the lens rests on the rest.', function () {
-            lensPutBack(themeId, bid); rerender();
+            olPutBack(themeId, bid); rerender();
           });
         }
       }));
@@ -27962,12 +28008,13 @@ function renderOpenLens(themeId) {
     var sp = lxEl('div', 'ol-spoken');
     sp.setAttribute('aria-live', 'polite');
     sp.appendChild(lxEl('span', 'ol-t', pb.title || ''));
-    sp.appendChild(lxEl('span', 'ol-s', (pb.author ? pb.author + ' · ' : '') + (isOut ? 'left out, still on your shelf' : (pb.status === 'read' ? 'read' : 'unread'))));
+    var sw1 = isOut ? 'left out, still on your shelf' : lxStatusWord(pb.status);
+    sp.appendChild(lxEl('span', 'ol-s', (pb.author || '') + (pb.author && sw1 ? ' · ' : '') + sw1));
     if (full && t.clauses && t.clauses[pick] && !isOut) { sp.appendChild(lxEl('p', 'ol-c', t.clauses[pick])); }
     else if (!isOut && !(t.clauses && t.clauses[pick])) { sp.appendChild(lxEl('p', 'ol-c ol-plainc', 'In this lens because you put it there.')); }
     var sa = lxEl('div', 'ol-acts');
     sa.appendChild(lxBtn('ol-lnk', 'Open the book', function () { location.hash = '#book/' + pick; }));
-    if (isOut) { sa.appendChild(lxBtn('ol-lnk', 'Put it back', function () { lensPutBack(themeId, pick); rerender(); })); }
+    if (isOut) { sa.appendChild(lxBtn('ol-lnk', 'Put it back', function () { olPutBack(themeId, pick); rerender(); })); }
     sp.appendChild(sa);
     bk.appendChild(sp);
   }

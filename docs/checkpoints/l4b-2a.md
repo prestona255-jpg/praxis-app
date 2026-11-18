@@ -4,9 +4,13 @@
 main at 6c31f48). Base: HEAD `6c31f48` (the L4b-1 hotfix, v3.328) == origin/main. Ruling r90, drawn in "Praxis Open
 Lens 4" (`docs/checkpoints/p2-eighteenth-sitting-rulings.md`). The category page (`#category/<id>`) is NOT in this build.
 
+**Status:** pushed `28dafd6` (v3.329). Preston's phone check (Night, signed in) PASSED. Its five findings are **Hotfix 1**
+(v3.330), recorded at the end of this file.
+
 ## The four rulings (Preston, 17 Nov 2026, all at rec)
 
-1. Two builds: Open Lens first (this one, v3.329), the category page second (L4b-2b, v3.330).
+1. Two builds: Open Lens first (this one, v3.329), the category page second (L4b-2b, v3.330). *(Moved to v3.331 by
+   Hotfix 1's R5.)*
 2. A tap on a lens still opens the lens sheet. The sheet's "Open lens" pill, which until now only showed a placeholder
    toast, opens the page.
 3. The band at the top of the page is TODAY'S sky colour (`--sky`) with that lens's own colour glow over it. It turns
@@ -291,6 +295,7 @@ From the brief (recorded as asked):
 - **L-1** A lens under two books shows "A lens rests on at least two books…" with no "Add books" button; that surface is not designed.
 - **L-2** The book page's own back link does not return to Open Lens; the browser's Back does (walk iv).
 - **L-3** Under the picked cover the page says "read" / "unread" (the live sheet's words), not Reading / Have read / Will read.
+  **CLOSED by Hotfix 1 (F-1).**
 - **L-4** Escape does not close the ••• menu; a tap outside it does not either (the ••• button toggles it). See F3.
 - **L-5** The band is the brown sky until LC2.
 - **L-6** "Think it through with Yumi" (page) and "Not quite — talk it through" (sheet) open the same say-back under two names (ledger S18).
@@ -304,14 +309,15 @@ Found on the way (new):
 - **L-9** (pre-existing) The browser's Back to `#books` from any page does not return to the depth left (7711 → `#book` 1284,
   `#notebook` 975, `#lens` 1623 in the rig). The page's own Back does (walk ix).
 - **L-10** (pre-existing, state.js) `lensPutBack` appends, so a book put back moves to the end of the covers (walk viii).
+  **CLOSED by Hotfix 1 (F-3)** for the visit; after a reload a put-back still goes to the end, by ruling R3.
 - **L-11** (pre-existing) `buildSignedOutPrompt`'s "Sign in" is 80×38.7 — under 44, on `#lenses` too.
 - **L-12** (pre-existing) `lxAskToRead` returns silently (`done(false)`, no toast) when fewer than two of the lens's books are on the shelf.
 - **L-13** F2b–F8 above. (F1 and F2 were fixed in this commit.)
 
 ## Owed
 
-- **Preston's look** at 1360 and 390, Day and Night (the 42 shots are the rig's; whether it looks right is his call).
-- The live check below, after the push.
+- ~~Preston's look~~ — done: his phone check of v3.329 PASSED (Hotfix 1, R1).
+- ~~The live check below, after the push~~ — done on his phone; Hotfix 1's own check is owed (§ Hotfix 1).
 
 ## Numbers
 
@@ -331,3 +337,134 @@ gold — the F1 fix); a note row → Back. Pass: every step lands where it says 
 is signed out**: rename, leave-out / put-back, the why line, forget-said and let-go wrote to the rig's local store only.
 Live-smoke on a signed-in account: rename a lens on the page, reload, the new name holds on Home's sky and the Shelf band;
 write a why line, reload, it holds on the sheet and the page.
+
+## Hotfix 1, 17 Nov 2026 — v3.330
+
+Five fixes from Preston's phone check of v3.329. Opus 5.5 executing ruled work (build prompt "L4b-2a HOTFIX 1 — OPEN LENS,
+FIVE FIXES"). Base: HEAD `28dafd6` == origin/main, `praxis-v3.329`, tracked tree clean, hook gate armed. Preston's go-ahead
+included "run fix-red-team on this", which lifted the agent bar for this round.
+
+### Rulings (Preston, 17 Nov 2026)
+
+- **R1** My phone check of L4b-2a at v3.329 is a PASS (Night, signed in): the page opens from the sheet; Keep shows gold; a
+  why line survives closing and reopening the app; the menu, See on the shelf, Edit, leaving a book out and Put it back all work.
+- **R2** A book's status on the Open Lens page and on the lens sheet uses the app's own status label, in lowercase to fit the line.
+- **R3** A left-out book returns to its slot on Undo and on Put it back for the rest of the visit, and its dimmed cover stays in
+  its slot. No saved field; after a reload a put-back book goes to the end.
+- **R4** On the Shelf, a kept lens's band name opens that lens's page (#lens/<id>), as a category heading will open the category page.
+- **R5** This hotfix takes v3.330. The category page moves to v3.331.
+- At the Stage 0 stop: **"Sheet too"** — the lens sheet keeps left-out books in their slots as well (one memory, page and sheet).
+
+### Stage 0 (read-only)
+
+Ground truth matched (HEAD `28dafd6`, CACHE_VERSION `praxis-v3.329`, 0 dirty tracked files, hook ARMED, FIX-PROTOCOL v1.3, 7
+agents). Every protocol doc named in the prompt was found. Pre-images MATCH: views.js 1,391,437 `9cc98032…`, state.js
+219,823 `47eaa565…`, components.css 946,265 `fee4f1a8…`, sw.js 6,894 `fd6cc5e7…`. Found on the way:
+
+- `statusText` never returns empty: an unknown or missing status normalises to "Currently reading", and nothing gives a book a
+  default status. So "no status rather than a wrong one" needs a guard, not `statusText` alone (`lxStatusWord`, below).
+- The app's safe-area pattern for fixed chrome at the top is `calc(<gap> + env(safe-area-inset-top))`
+  (`.scan-draftbar` components.css :16744; the `0px` fallback as in `#statusbar-scrim` :724). The 6s was views.js :26902.
+- F-4 loses no "see all": at 1360 a band already shows every book (`isMobileShelf()` is `max-width:759px`); at 390 a lens of
+  7+ books keeps its "See all N" tile; and the page's ••• → See on the shelf opens the focused view at both widths.
+- F-3: one index per book cannot pass "leave out two, put back in either order" (the second index is taken after the first
+  splice). The memory is therefore the row's ORDER, not an index; the position passed to `lensPutBack` is worked out from it.
+
+### Stage 1 — the fixes. CHECKPOINT 1: PASS
+
+- **F-1** `lxStatusWord(s)`: the five stored values the app knows (`reading`, `read`, `finished`, `want`, `will-read`) →
+  `statusText(s).toLowerCase()` ("currently reading" / "have read" / "will read"); anything else → `''`, and the line drops its
+  separator. No status: the page line is the author alone; the sheet line is the title alone (+ " · left out").
+- **F-2** `.lx.lx-toast` `top:14px` → `top:calc(14px + env(safe-area-inset-top, 0px))`; an Undo toast stays 10000 ms (was 6000).
+  The toast's text is unchanged.
+- **F-3** `olSlots` (views.js, beside `olSt`; memory only): the row's order, taken at the first leave-out (`olLeaveOut`),
+  forgotten once nothing is left out (`olOrder`). `olOrder` draws the row (page and sheet) with each left-out book dimmed in its
+  slot; `olPutBack` (Undo and Put it back, page and sheet) passes `at` = the kept books before it in that order. state.js
+  `lensPutBack(themeId, bookId, at)` splices at `at` when `0 <= at <= bookIds.length`, else pushes as before. `lensLeaveOut`
+  unchanged. All 7 call sites go through `olLeaveOut` / `olPutBack`.
+- **F-4** `buildShelfBandHeader`: the band name of a `lens:<id>` band whose lens still exists (`state.userThemes[id]`, checked
+  at the tap) sets `location.hash = '#lens/' + id`; every other band (categories, the Reading band, a lens band with no id, a
+  lens gone since) calls `openShelfFocusedBand` exactly as before. The lens mark still opens the sheet.
+- **F-5** `.lx.ol .ol-rw + .ol-rw::before` `right:0` → `right:14px` (the Notes card shares it).
+
+| File | numstat | Before → after (LF) | md5 after | blob |
+|---|---|---|---|---|
+| js/views.js | 59 / 12 | 1,391,437 → 1,393,985 (+2,548) | `728c3b39cba87003da761d5a2d75b5f0` | `d1c2b69` |
+| js/state.js | 8 / 2 | 219,823 → 220,174 (+351) | `b8cdafb57cc335ab5a6b1afc0532dbe0` | `15dffed` |
+| assets/components.css | 2 / 2 | 946,265 → 946,306 (+41) | `b363292f4ad332894ce55b94919d9683` | `c74dc86` |
+| sw.js (Stage 4) | 1 / 1 | 6,894 → 6,894 (+0) | `e3db767c3f9b7a55eca577ae3d485568` | — |
+
+Parse OK on every file in `js/` (`tools/parse-check`). Added lines: `const ` / `let ` / `=>` / `class ` / backtick 0, hex 0,
+`ls(` / `sv(` / `localStorage` / Firestore 0. EOL `i/lf w/crlf` on all. (A Git Bash `sed` stripped the CSS working copy's CRs
+mid-stage; CRLF was restored before measuring — lesson L20.)
+
+### Stage 2 — test and look. CHECKPOINT 2: PASS
+
+- **Existing suites, exit 0, counts unchanged:** lens-eval 68/68 · lens-data 101/101 · export 58/58 · delete 58/58 ·
+  ceiling-core 36/36 · fx1c-sim 60/60 · L4b-1 hotfix 46/46 · L4b-2a unit 71/71 (its cases unchanged).
+- **New: `docs/checkpoints/l4b-2a-shots/hotfix1-unit-harness`, 74/74, exit 0; exit 2 against HEAD's bytes.** It extracts
+  `lxStatusWord` / `olOrder` / `olLeaveOut` / `olPutBack`, the page's and the sheet's status lines and the band-name handler
+  (views.js), and `normalizeStatus` … `statusText`, `lensThemeById` … `lensPutBack` (state.js), by text from the live bytes.
+  H1 status words 9 · H2 the two lines 19 (every known value on both; none / unknown / no author / left out; never "unread") ·
+  H3 slots 40 (third of five out → Undo → third; out → Put it back → third; two out, back in either order → both in their
+  slots; no position / out of range / −1 → the end; no memory (a reload) → the end; a book added or removed elsewhere; the
+  floor of two; Undo twice; unknown lens; memory re-taken; every case: each book in exactly one list) · H4 band name 6.
+- **Captures** (headless Chrome over CDP, fresh profile; Preston's ruling "Use headless Chrome", the pane was hidden):
+  24 JPGs `docs/checkpoints/l4b-2a-shots/hotfix1-<state>-<390|1360>-<day|night>.jpg`; states `page-reading` (full page),
+  `sheet-reading` (viewport), `leftout` (full page), `toast` (viewport, scrolled to the covers), `yours` (clipped to the card),
+  `shelf` (viewport on the lens band). Readouts, both widths and moods: page line "Paulo Freire · currently reading"; sheet
+  line "Pedagogy of the Oppressed · currently reading"; after leaving out the third, the row reads Pedagogy / Teaching / **OUT
+  All About Love** / The Fire Next Time (in its slot), toast shown; divider `left 14px right 14px`, rows 20..370 in a 20..370
+  card (390), 150..550 in 150..550 (1360); Undo → `bk_l4_01,02,05,13`, the base order; Put it back → the base order; band name
+  "Love as a pedagogy" → `#lens/th_ol_read`, the page rendered, the focused view not opened; at 390 the Undo toast is shown at
+  ~9.5s and gone at ~10.5s. Console errors 0.
+- **What the rig cannot show:** it has no notch. `env(safe-area-inset-top)` is 0 here, so the toast sits at 14px, exactly
+  where it sat at HEAD. Whether it clears a real status bar is unproven here and is owed to Preston's phone. At inset 0 the
+  toast overlaps the top bar while shown (390: toast 14..78 over the nav 0..57 and the Search pill 5..51; 1360: over the nav
+  0..94), unchanged from HEAD, now for 10s instead of 6.
+
+### Stage 3 — the red-team and the reviewer
+
+- **fix-red-team (Sonnet):** "safe to hand to the owner. The new code has no path that duplicates or loses a book, and the only
+  residual is a possibly odd Put it back position after a cross-tab change." No BLOCK, no MAJOR. Its answers: (1) a book in
+  both lists or neither is unreachable: lensLeaveOut / lensPutBack each move one book between the lists and guard both sides;
+  Undo after a manual Put it back, after a let-go, or a second Undo all return false. (2) A stale order cannot lose a book or
+  misplace it beyond its position: `at` is always within 0..bookIds.length and unknown books append. (3) A band name for a lens
+  gone since falls back to the focused view; a stale id that does reach `#lens/` lands on the page's not-found state; theme ids
+  are `theme_<time>_<random>`, nothing to escape. (4) No toast regression at inset 0. Findings: **MINOR**: after a reorder in
+  another tab or by sync, Put it back can write a position that matches neither tab's order (it moves a book, never loses or
+  duplicates one). **NIT**: the band label's accessible name is just the lens name. **NIT**: sw.js not yet bumped (done in
+  Stage 4). None is a defect against the rulings, so no line changed.
+- **praxis-reviewer (Sonnet): PASS, "CLEARED TO COMMIT for the three files, with no blocking gates."** It measured the three
+  numbers and EOL itself, parse, `git diff --check` clean, tracked status = the three files, 0 banned tokens, every call site
+  through the wrappers (nothing in `netlify/`), the rulings against the diff, and re-ran hotfix1 74/74, lens-eval 68/68,
+  lens-data 101/101. Not re-run by it: the other suites, the against-HEAD exit 2, the 24 images (counted, not opened).
+
+### Stage 4 — docs and the version
+
+sw.js `praxis-v3.329` → `praxis-v3.330` (numstat 1 1, 6,894 B, md5 `e3db767c…` as expected). BOARD.md, BUILD_STATE.md,
+sequence.md and rooms-census.md updated: L4b-2a pushed at 28dafd6 and its phone check PASSED; this hotfix at v3.330; the
+category page's reservation moved to v3.331 on every line that stated it (this file's ruling 1 annotated rather than
+rewritten, because it quotes the ruling; rooms-census `#category/<id>` row; sequence's 2026-11-17 split entry and the lane
+entry). Builder regenerated.
+
+### Ledger this closes
+
+- **L-3** (the read / unread words): closed by F-1.
+- **L-10** (`lensPutBack` appends): closed by F-3 for the visit; after a reload a put-back still goes to the end (R3).
+
+Untouched, as ruled: F3–F8 and L-8, L-9, L-11, L-12, L-13.
+
+### Separate tasks (pre-existing drift, not fixed here)
+
+- The lens sheet's count line "N READ" (views.js, `openLensSheet`, `readN`) counts only `status === 'read'`; a book marked
+  finished under the older name (`finished`) is not counted. Same family as F-1; affects no check here.
+- The lens toast sits over the top bar and the Search pill while shown, at every inset; the 10s ruling lengthens that.
+  Whether it should sit below the bar is a design call.
+
+### Owed after the push (Preston's phone, v3.330)
+
+Open a lens page, tap Edit, tap a minus, and say whether the Undo message is fully visible below the clock. Tap Undo and say
+whether the book is back in its slot. Check that a book you are reading says so. On the Shelf, tap a lens's name and say
+whether its page opens. **Persistence unverified — the rig is signed out**: the leave-out / put-back writes went to the rig's
+local store only (they use the same writers as v3.329, which your check showed persist).

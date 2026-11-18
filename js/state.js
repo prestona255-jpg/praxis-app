@@ -3158,13 +3158,19 @@ function lensLeaveOut(themeId, bookId) {
   markThemesDirty(); saveState();
   return true;
 }
-function lensPutBack(themeId, bookId) {
+// at (optional, L4b-2a hotfix 1): the index in bookIds to return the book to (its
+// slot, worked out by the caller from the order it remembers in memory). Without
+// it, or out of range, the book goes to the end, as before.
+function lensPutBack(themeId, bookId, at) {
   var t = lensThemeById(themeId);
   if (!t) { return false; }
   var ix = t.leftOuts.indexOf(bookId);
   if (ix === -1) { return false; }
   t.leftOuts.splice(ix, 1);
-  if (t.bookIds.indexOf(bookId) === -1) { t.bookIds.push(bookId); }
+  if (t.bookIds.indexOf(bookId) === -1) {
+    if (typeof at === 'number' && at >= 0 && at <= t.bookIds.length) { t.bookIds.splice(at, 0, bookId); }
+    else { t.bookIds.push(bookId); }
+  }
   t.updatedAt = Date.now();
   markThemesDirty(); saveState();
   return true;

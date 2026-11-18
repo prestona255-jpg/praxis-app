@@ -31,8 +31,14 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-17 (L4b-2a PASSED on Preston's phone; L4b-2a hotfix 1 BUILT at v3.330; the category page moves to v3.331)** —
+  Preston's phone check of v3.329 (pushed 28dafd6; Night, signed in) PASSED. Its five findings are one hotfix build, v3.330,
+  ahead of L4b-2b (rulings R1–R5): status words, the Undo toast below the status bar and 10s, left-out books keep their slots
+  (page and sheet, memory only), the Shelf's lens band name opens the lens page, the dividers. Preston's R5 moves the category
+  page from v3.330 to v3.331 — his own ruling, nothing retired or reordered, so no `PROPOSED:` flag.
+  Record: `docs/checkpoints/l4b-2a.md` § Hotfix 1.
 - **2026-11-17 (L4b-2 split; L4b-2a BUILT at v3.329)** — Preston ruled, 17 Nov 2026 (all at rec): L4b-2 is two builds,
-  Open Lens first (L4b-2a, v3.329) and the category page second (L4b-2b, v3.330); a lens tap still opens the sheet, whose
+  Open Lens first (L4b-2a, v3.329) and the category page second (L4b-2b, v3.330 — moved to v3.331 by hotfix 1's R5); a lens tap still opens the sheet, whose
   "Open lens" pill now opens the page; the page's band is today's sky with the lens's glow (blue arrives with LC2). A split
   of an item already in the lane table, ruled by Preston — nothing retired, the spine unchanged, so no `PROPOSED:` flag.
   The red-team's two MAJOR CSS defects (F1/F2) are fixed in the same commit, on Preston's ruling ("Fold in F1/F2").
@@ -1613,9 +1619,10 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   showing `[object Object]`) are fixed in the **L4b-1 hotfix**, SHIPPED v3.328 (pushed 6c31f48, `docs/checkpoints/l4b-1-hotfix.md`);
   Preston's phone check owed.
   · **L4b-2** — new routes `#lens/<id>` (Open Lens) and `#category/<id>`. Needs L4 (the lens engine). Medium. Split in
-  two (Preston, 17 Nov 2026): **L4b-2a** — Open Lens, the page (`#lens/<id>`), BUILT at v3.329 (`docs/checkpoints/l4b-2a.md`);
-  a lens tap still opens the sheet and its "Open lens" pill opens the page; the band is today's sky (`--sky`) + the lens's
-  glow, blue with LC2. Preston's look owed. **L4b-2b** — the category page (`#category/<id>`), v3.330; its doors are the
+  two (Preston, 17 Nov 2026): **L4b-2a** — Open Lens, the page (`#lens/<id>`), SHIPPED v3.329 (pushed 28dafd6,
+  `docs/checkpoints/l4b-2a.md`); a lens tap still opens the sheet and its "Open lens" pill opens the page; the band is today's
+  sky (`--sky`) + the lens's glow, blue with LC2. Preston's phone check PASSED; its five findings are **L4b-2a hotfix 1**,
+  BUILT at v3.330 (local; his phone check owed). **L4b-2b** — the category page (`#category/<id>`), v3.331; its doors are the
   Shelf's category heading and the You-sky category orb, and it owes its own line in `tabbarTabFor`.
   · **L4b-3** — the redrawn rooms, a few per build: Home body, Shelf, book, Notebook, note, You, artifact, the pages under
   You, Search. Needs L4b-1. Large; split by room.

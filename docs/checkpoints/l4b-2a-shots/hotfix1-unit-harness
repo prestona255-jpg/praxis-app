@@ -1,0 +1,218 @@
+// docs/checkpoints/l4b-2a-shots/hotfix1-unit-harness -- L4b-2a hotfix 1 unit proofs.
+// cscript JScript (Node is blocked), the l4b-2a unit-harness pattern: the code under test is
+// EXTRACTED BY TEXT from the real bytes of js/views.js and js/state.js and run in one scope
+// against a stubbed state:
+//   H1 lxStatusWord          -- every status statusText knows, plus none / blank / unknown
+//   H2 the page's status line and the sheet's status line (the two lines, extracted by text)
+//   H3 olOrder / olLeaveOut / olPutBack + state.js lensLeaveOut / lensPutBack(at):
+//      a left-out book keeps its slot; Undo and Put it back return it there; two out, back
+//      in either order; no position -> the end; never in both lists, never in neither
+//   H4 the Shelf band name: a kept lens -> #lens/<id>; a category, a lens with no id, and a
+//      lens gone since -> openShelfFocusedBand, exactly as before
+// EXTENSIONLESS on purpose (see tools/parse-check). ASCII-only: cscript reads it as ANSI,
+// so the source's middle dot arrives as two characters; outputs are compared with every
+// non-ASCII run folded to '*'.
+//
+// Usage:  cscript //nologo //E:jscript docs/checkpoints/l4b-2a-shots/hotfix1-unit-harness [root]
+// Exit:   0 = every case passed . 1 = a case failed . 2 = could not load
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName))));
+if (WScript.Arguments.length > 0) { root = String(WScript.Arguments(0)); }
+function readFile(p) { var s = fso.OpenTextFile(p, 1, false); var t = s.ReadAll(); s.Close(); return t; }
+if (typeof Array.prototype.indexOf !== 'function') { Array.prototype.indexOf = function (v) { var i; for (i = 0; i < this.length; i++) { if (this[i] === v) { return i; } } return -1; }; }
+
+var failures = 0, total = 0;
+function check(name, got, want) { total++; if (got === want) { WScript.Echo('  PASS  ' + name + '  = ' + got); } else { failures++; WScript.Echo('  FAIL  ' + name + '\n        got  ' + got + '\n        want ' + want); } }
+(function () { var b = failures; check('self-check (expected to FAIL)', 1, 2); if (failures - b !== 1) { WScript.Echo('HARNESS SELF-CHECK FAILED'); WScript.Quit(2); } failures = b; total--; })();
+
+function between(src, a, b) {
+  var i = src.indexOf(a), j = src.indexOf(b, i + 1);
+  if (i < 0 || j < 0) { throw new Error('anchor not found: ' + a + ' .. ' + b); }
+  if (src.indexOf(a, i + 1) !== -1) { throw new Error('anchor not unique: ' + a); }
+  return src.slice(i, j);
+}
+function fold(s) { return String(s).replace(/[^\x20-\x7e]+/g, '*'); }
+
+// ---------------------------------------------------------------- load
+var vsrc, ssrc, M;
+try {
+  vsrc = readFile(fso.BuildPath(root, 'js\\views.js')).replace(/\r/g, '');
+  ssrc = readFile(fso.BuildPath(root, 'js\\state.js')).replace(/\r/g, '');
+} catch (e) { WScript.Echo('LOAD FAIL (read): ' + e.message); WScript.Quit(2); }
+try {
+  var helperSrc = between(vsrc, 'var olSlots = {};', 'function lxUid() {');
+  var pageSrc   = between(vsrc, 'var sw1 = isOut ?', 'if (full && t.clauses && t.clauses[pick] && !isOut)');
+  var sheetSrc  = between(vsrc, 'var sw0 = lxStatusWord(', 'var pb = isOut');
+  var bandSrc   = between(vsrc, "labelEl.addEventListener('click', function () {", "  } else {\n    labelEl = document.createElement('span');");
+  var statSrc   = between(ssrc, 'function normalizeStatus(s) {', '// Canonical vocabulary in mockup display order');
+  var lensSrc   = between(ssrc, 'function lensThemeById(themeId) {', '// "Let her forget this"');
+  M = new Function('state',
+    'var dirty = 0, saved = 0;\n' +
+    'function ensureThemeFields(t) {}\n' +
+    'function markThemesDirty() { dirty++; }\n' +
+    'function saveState() { saved++; }\n' +
+    statSrc + '\n' + lensSrc + '\n' + helperSrc + '\n' +
+    'function lxEl(tag, cls, txt) { return txt; }\n' +
+    'function pageLine(pb, isOut) { var out = null, sp = { appendChild: function (x) { out = x; } };\n' + pageSrc + '\n return out; }\n' +
+    'function sheetLine(pick, isOut) { var out = null, crow = { appendChild: function (x) { out = x; } };\n' + sheetSrc + '\n return out; }\n' +
+    'function band(groupKey, groupBooks, label, lensName) {\n' +
+    '  var fn = null, labelEl = { addEventListener: function (ev, f) { fn = f; } }, calls = [], location = { hash: "#books" };\n' +
+    '  var openShelfFocusedBand = function (k, b, l, n) { calls.push(k + "|" + l + "|" + n); };\n' +
+    bandSrc + '\n' +
+    '  fn(); return { hash: location.hash, focused: calls.join(",") };\n' +
+    '}\n' +
+    'return { word: lxStatusWord, page: pageLine, sheet: sheetLine, order: olOrder, leave: olLeaveOut, back: olPutBack,' +
+    ' rawBack: lensPutBack, rawLeave: lensLeaveOut, band: band, slots: function () { return olSlots; },' +
+    ' writes: function () { return dirty + "/" + saved; } };');
+} catch (e) { WScript.Echo('LOAD FAIL: ' + e.message); WScript.Quit(2); }
+
+var ST = { books: {}, userThemes: {} };
+var X = M(ST);
+
+// ================================================================ H1 lxStatusWord
+WScript.Echo('H1 lxStatusWord');
+check('reading',            X.word('reading'),   'currently reading');
+check('read',               X.word('read'),      'have read');
+check('finished (legacy)',  X.word('finished'),  'have read');
+check('want (legacy)',      X.word('want'),      'will read');
+check('will-read',          X.word('will-read'), 'will read');
+check('no status',          X.word(undefined),   '');
+check('blank',              X.word(''),          '');
+check('unknown',            X.word('paused'),    '');
+check('null',               X.word(null),        '');
+
+// ================================================================ H2 the two lines
+WScript.Echo('H2 the page line and the sheet line');
+var VALS = [['reading', 'currently reading'], ['read', 'have read'], ['finished', 'have read'], ['want', 'will read'], ['will-read', 'will read']];
+var k;
+for (k = 0; k < VALS.length; k++) {
+  check('page ' + VALS[k][0],  fold(X.page({ author: 'Paulo Freire', status: VALS[k][0] }, false)), 'Paulo Freire * ' + VALS[k][1]);
+  ST.books.bS = { title: 'Pedagogy', status: VALS[k][0] };
+  check('sheet ' + VALS[k][0], fold(X.sheet('bS', false)), 'Pedagogy * ' + VALS[k][1]);
+}
+check('page none',                fold(X.page({ author: 'Paulo Freire' }, false)), 'Paulo Freire');
+check('page unknown',             fold(X.page({ author: 'Paulo Freire', status: 'paused' }, false)), 'Paulo Freire');
+check('page no author, reading',  fold(X.page({ status: 'reading' }, false)), 'currently reading');
+check('page no author, none',     fold(X.page({}, false)), '');
+check('page left out',            fold(X.page({ author: 'Paulo Freire', status: 'reading' }, true)), 'Paulo Freire * left out, still on your shelf');
+ST.books.bS = { title: 'Pedagogy' };
+check('sheet none',               fold(X.sheet('bS', false)), 'Pedagogy');
+check('sheet none, left out',     fold(X.sheet('bS', true)), 'Pedagogy * left out');
+ST.books.bS = { title: 'Pedagogy', status: 'reading' };
+check('sheet reading, left out',  fold(X.sheet('bS', true)), 'Pedagogy * currently reading * left out');
+check('never "unread" anywhere',  (fold(X.page({ author: 'A', status: 'want' }, false)) + fold(X.sheet('bS', false))).indexOf('unread'), -1);
+
+// ================================================================ H3 slots
+WScript.Echo('H3 left-out books keep their slots');
+function lens(id, ids) { ST.userThemes[id] = { id: id, bookIds: ids.slice(0), leftOuts: [] }; return ST.userThemes[id]; }
+function sane(t) {   // every book in exactly one list, no repeats
+  var all = t.bookIds.concat(t.leftOuts), i;
+  for (i = 0; i < all.length; i++) { if (all.indexOf(all[i]) !== i) { return 'dup ' + all[i]; } }
+  return 'ok';
+}
+var FIVE = ['b1', 'b2', 'b3', 'b4', 'b5'], t;
+
+t = lens('L1', FIVE);
+check('leave out the third', X.leave('L1', 'b3'), true);
+check('  bookIds without it', t.bookIds.join(','), 'b1,b2,b4,b5');
+check('  dimmed cover stays in its slot (row)', X.order('L1', t).join(','), 'b1,b2,b3,b4,b5');
+check('  nothing written to storage beyond the lens writer', X.writes(), '1/1');
+check('Undo (olPutBack)', X.back('L1', 'b3'), true);
+check('  third again', t.bookIds.join(','), 'b1,b2,b3,b4,b5');
+check('  leftOuts empty', t.leftOuts.length, 0);
+check('  row after', X.order('L1', t).join(','), 'b1,b2,b3,b4,b5');
+check('  memory forgotten once nothing is left out', X.slots().L1 === undefined, true);
+check('  sane', sane(t), 'ok');
+
+t = lens('L2', FIVE);
+X.leave('L2', 'b3');
+check('Put it back after a render between', X.order('L2', t).join(',') + ' / ' + (X.back('L2', 'b3') ? 'back' : 'no'), 'b1,b2,b3,b4,b5 / back');
+check('  third again', t.bookIds.join(','), 'b1,b2,b3,b4,b5');
+
+t = lens('L3', FIVE);
+X.leave('L3', 'b2'); X.leave('L3', 'b4');
+check('two out: bookIds', t.bookIds.join(','), 'b1,b3,b5');
+check('two out: row keeps both slots', X.order('L3', t).join(','), 'b1,b2,b3,b4,b5');
+X.back('L3', 'b2');
+check('  b2 back first: bookIds', t.bookIds.join(','), 'b1,b2,b3,b5');
+check('  b4 still dimmed in its slot', X.order('L3', t).join(','), 'b1,b2,b3,b4,b5');
+X.back('L3', 'b4');
+check('  then b4: original order', t.bookIds.join(','), 'b1,b2,b3,b4,b5');
+check('  sane', sane(t), 'ok');
+
+t = lens('L4', FIVE);
+X.leave('L4', 'b2'); X.leave('L4', 'b4');
+X.back('L4', 'b4');
+check('two out, b4 back first: bookIds', t.bookIds.join(','), 'b1,b3,b4,b5');
+X.back('L4', 'b2');
+check('  then b2: original order', t.bookIds.join(','), 'b1,b2,b3,b4,b5');
+check('  sane', sane(t), 'ok');
+
+t = lens('L5', FIVE);
+X.rawLeave('L5', 'b3');
+check('lensPutBack with no position -> the end', X.rawBack('L5', 'b3') && t.bookIds.join(','), 'b1,b2,b4,b5,b3');
+t = lens('L5b', FIVE);
+X.rawLeave('L5b', 'b3');
+check('lensPutBack with a position out of range -> the end', X.rawBack('L5b', 'b3', 99) && t.bookIds.join(','), 'b1,b2,b4,b5,b3');
+t = lens('L5c', FIVE);
+X.rawLeave('L5c', 'b3');
+check('lensPutBack with -1 -> the end', X.rawBack('L5c', 'b3', -1) && t.bookIds.join(','), 'b1,b2,b4,b5,b3');
+t = lens('L5d', FIVE);
+X.rawLeave('L5d', 'b3');
+check('lensPutBack with at=2 -> the slot', X.rawBack('L5d', 'b3', 2) && t.bookIds.join(','), 'b1,b2,b3,b4,b5');
+
+t = lens('L6', FIVE);
+t.bookIds = ['b1', 'b2', 'b4', 'b5']; t.leftOuts = ['b3'];   // left out before a reload: no memory
+check('no memory (after a reload): row puts it at the end', X.order('L6', t).join(','), 'b1,b2,b4,b5,b3');
+X.back('L6', 'b3');
+check('  put back with no memory -> the end', t.bookIds.join(','), 'b1,b2,b4,b5,b3');
+
+t = lens('L7', FIVE);
+X.leave('L7', 'b3');
+t.bookIds.push('b9');                                      // a book added since (another tab / sync)
+check('a book added since goes after the remembered row', X.order('L7', t).join(','), 'b1,b2,b3,b4,b5,b9');
+t.bookIds.splice(t.bookIds.indexOf('b1'), 1);              // a book removed since
+check('a book removed since drops out of the row', X.order('L7', t).join(','), 'b2,b3,b4,b5,b9');
+X.back('L7', 'b3');
+check('  put back among the changed books: in its slot', t.bookIds.join(','), 'b2,b3,b4,b5,b9');
+check('  sane', sane(t), 'ok');
+
+t = lens('L8', ['b1', 'b2']);
+check('the floor: a two-book lens leaves nothing out', X.leave('L8', 'b1'), false);
+check('  unchanged', t.bookIds.join(',') + ' / ' + t.leftOuts.length, 'b1,b2 / 0');
+check('  no stale memory left in the row', X.order('L8', t).join(','), 'b1,b2');
+
+t = lens('L9', FIVE);
+X.leave('L9', 'b3');
+check('Undo twice: the second is a no-op', X.back('L9', 'b3') + '/' + X.back('L9', 'b3'), 'true/false');
+check('  sane, b3 once', sane(t) + ' ' + t.bookIds.join(','), 'ok b1,b2,b3,b4,b5');
+check('put back a book that was never left out: no-op', X.back('L9', 'b1'), false);
+check('unknown lens: no-op', X.leave('nope', 'b1') + '/' + X.back('nope', 'b1'), 'false/false');
+
+t = lens('L10', FIVE);
+X.leave('L10', 'b3'); X.back('L10', 'b3');
+X.leave('L10', 'b5');                                       // a fresh leave-out after all were put back re-remembers
+check('memory re-taken after everything went back', X.order('L10', t).join(','), 'b1,b2,b3,b4,b5');
+X.back('L10', 'b5');
+check('  b5 back in the last slot', t.bookIds.join(','), 'b1,b2,b3,b4,b5');
+
+// ================================================================ H4 the Shelf band name
+WScript.Echo('H4 the Shelf band name');
+ST.userThemes.th_k = { id: 'th_k', bookIds: ['b1', 'b2'], leftOuts: [] };
+var r;
+r = X.band('lens:th_k', [{}, {}], 'Love', 'Love');
+check('kept lens band name -> #lens/<id>', r.hash, '#lens/th_k');
+check('  focused view not opened', r.focused, '');
+r = X.band('cat:History', [{}], 'History', null);
+check('category band -> openShelfFocusedBand', r.hash + ' ' + r.focused, '#books cat:History|History|null');
+r = X.band('lens:', [{}], 'Untitled', 'Untitled');
+check('lens band without an id -> openShelfFocusedBand', r.hash + ' ' + r.focused, '#books lens:|Untitled|Untitled');
+r = X.band('lens:th_gone', [{}], 'Gone', 'Gone');
+check('lens band whose lens is gone -> openShelfFocusedBand', r.hash + ' ' + r.focused, '#books lens:th_gone|Gone|Gone');
+r = X.band('desk-reading', [{}], 'Reading', null);
+check('the Reading band -> openShelfFocusedBand', r.hash + ' ' + r.focused, '#books desk-reading|Reading|null');
+
+WScript.Echo('');
+WScript.Echo((total - failures) + '/' + total + ' passed');
+WScript.Quit(failures ? 1 : 0);
