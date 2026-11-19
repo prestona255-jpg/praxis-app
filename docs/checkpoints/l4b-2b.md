@@ -496,7 +496,10 @@ on the About version line or `#diag` first.)
 ## Hotfix 2, 18 Nov 2026 (the small fixes and the still flower, v3.333)
 
 18 Nov 2026 · Opus 5.5 executing the review chat's written and tested patch, unchanged, on main at `3ecdc38` (v3.332) ==
-origin/main. Preston's go-ahead included "run fix-red-team on this". **Status: built, staged, NOT committed.**
+origin/main. Preston's go-ahead included "run fix-red-team on this". **Status: PUSHED at `b0005cb` (v3.333); Preston's
+phone check PASSED (19 Nov 2026, `docs/checkpoints/l4d.md` R1: the flower holds, the You page does not slide sideways, no name
+sits on the caption, the Undo bar and Undo work).** (Corrected at L4d: this line said "built, staged, NOT committed", written
+before the commit and never updated.)
 fix-red-team: no BLOCK, no MAJOR (2 MINOR, 1 NIT). praxis-reviewer: see § Stage 3.
 
 ### Rulings, worded as given (18 Nov 2026)
@@ -709,7 +712,11 @@ by it: the rig's pixel and computed-style measures, WebKit, the live deploy, the
 
 ### Ledger (recorded, not fixed here)
 
-- **H2-L1** (R2) all 17 category names by the orbs waits for LC2's sky engine.
+- **H2-L1** (R2) all 17 category names by the orbs waits for LC2's sky engine. **CLOSED at L4d (v3.334, 19 Nov 2026),
+  by its R4:** By the orbs is a still sky, every category's name under its orb, all the time (`docs/checkpoints/l4d.md`).
+- **R8 (the sky's frame rate in Categories mode) — CLOSED at L4d (v3.334, 19 Nov 2026):** js/hand.js unlocked by ruling, the
+  sky reads no layout while it moves; the engine's time per frame and the frame rate before and after are in
+  `docs/checkpoints/l4d.md`.
 - **H2-L2** The About page has no version number (its footer reads "version stamped at build"), so phone checks confirm a build by
   its new feature or by `#diag`, never by "the About version line" — the Owed-after-the-push lines above that say so are wrong.
 - **H2-L3** (T1) the spiral arms never show now (they rested at `scale(.1)` and grew only mid-morph).

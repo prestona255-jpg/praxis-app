@@ -28597,9 +28597,10 @@ function lxFillCatNames(rec, items) {
   if (!rec.below) { rec.below = lxEl('div', 'lx lx-catnames'); }
   var box = rec.below, mode = lxCatNamesMode(), i;
   box.innerHTML = '';
-  if (!items || !items.length) { box.hidden = true; rec.host.classList.remove('lx-orbnames'); return; }
+  if (!items || !items.length) { box.hidden = true; rec.host.classList.remove('lx-orbnames'); rec.S.toggles({ fixed: false }); return; }
   box.hidden = false;
   if (mode === 'orbs') { rec.host.classList.add('lx-orbnames'); } else { rec.host.classList.remove('lx-orbnames'); }
+  rec.S.toggles({ fixed: mode === 'orbs' });   // L4d: By the orbs is a still sky, every name showing
   var seg = lxEl('div', 'lx-cn-seg');
   seg.setAttribute('role', 'group');
   seg.setAttribute('aria-label', 'Where the category names show');

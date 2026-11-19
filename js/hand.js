@@ -308,11 +308,11 @@ var PraxisHand = (function(){
      items = [{name, look, books, state, size?, aria?}] where state is kept · own · offer · deciding · later · cat · book; size (optional) drives the drawn size instead of books; aria (optional) replaces the built label. The list may change at any time (S.set). */
   var SKIES=[], REDUCE=!!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   function Sky(host,opts){
-    var S={host:host,field:host.querySelector('[data-field]'),cv:host.querySelector('canvas.paint'),orbs:[],th:0,last:0,period:300,ready:false,items:[],shares:[],keptLooks:[],sig:'',compact:!!(opts&&opts.compact),threads:true,names:true,many:false};
+    var S={host:host,field:host.querySelector('[data-field]'),cv:host.querySelector('canvas.paint'),orbs:[],th:0,last:0,period:300,ready:false,items:[],shares:[],keptLooks:[],sig:'',compact:!!(opts&&opts.compact),threads:true,names:true,many:false,fixed:false};
     S.flow=Flow(S.cv,host);
     function geo(){var W=S.field.clientWidth,H=S.field.clientHeight,g,many=(S.items.length>((W>=560)?12:8)),tight=(!many&&W<560&&S.items.length>=7);g=Math.round(Math.min(S.compact?118:(many?((W<460)?108:150):(tight?120:((W<460)?136:176))),W*.36,H*.5));return {W:W,H:H,cx:W/2,cy:H/2,g:g,ft:S.field.offsetTop,wide:W>=560};}
     S.set=function(items,shares,keptLooks){ S.items=items||[]; S.shares=shares||[]; S.keptLooks=keptLooks||[]; };
-    S.toggles=function(o){ if(o&&typeof o.threads==='boolean'){S.threads=o.threads;} if(o&&typeof o.names==='boolean'){S.names=o.names;} S.sig=''; };
+    S.toggles=function(o){ if(o&&typeof o.threads==='boolean'){S.threads=o.threads;} if(o&&typeof o.names==='boolean'){S.names=o.names;} if(o&&typeof o.fixed==='boolean'){S.fixed=o.fixed;} S.sig=''; };
     function ovl(a,b,pad){ return a.left<b.right+pad && a.right>b.left-pad && a.top<b.bottom+pad && a.bottom>b.top-pad; }
     function cls(el,name,on){ var c=el.className.replace(new RegExp(' '+name+'\\b','g'),''); el.className=on?(c+' '+name):c; }
     S.build=function(){
@@ -320,11 +320,14 @@ var PraxisHand = (function(){
       /* classes first: .many grows the field, so the geometry is read after it lands */
       S.many=(N>((S.field.clientWidth>=560)?12:8)); S.tight=(!S.many&&S.field.clientWidth<560&&N>=7);
       cls(S.field,'many',S.many); cls(S.field,'tight',S.tight); cls(S.field,'nonames',!S.names); cls(S.field,'one',N===1); cls(S.field,'none',N===0);
-      G=geo();
+      /* L4d: a still sky (By the orbs). Every lens keeps a fixed place in rows about the flower with its name under it; the field grows to hold them. */
+      S.fx=!!(S.fixed&&S.names&&N>1); cls(S.field,'fixed',S.fx);
+      if(S.fx&&S.fxH){ S.field.style.height=S.fxH+'px'; } else if(!S.fx&&S.field.style.height){ S.field.style.height=''; S.fxH=0; }
+      G=geo(); if(S.fx){ G.g=gFix(G.W); }
       if(!G.W){return;}
       S.G=G;
       sig=N+':';for(i=0;i<N;i++){sig+=S.items[i].name+'|'+S.items[i].state+'|'+S.items[i].books+';';}
-      sig+='K'+S.keptLooks.length+'/'+G.W+'x'+G.H+'/'+(S.threads?'t':'-')+(S.names?'n':'-');
+      sig+='K'+S.keptLooks.length+'/'+G.W+'x'+(S.fx?'f':G.H)+'/'+(S.threads?'t':'-')+(S.names?'n':'-');
       changed=(sig!==S.sig); S.sig=sig;
       bl=S.field.querySelector('[data-bloom]');
       if(bl){ bl.style.width=G.g+'px';bl.style.height=G.g+'px'; if(bl.getAttribute('data-n')!==String(S.keptLooks.length)+'/'+G.g){ bl.setAttribute('data-n',String(S.keptLooks.length)+'/'+G.g); bl.innerHTML=bloom(S.keptLooks,11); } }
@@ -363,40 +366,89 @@ var PraxisHand = (function(){
       }
       for(i=0;i<S.orbs.length;i++){o=S.orbs[i];l=S.items[o.i];o.sz=Math.max(44,Math.round(sizeFor(l.size||l.books,N,G.wide,S.compact)*(l.state==='deciding'?1.18:1)*(o.ring?.84:1)));
         o.el.firstChild.style.width=o.sz+'px';o.el.firstChild.style.height=o.sz+'px';o.lh=o.lab.offsetHeight||16;}
+      if(S.fx){ G=fixedRows(G); S.G=G; S.field.querySelector('svg.bg').setAttribute('viewBox','0 0 '+G.W+' '+G.H); }
+      else { for(i=0;i<S.orbs.length;i++){ if(S.orbs[i].lab.style.maxWidth){ S.orbs[i].lab.style.maxWidth=''; S.orbs[i].el.style.width=''; } } S.cells=null; S.hw=70; }
       S.rx=Math.min(G.W/2-72,G.wide?230:((G.W<460)?124:190));S.ry=Math.min(G.H/2-(S.compact?70:74),G.wide?176:((G.W<460)?(S.compact?54:(S.tight?112:94)):150));
       if(S.many){ S.rx=Math.min(G.W/2-46,G.wide?250:160); S.ry=Math.min(G.H/2-48,G.wide?190:136); S.rx2=S.rx*.56; S.ry2=S.ry*.52; }
       S.ready=true;S.place(true);
       S.flow.ft=G.ft; if(!S.flowOn || S.flow.W!==S.host.clientWidth || S.flow.H!==S.host.clientHeight){ S.flowOn=S.flow.init(); }
       if(REDUCE){ S.flow.al=.26; }
     };
+    /* L4d (19 Nov 2026): the sky reads no layout while it moves. A name's box is worked out from its orb and its own measured size; sizes are read once, at the top of a frame, only for a name whose side has just changed (and for all of them now and then, for late fonts). A name that would run over a neighbour's form or another name tries the other side of its lens, then (in a full sky) beside it, before it steps back. Offers keep their names over kept lenses' names. */
+    function dimOf(o,pos){ var s=(pos==='lft'||pos==='rgt'),d=s?o.ds:o.dc,w; if(d){return d;} if(s&&o.dc&&o.dc[0]){ w=Math.min(o.dc[0],104); return [w,o.dc[1]*Math.max(1,Math.ceil(o.dc[0]/104))]; } return [0,0]; }
+    function labRect(o,pos,G){ var d=dimOf(o,pos),w=d[0],h=d[1],x,dx=0;
+      if(!w){return null;}
+      if(pos==='rgt'){ x=o.x+o.sz/2+6; return {left:x,right:x+w,top:o.y-h/2,bottom:o.y+h/2,dx:0,w:w,h:h}; }
+      if(pos==='lft'){ x=o.x-o.sz/2-6; return {left:x-w,right:x,top:o.y-h/2,bottom:o.y+h/2,dx:0,w:w,h:h}; }
+      if(pos.length>2){ dx=(pos.charAt(2)==='l'?-1:1)*Math.max(0,w/2-o.sz*.3); }
+      if(o.x+dx-w/2<8){dx=8-(o.x-w/2);} else if(o.x+dx+w/2>G.W-8){dx=(G.W-8)-(o.x+w/2);}
+      if(pos.charAt(0)==='u'){ return {left:o.x+dx-w/2,right:o.x+dx+w/2,top:o.y-o.sz/2-h,bottom:o.y-o.sz/2,dx:dx,w:w,h:h}; }
+      return {left:o.x+dx-w/2,right:o.x+dx+w/2,top:o.y+o.sz/2,bottom:o.y+o.sz/2+h,dx:dx,w:w,h:h}; }
+    /* the still sky's flower takes its size from the width alone: the field's height there is made from the rows, and must not feed back into the flower */
+    function gFix(W){ return Math.round(Math.min(S.compact?118:(S.many?((W<460)?108:150):(S.tight?120:((W<460)?136:176))),W*.36)); }
+    function fixedRows(G){
+      var n=S.orbs.length,W=G.W,cols=(W<460)?4:((W<900)?5:7),cw=Math.min(W/cols,150),cm,mid,M,R,cnt=[],i,j,k,r,c,base,extra,ord=[],sl=[],mh,rh,lhm=0,szm=0,H,y,x,o,q=0,cells=[];
+      for(k=0;k<cols;k++){ if((cols%2)?(k!==(cols-1)/2):(k!==cols/2-1&&k!==cols/2)){ x=(k-(cols-1)/2)*cw; y=Math.max(0,G.g/2+cw/2-8-((cols%2)?cw:1.5*cw)); x=G.cx+x+((x<0)?-y:y); if(x-cw/2>=-.5&&x+cw/2<=W+.5){ sl.push(x); } } }
+      cm=sl.length; mid=Math.min(n,cm); M=n-mid; R=Math.ceil(M/(2*cols));
+      S.hw=Math.min(140,cw)/2; for(i=0;i<n;i++){ o=S.orbs[i]; o.lab.style.maxWidth=f(cw-14)+'px'; o.el.style.width=f(S.hw*2)+'px'; if(o.sz>cw-14){ o.sz=Math.max(44,Math.floor(cw-14)); o.el.firstChild.style.width=o.sz+'px'; o.el.firstChild.style.height=o.sz+'px'; } }
+      for(i=0;i<n;i++){ o=S.orbs[i]; lhm=Math.max(lhm,o.lab.offsetHeight||0); szm=Math.max(szm,o.sz); }
+      rh=szm+lhm+16; mh=Math.max(rh,G.g+20); H=2*R*rh+mh;
+      if(S.fxH!==H){ S.fxH=H; S.field.style.height=H+'px'; G=geo(); G.g=gFix(G.W); }
+      if(R){ base=Math.floor(M/(2*R)); extra=M-base*2*R; for(r=0;r<2*R;r++){cnt.push(base);} for(k=0;k<2*R;k++){ ord.push((k%2)?(R+(k>>1)):(R-1-(k>>1))); } for(k=0;k<extra;k++){ cnt[ord[k]]++; } }
+      sl.sort(function(a,b){ return Math.abs(a-G.cx)-Math.abs(b-G.cx)||a-b; }); sl=sl.slice(0,mid); sl.sort(function(a,b){ return a-b; });
+      for(r=0;r<=2*R;r++){
+        if(r===R){ for(j=0;j<mid;j++){ cells[q++]=[sl[j],G.cy-lhm/2]; } continue; }
+        c=cnt[(r<R)?r:(r-1)]; y=(r<R)?(G.cy-mh/2-(R-r-.5)*rh):(G.cy+mh/2+(r-R-.5)*rh);
+        for(j=0;j<c;j++){ x=G.cx+(j-(c-1)/2)*cw; cells[q++]=[x,y-lhm/2]; } }
+      S.cells=cells; return G; }
+    function readDims(all){ var i,o,w,h;
+      for(i=0;i<S.orbs.length;i++){ o=S.orbs[i]; if(!all&&!o.dirty){continue;} o.dirty=false;
+        w=o.lab.offsetWidth||0; h=o.lab.offsetHeight||0;
+        if(o.cur==='lft'||o.cur==='rgt'){ o.ds=[w,h]; } else { o.dc=[w,h]; } } }
+    function solve(snap){
+      var i,o,G=S.G,n=S.orbs.length,arts=[],labs=[],ord=[],st,c,k,r,rr,nat,opp,out,cand,pos,d,h,ay;
+      function free(i,r,pad){ var k; for(k=0;k<arts.length;k++){ if(k!==i&&ovl(r,arts[k],pad)){return false;} if(labs[k]&&ovl(r,labs[k],pad)){return false;} } return true; }
+      function inb(r,pos){ return (pos==='lft'||pos==='rgt')?(r.left>=4&&r.right<=G.W-4):true; }
+      for(i=0;i<n;i++){ o=S.orbs[i]; d=o.dc||[0,0];
+        ay=o.y-((o.up&&!o.side&&!d[0])?16:0);
+        arts.push({left:o.x-o.sz/2,right:o.x+o.sz/2,top:ay-o.sz/2,bottom:ay+o.sz/2}); labs.push(null);
+        if(o.side){ o.pos=o.side; labs[i]=labRect(o,o.side,G); o.hidNext=false; } }
+      if(S.many){ arts.push({left:G.cx-G.g*.3,right:G.cx+G.g*.3,top:G.cy-G.g*.3,bottom:G.cy+G.g*.3}); }
+      for(i=0;i<n;i++){ st=S.items[S.orbs[i].i].state; if(st==='offer'||st==='deciding'){ord.push(i);} }
+      for(i=0;i<n;i++){ st=S.items[S.orbs[i].i].state; if(!(st==='offer'||st==='deciding')){ord.push(i);} }
+      for(k=0;k<n;k++){ i=ord[k]; o=S.orbs[i]; if(o.side){continue;}
+        nat=o.up?'up':'dn'; opp=o.up?'dn':'up';
+        if(!(o.dc&&o.dc[0])){ o.pos=nat; o.hidNext=false; continue; }
+        if(S.fx){ o.pos='dn'; o.hidNext=false; labs[i]=labRect(o,'dn',G); continue; }
+        cand=[nat,opp]; if(S.many){ out=(o.x>=G.cx)?'rgt':'lft'; cand.push(out); cand.push(out==='rgt'?'lft':'rgt'); cand.push(nat+'l'); cand.push(nat+'r'); cand.push(opp+'l'); cand.push(opp+'r'); }
+        r=null; pos=null;
+        if(o.pos&&!o.hid&&cand.indexOf(o.pos)>=0){ rr=labRect(o,o.pos,G); if(rr&&inb(rr,o.pos)&&free(i,rr,2)){ r=rr; pos=o.pos; } }
+        for(c=0;!r&&c<cand.length;c++){ rr=labRect(o,cand[c],G); if(rr&&inb(rr,cand[c])&&free(i,rr,2)){ r=rr; pos=cand[c]; } }
+        if(r){ labs[i]=r; o.pos=pos; o.hidNext=false; } else { o.pos=nat; o.hidNext=true; } }
+      for(i=0;i<n;i++){ o=S.orbs[i]; pos=o.pos; rr=labs[i]||labRect(o,pos,G);
+        if(pos!==o.cur){ o.cur=pos; o.dirty=true; cls(o.el,'up',pos.charAt(0)==='u'); cls(o.el,'lft',pos==='lft'); cls(o.el,'rgt',pos==='rgt'); }
+        if(pos==='rgt'||pos==='lft'){ d=dimOf(o,pos); h=Math.max(o.sz,d[1]);
+          o.el.style.left=f(pos==='rgt'?(o.x-o.sz/2):(o.x+o.sz/2-(o.sz+6+d[0])))+'px'; o.el.style.top=f(o.y-h/2)+'px';
+          if(o.dx){ o.dx=0; o.lab.style.transform=''; } }
+        else { d=o.dc||[0,0]; o.el.style.left=f(o.x-(S.hw||70))+'px'; o.el.style.top=f(o.y-o.sz/2-(pos.charAt(0)==='u'?(d[1]||16):0))+'px';
+          c=rr?rr.dx:0; if(c!==o.dx){ o.dx=c; o.lab.style.transform=c?('translateX('+f(c)+'px)'):''; } }
+        if(!!o.hidNext!==!!o.hid){ o.hid=!!o.hidNext; cls(o.lab,'hid',o.hid); } } }
     S.place=function(snap){
-      var i,o,ang,G=S.G,L=[],l,up,rx,ry;
+      var i,o,ang,G=S.G,L=[],l,up,rx,ry,cx,side;
+      S.fr=(S.fr||0)+1;
+      if(snap){ for(i=0;i<S.orbs.length;i++){ S.orbs[i].dirty=true; } }
+      readDims(snap||S.fr%90===0);
       for(i=0;i<S.orbs.length;i++){o=S.orbs[i];l=S.items[o.i];
         if(o.ring){ ang=o.a-S.th*.8; rx=S.rx2; ry=S.ry2; } else { ang=o.a+S.th; rx=S.rx; ry=S.ry; }
         if(S.orbs.length===1){ o.x=G.cx+rx*.62*Math.cos(ang);o.y=G.cy+ry*Math.sin(ang); } else { o.x=G.cx+rx*Math.cos(ang);o.y=G.cy+ry*Math.sin(ang); }
-        var cx=Math.cos(ang),side=(G.W>=900&&S.orbs.length>=5&&!S.many)?((cx<-.5)?'lft':((cx>.5)?'rgt':'')):'',lr,dx;
-        up=(o.y<G.cy-8);if(up!==o.up||side!==o.side){o.up=up;o.side=side;o.flip=false;cls(o.el,'up',up&&!side);cls(o.el,'lft',side==='lft');cls(o.el,'rgt',side==='rgt');o.w=o.el.offsetWidth;o.lh=o.lab.offsetHeight||16;}
-        if(side==='rgt'){ o.el.style.left=f(o.x-o.sz/2)+'px';o.el.style.top=f(o.y-o.el.offsetHeight/2)+'px'; }
-        else if(side==='lft'){ o.el.style.left=f(o.x+o.sz/2-o.w)+'px';o.el.style.top=f(o.y-o.el.offsetHeight/2)+'px'; }
-        else { o.el.style.left=f(o.x-70)+'px';o.el.style.top=f(o.y-o.sz/2-(up?o.lh:0))+'px';
-          lr=o.lab.offsetWidth||0; dx=0; if(o.x-lr/2<8){dx=8-(o.x-lr/2);} else if(o.x+lr/2>G.W-8){dx=(G.W-8)-(o.x+lr/2);} if(dx!==o.dx){o.dx=dx;o.lab.style.transform=dx?('translateX('+f(dx)+'px)'):'';} }
+        if(S.fx&&S.cells&&S.cells[i]){ o.x=S.cells[i][0]; o.y=S.cells[i][1]; ang=PI/2; }
+        cx=Math.cos(ang);side=(S.fx)?'':(G.W>=900&&S.orbs.length>=5&&!S.many)?((cx<-.5)?'lft':((cx>.5)?'rgt':'')):'';
+        up=(!S.fx&&o.y<G.cy-8);
+        if(up!==o.up||side!==o.side){ o.up=up;o.side=side; if(!side&&(!o.pos||o.pos.charAt(0)==='u'||o.pos.charAt(0)==='d'||o.pos===o.wasSide)){ o.pos=up?'up':'dn'; } o.wasSide=side; }
         L.push([o.x,G.ft+o.y,(l.state==='kept'||l.state==='own'||l.state==='deciding')?.42:.2,o.sz*.5,mix(l.look.c[0],'#4A3220',.4)]);}
       S.flow.L=[[G.cx,G.ft+G.cy,1.3,G.g*.52,'#8A6226']].concat(L);
-      /* a name that would run over a neighbour's form, or another name, first flips to the other side of its lens; if that is no better it steps back until the sky has moved on (it is still there on touch). Offers keep their names over kept lenses' names. */
-      var rects=[],lr2,ar,k2,hit,pri,pass;
-      function measure(){ rects=[]; for(i=0;i<S.orbs.length;i++){ o=S.orbs[i]; ar=o.el.firstChild.getBoundingClientRect(); rects.push({a:ar,l:(o.lab.offsetParent&&getComputedStyle(o.lab).display!=='none')?o.lab.getBoundingClientRect():null}); } }
-      function collides(i){ var k; lr2=rects[i].l; if(!lr2){return false;}
-        for(k=0;k<S.orbs.length;k++){ if(k===i){continue;} if(ovl(lr2,rects[k].a,2)){return true;}
-          if(rects[k].l&&!S.orbs[k].hid){ pri=(S.items[S.orbs[k].i].state==='offer'||S.items[S.orbs[k].i].state==='deciding')&&!(S.items[S.orbs[i].i].state==='offer'||S.items[S.orbs[i].i].state==='deciding'); if((k<i||pri)&&ovl(lr2,rects[k].l,2)){return true;} } }
-        return false; }
-      function setFlip(o,on){ if(!!o.flip===on){return;} o.flip=on; cls(o.el,'up',on?!o.up:o.up); o.el.style.top=f(o.y-o.sz/2-((on?!o.up:o.up)?o.lh:0))+'px'; }
-      measure();
-      for(pass=0;pass<2;pass++){ if(pass){measure();}
-      for(i=0;i<S.orbs.length;i++){ o=S.orbs[i]; if(!rects[i].l||o.side){continue;}
-        hit=collides(i);
-        if(hit&&!o.flip){ setFlip(o,true); rects[i].l=o.lab.getBoundingClientRect(); hit=collides(i); if(hit){ setFlip(o,false); rects[i].l=o.lab.getBoundingClientRect(); } }
-        else if(!hit&&o.flip){ setFlip(o,false); rects[i].l=o.lab.getBoundingClientRect(); if(collides(i)){ setFlip(o,true); rects[i].l=o.lab.getBoundingClientRect(); hit=false; } }
-        if(hit!==!!o.hid){ o.hid=hit; cls(o.lab,'hid',hit); } } }
+      solve(snap);
+      if(snap){ readDims(true); solve(true); readDims(true); solve(true); }
       var tg=S.field.querySelector('[data-threads]'),el,p,q,dx,dy,d,ux,uy,x0,y0,x1,y1,mx,my,j;
       for(j=0;j<tg.children.length;j++){
         el=tg.children[j];p=null;q=null;
@@ -414,6 +466,7 @@ var PraxisHand = (function(){
       if(S.flowOn){S.flow.step(1);}
     };
     S.visible=function(){ var r; if(!S.host.offsetWidth){return false;} r=S.host.getBoundingClientRect(); return r.bottom>0 && r.top<window.innerHeight; };
+    if(document.fonts&&document.fonts.addEventListener){ document.fonts.addEventListener('loadingdone',function(){ if(S.fx&&S.ready){ S.sig=''; S.build(); } }); }
     SKIES.push(S);
     return S;
   }
@@ -458,7 +511,7 @@ var PraxisHand = (function(){
       '<circle class="bl-ember bl-ember-a" cx="49" cy="17" r="1.7" fill="var(--bl-light)"/><circle class="bl-ember bl-ember-b" cx="15" cy="47" r="1.4" fill="var(--bl-light)"/></svg>';
   }
   return {
-    VERSION:'hand.js L4 · 2026-11-08 · Fable 5.1',
+    VERSION:'hand.js L4d · 2026-11-19 · Fable 5.2',
     SKY_NIGHT:SKYD, SKY_DAY:SKYDAY, LIGHT:LITE, GARDEN:GARDEN, GARDEN_NAMES:GARDEN_NAMES,
     hash:hash, rng:rng, mix:mix, contrast:contrast, gardenColour:gardenColour, sizeFor:sizeFor,
     makeLook:makeLook, formSvg:formSvg, bloom:bloom, svgEl:svgEl, yumiSeed:yumiSeed, bloomSvg:bloomSvg,

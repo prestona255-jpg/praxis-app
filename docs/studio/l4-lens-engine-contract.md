@@ -187,6 +187,21 @@ Also proven in the same session: the loop stops when the tab is hidden (`documen
 
 `hand.js` (L4 edition, published with both mockups; md5 recorded in the carry) is the one engine. The build lifts it as `js/hand.js`, unchanged except: nothing. Its host contract: a `.sky` element holding `canvas.paint`, a `[data-field]` with `svg.bg > [data-stars] + [data-threads]`, a `[data-core] > svg[data-bloom]`; the host CSS from the mockup's `/* THE SKY */` block (orb, label, threads, the keyframes, the reduced-motion rule) lifted as `css/sky.css`. Load order: after state (it reads nothing from state; views call it), before views. Public surface: `Sky(host,{compact}) → set(items, shares, keptLooks) · toggles({threads,names}) · build() · tick()`, `startSkies()`, `makeLook`, `formSvg`, `bloom`, `yumiSeed`, `bloomSvg`, `gardenColour`, `sizeFor`, `contrast`, `GARDEN`. Items: `{name, look, books, state, size?, aria?}`; `shares`: `[[i, j, sharedBooks]]`. Design calls S1–S9 (sizes, rings, names, threads) are in the engine, not the views.
 
+**Amended at L4d (19 Nov 2026; Preston's R2 and R4, `docs/checkpoints/l4d.md`).** `js/hand.js` is no longer the carry's bytes:
+it was unlocked by ruling for L4d and is locked again at **`1674586b3645239d832c7b63832268d2` (46,181 B)**; `fd51ca7e…`
+(40,981 B) is the L4 lift and stays as history. The public surface adds one switch: **`toggles({threads, names, fixed})`** —
+`fixed: true` (sent by `lxFillCatNames` when You's Categories mode shows names "By the orbs") makes the sky STILL when names are on
+and it holds more than one lens: the orbs stop circling and sit in rows about the flower (4 across under 460 px, 5 under 900, 7
+from 900), each name under its orb, every name showing, the field as tall as the rows need (inline height, cleared on leaving). In the
+still sky the flower's size comes from the width alone, an orb is never drawn wider than its cell less 14 px (a full category
+is capped there; the turning sky's sizes are unchanged), the middle row keeps only the places that fit inside the field, and a
+web font that finishes loading re-rows a still sky (one `document.fonts` `loadingdone` listener per sky, added when the sky is
+made; skies are never discarded — one per host, `'home'` and `'you'`).
+Everywhere else the sky turns as before (R5): a name keeps the place it has while that place is free; otherwise it takes the
+first free place among its natural side (above or below) and the opposite side, and in a full sky also beside the orb (outward,
+then inward) and above or below shifted left or right; otherwise it steps back. It never sits on another orb, on another name, or
+(in a full sky) on the flower's middle (a square of 0.6 × the flower's size). The engine reads no layout while the sky moves.
+
 ## 9 · PASS proofs the build adds to lens-contract §7
 
 8. **The eval set**: a fixture of 12 model replies (3 clean, 2 old-shape, 2 with reader-claims, 1 declined twin, 1 under-2-books, 1 over-length, 1 with a clause for an uncited book, 1 unparseable) runs through `evalLensResponse` v2 with the expected survivors and the expected log lines — in the repo's harness, before any live call.

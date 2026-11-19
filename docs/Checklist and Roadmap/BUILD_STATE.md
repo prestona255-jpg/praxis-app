@@ -6,10 +6,10 @@
 > commits its state as diff-reviewable text and is updated in the **same commit**
 > that finalizes each checkpoint, so it can never go stale on the desktop again.
 
-**Authoritative as of:** 2026-11-18 (refreshed at L4b-2b hotfix 2; before that at L4b-2b hotfix 1, L4b-2b, L4b-2a hotfix 1, L4b-2a, the L4b-1 hotfix, L4b-1, the L4c flip, L4c, LC1 hotfix 1 and LC1)
+**Authoritative as of:** 2026-11-19 (refreshed at L4d; before that at L4b-2b hotfix 2, L4b-2b hotfix 1, L4b-2b, L4b-2a hotfix 1, L4b-2a, the L4b-1 hotfix, L4b-1, the L4c flip, L4c, LC1 hotfix 1 and LC1)
 **Live:** https://praxis-reading.netlify.app (Netlify's primary URL for the site is now https://praxisreader.com)
-**Live CACHE_VERSION:** `praxis-v3.332` (L4b-2b hotfix 1, the category names under the You sky, pushed 3ecdc38; Preston's phone check PASS, 18 Nov); L4b-2b hotfix 2, the small fixes and the still flower, ships v3.333
-**HEAD == origin/main:** `3ecdc38` (L4b-2b hotfix 1); L4b-2b hotfix 2 (the small fixes and the still flower, v3.333) is built on it, local until pushed. Next build: the sky's frame rate (js/hand.js unlock, ruling R8)
+**Live CACHE_VERSION:** `praxis-v3.333` (L4b-2b hotfix 2, the small fixes and the still flower, pushed b0005cb; Preston's phone check PASS, 19 Nov); L4d, the sky engine, ships v3.334
+**HEAD == origin/main:** `b0005cb` (L4b-2b hotfix 2); L4d (the sky engine: no layout reads while it moves; By the orbs is a still sky with every name, v3.334) is built on it, local until pushed — js/hand.js relocked at `1674586b…` (46,181 B), `docs/checkpoints/l4d.md`. Separate task logged: at 760 px the page scrolls sideways (866 against 760) because the top navigation list runs past the edge (older than L4d). Next lane: L4b-3a
 **Coverage board:** per-surface coverage now lives in `BOARD.md` at the repo root. The body and
 appendix below reflect detailed state as of `praxis-v3.123` (2026-06-19) and have **not** been
 retro-filled to current HEAD — treat them as historical beyond that point.
