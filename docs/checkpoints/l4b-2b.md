@@ -321,7 +321,7 @@ About version line or `#diag` first.)
 
 18 Nov 2026 · Opus 5.5 executing the review chat's written patch on main at `84d0c64` (v3.331) == origin/main, plus two
 lines on Preston's rulings (R6, and the ≥1200 un-cap). Preston's go-ahead included "run fix-red-team on this".
-**Status: built, staged, NOT committed.** fix-red-team: no BLOCK, no MAJOR (3 MINOR, 5 NIT, 1 residual). praxis-reviewer: CLEARED WITH NOTES.
+**Status: pushed at `3ecdc38` (v3.332); Preston's phone check PASS, 18 Nov (Hotfix 2's R1, below).** fix-red-team: no BLOCK, no MAJOR (3 MINOR, 5 NIT, 1 residual). praxis-reviewer: CLEARED WITH NOTES.
 
 ### Rulings, worded as given
 
@@ -467,7 +467,7 @@ shows. Findings:
 
 ### Ledger (recorded, not fixed here)
 
-- **H-L1** (T1) the row focus ring is clipped by the list's `overflow:hidden`.
+- **H-L1** (T1) the row focus ring is clipped by the list's `overflow:hidden`. **FIXED in Hotfix 2 (v3.333), R5.**
 - **H-L2** (T2) focus drops to the body after a switch press (shared with the sky's mode buttons).
 - **H-L3** (T3) "By the orbs" with Names off shows nothing new.
 - **H-L4** (T4) no `:has()` → the ≥1200 clip returns.
@@ -479,7 +479,8 @@ shows. Findings:
 - **H-S1** Sky names (12.5 px, `--on-night`) fall under 4.5:1 on the worst pixel where the sky's gold streaks or a bright orb
   pass behind them — Lenses and Marks at 84d0c64 already (1.27–2.32:1 at 390); By the orbs inherits it at 11 px.
 - **H-S2** The review chat measured You's scroll width 394 vs 390 at 84d0c64 (`.pf-field` reaches 394); this rig's fixture
-  shows 390 = 390 before and after. Unconfirmed here; worth one check on the real library.
+  shows 390 = 390 before and after. Unconfirmed here; worth one check on the real library. **FIXED in Hotfix 2 (v3.333), R6** —
+  confirmed by the review chat's measurement (394/390, `.pf-field` 40–394) and by this rig's (`.pf-field` 40–364 past its grid's 350).
 - **H-S3** The `praxis-sky-perf` worktree holds uncommitted edits to the byte-locked `js/hand.js` (label measurement every 6th
   frame) and a comment in `js/views.js`. Not touched. If it ever lands, re-check By the orbs: it changes how often the names'
   collision pass runs.
@@ -491,3 +492,246 @@ On Preston's phone at v3.332: You → Categories. A switch and a list should sit
 opens, and Back returns to You. Tap "By the orbs": small names appear beside about half the orbs. Close and reopen the app: it
 should still be on "By the orbs". Say PASS, or name what is wrong. (This machine cannot reach the live origin; confirm v3.332
 on the About version line or `#diag` first.)
+
+## Hotfix 2, 18 Nov 2026 (the small fixes and the still flower, v3.333)
+
+18 Nov 2026 · Opus 5.5 executing the review chat's written and tested patch, unchanged, on main at `3ecdc38` (v3.332) ==
+origin/main. Preston's go-ahead included "run fix-red-team on this". **Status: built, staged, NOT committed.**
+fix-red-team: no BLOCK, no MAJOR (2 MINOR, 1 NIT). praxis-reviewer: see § Stage 3.
+
+### Rulings, worded as given (18 Nov 2026)
+
+- **R1** My phone check of L4b-2b hotfix 1 at v3.332 is a PASS: the list works, a row opens its category page and Back returns
+  to You, and the choice survives closing the app.
+- **R2** "By the orbs" shows about half the names on my phone. I keep it as built. Showing all 17 by the orbs waits for the new
+  sky engine in LC2.
+- **R3** The flower holds still. Its 64-second wind into a spiral and back is off in the sky, on Home and on You. The orbs, the
+  streaks and the flower's slow turn keep moving.
+- **R4** In By-the-orbs mode an orb's name must not run into the caption line under the sky.
+- **R5** A list row's keyboard focus ring sits inside the row.
+- **R6** The You page must not scroll sideways on a phone.
+- **R7** The Undo toast must stand off a Night page.
+- **R8** The sky's choppiness in Categories mode is its own build, next, with js/hand.js unlocked for it and frame rates
+  measured before and after. Nothing from it is in this build.
+
+### What was built
+
+One block appended after `/* === L4b-2b HOTFIX 1 — end === */` in `assets/components.css` (:17973–17984), five rules, and
+`sw.js` `praxis-v3.332` → `praxis-v3.333`. No JS change but sw.js. Tokens only, no hex.
+
+- :17979 `.sky .pt,.sky .tiltg{animation:none}` — R3. Equal specificity to :17544–17545 and later, so it wins; :17544's
+  `transform:var(--tf)` still applies, so every petal rests at its own `--tf` (the cycle's 0 % / 14 % / 100 % frame, the pose
+  reduced motion shows) and `.tiltg` at identity. The Open Lens band's rules (:17837–17838, 0,4,0) are untouched.
+- :17980 `.sky.lx-orbnames .field{margin-bottom:28px}` — R4. `lx-orbnames` is set only by `lxFillCatNames` (You, Categories,
+  By the orbs).
+- :17981 `.lx.lx-catnames .lx-cn-row:focus-visible{outline-offset:-2px}` — R5 (hotfix 1's T1 / H-L1, the red-team's own fix).
+- :17982 `.pf-field,.pf-field input,.pf-field textarea{min-width:0}` — R6. The settings grid's one `1fr` track was sized by its
+  fields' min-content.
+- :17983 `.lx.lx-toast{background:var(--umber-2);box-shadow:var(--card-hi),inset 0 0 0 1px var(--line-night)}` — R7. Both
+  tokens exist only in theme.css's `:root` (`--umber-2` #46321F :40, `--line-night` rgba(255,255,255,.14) :44), so every mood
+  gets the same fill and ring.
+
+### Stage 0 — pre-flight: PASS (read-only)
+
+HEAD `3ecdc38` == origin/main, CACHE_VERSION v3.332, tracked tree clean, hook ARMED, FIX-PROTOCOL v1.3, 7 agents; all ten
+protocol docs found (the ledgers live inside this file). Before-numbers MATCH: components.css 950,908 `7311ec5b…`, sw.js 6,894
+`902e8692…`, and views.js `5b17578b…`, integrations.js `2d86b859…`, hand.js `fd51ca7e…`, state.js `b8cdafb5…`, theme.css
+`571e0ccc…`, lumen-amber `631bc2aa…`, marks.js `772886c0…`. The diff extracted from the prompt: 33 lines, 1,817 B, md5
+`dec3a8e4b6938371bb1bb9bd77d6e9c8`, CR 0 — MATCH. The anchor once, as a whole line, at :17972, the file's last line. `git apply
+--check` passes; the scratch dry apply (`-c core.autocrlf=false`) gives both after-md5s. No JS reads an animation event or
+`getAnimations` (0 hits in js/ and sw.js). `v3.333` and "HOTFIX 2": 0 hits at HEAD. The praxis-sky-perf worktree (sky-perf-lane at
+84d0c64) still holds uncommitted edits to `js/hand.js` and `js/views.js` (names listed only, contents not read; H-S3).
+One disagreement recorded: FIX-PROTOCOL §1 opens a checkpoint file at Stage 0; the prompt kept Stage 0 read-only, so this record
+was written at Stage 4, as hotfix 1's was.
+
+### Stage 1 — apply: PASS
+
+| file (LF, staged blob) | before (3ecdc38) | after (expected) | after (measured) | numstat |
+|---|---|---|---|---|
+| assets/components.css | 950,908 `7311ec5b…` | 951,830 (+922) `41dda36377d68637a42b7d51170a546b` | **951,830 `41dda36377d68637a42b7d51170a546b`** | 12 / 0 |
+| sw.js | 6,894 `902e8692…` | 6,894 (+0) `042099e3f61c4da54de7d48e0ce75802` | **6,894 `042099e3f61c4da54de7d48e0ce75802`** | 1 / 1 |
+
+EOL `i/lf w/crlf` on both (worktree CR count = line count, 17,984 and 172). `git diff --cached --check` clean. parse-check: all 19
+`js/*.js`, sw.js and assets/marks.js PARSE OK, and the harness FAILS a broken copy (exit 1). Added lines (13): hex 0, `const` /
+`let` / `=>` / `class` / backtick 0. Unchanged files at their numbers.
+
+### Stage 2 — test and look: PASS
+
+**2.1 suites** (each printed its own total — S-1): lens-eval 68/68 · lens-data 101/101 · export 58/58 · delete 58/58 · ceiling-core
+36/36 · fx1c-sim 60/60 · L4b-1 hotfix 46/46 · L4b-2a unit 71/71 · L4b-2a hotfix 1 74/74 · L4b-2b unit 120/120 · L4b-2b hotfix 1
+74/74.
+
+**The rig** (untracked): `.claude/rig/captures/l4b2bhf2/` — `hf2-rig.js` (probes, on top of the l4 fixture + `l4b1-rig.js` +
+`../l4b2bhf1/hf1-rig.js`: 38 books, 17 categories, 3 kept lenses) and `hf2-shots.ps1` (headless Chrome over CDP, fresh profile,
+phases anims · petals · gap · ring · toast · fields · drag · walk); served by `../l4b2bhf1/serve-root.ps1` — 8862 the working tree
+(AFTER, sw `praxis-v3.333`, the HOTFIX 2 block present), 8863 a `git archive` of 3ecdc38 (BEFORE, sw `praxis-v3.332`). 390 is
+`mobile:true`, dpr 2, 390×844; 1360 is dpr 1. All captures fresh, 18 Nov 2026 15:36–18:55. **One rig trap found and fixed:**
+`l4b1-rig.js`'s `R.stub` injects `#__rig_settle`, which sets `animation:none!important` on every element — the first animation pass
+read `none` on BEFORE too. `HF.motionOn()` keeps transitions off but lets CSS animations run (a test div then computes `drift`);
+every motion figure below was taken with it (ledger H2-L7).
+
+**2.2a — the You page sideways.** `.pf-set-fields` and the `.pf-field` right edge, Night and Day, Lenses and Categories (identical):
+
+| width | BEFORE (3ecdc38) | AFTER |
+|---|---|---|
+| 320 | grid 40..280 · fields 40..**364** (+84 past the grid) · page 364/320 | grid 40..280 · fields 40..280 · 320/320 |
+| 360 | grid 40..320 · fields 40..**364** (+44) · 364/360 | 40..320 · 40..320 · 360/360 |
+| 390 | grid 40..350 · fields 40..**364** (+14) · 390/390 | 40..350 · 40..350 · 390/390 |
+| 1360 | grid 56..1304 · two columns 56..669 / 691..1304 · 1360/1360 | the same |
+
+The rig still shows 390/390 before the patch at 390, as in hotfix 1, but measured directly the field overruns its grid by 14 px at
+390 and the page overruns the viewport at 320 and 360. The rig is a phone-emulated context (`mobile:true`, dpr 2, the page's
+`width=device-width, initial-scale=1, viewport-fit=cover` meta, scrollbars hidden). The field is label 120 + gap 10 + the input's
+intrinsic width: 194 here (to 364); the review chat's 40–394 implies 224. The input's intrinsic width follows its font's metrics, so a
+font difference between the two rigs is the likeliest cause — not proven. **The drag:** a sideways touch drag never moves `scrollX`
+under phone emulation; an overwide page widens the layout viewport (BEFORE at 320: `innerWidth` 364) and the drag pans the visual
+viewport. Fresh load, settings in view, 200 px touch drag: BEFORE at 320 → `visualViewport.pageLeft` **44**; AFTER at 320, 360 and
+390 → **0** (BEFORE at 360 and 390 carried the 320 step's zoom and are not counted).
+
+**2.2b — what moves.** Computed `animation-name`, 390 and 1360 alike, BEFORE → AFTER:
+
+| | Home | You · Lenses | You · Categories | You · Marks |
+|---|---|---|---|---|
+| `.sky .pt` | morph ×19 → **none ×19** | morph ×19 → **none ×19** | morph ×19 → **none ×19** | morph ×19 → **none ×19** |
+| `.sky .tiltg` | tilt → **none** | tilt → **none** | tilt → **none** | tilt → **none** |
+| `.sky .sping` | turn → turn | turn → turn | turn → turn | turn → turn |
+| `.sky .orb .art` | drift ×3 → ×3 | drift ×3 → ×3 | drift ×17 → ×17 | drift ×5 → ×5 |
+| `.sky .pu` / `.sky .sw` | pulse ×23, sway ×28 both | 23 / 28 both | 54 / 81 both | 26 / 33 both |
+
+Over 1.5 s, BEFORE and AFTER on all eight views: the streak canvas's pixels change, the orbs' `.art` transforms change, `.sping`'s
+transform changes. Open Lens (`#lens/th_l4_01`): `.lx.ol .ol-band .pt` 0 and `.tiltg` 0 elements in both builds (the band's mark is
+`PraxisHand.formSvg`, which draws no petals); its `.tn` turns in both — unchanged.
+
+**2.2c — the petals** (You, Lenses, 390 Night, a fresh load; three petals — first, middle, last of 18 — and the spiral-arms group):
+
+| | BEFORE t0 (morph at 1.6 s) | BEFORE t0 + 32 s (33.6 s) | AFTER t0 | AFTER t0 + 32 s |
+|---|---|---|---|---|
+| petal 1 | `matrix(-0.160,-0.987,0.987,-0.160,-0.64,-3.95)` = its `--tf` | `matrix(-0.102,-0.844,0.357,-0.043,58.19,-21.41)` ≠ `--tf` | the same matrix, = `--tf` | **identical, = `--tf`** |
+| petal 2 | = `--tf` | ≠ `--tf` | = `--tf` | **identical, = `--tf`** |
+| petal 3 | = `--tf` | ≠ `--tf` | = `--tf` | **identical, = `--tf`** |
+| arms | `matrix(0.1,0,0,0.1,0,0)` = `--tf` | `matrix(1,0,0,1,0,0)` | `scale(.1)` = `--tf` | **identical** |
+
+Captures (whole viewport frames 780×1688, and a 2× crop of the flower): `hotfix2-flower-{t0,t32}-390-{before,after}.jpg` and
+`hotfix2-flower-{t0,t32}-zoom-390-{before,after}.png`.
+
+**2.2d — By the orbs, the lowest name vs the caption's first text line** (20 samples, 1 s apart; animations running):
+
+| | BEFORE smallest gap | AFTER smallest gap | field margin-bottom · sky host |
+|---|---|---|---|
+| 390 Night | 8.5 px (Social & Political Thought, 2 lines) | **36.3 px** | 0 → 28 px · 541 → 569 |
+| 390 Day | 12.2 px (Theory & Philosophy, 2 lines) | **40.5 px** | 0 → 28 px · 541 → 569 |
+| 1360 Night | 3.5 px (Theory & Philosophy, 2 lines) | **31.5 px** | 0 → 28 px · 523.5 → 551.5 |
+
+Never below 0 AFTER. This fixture does NOT reproduce a BEFORE overlap (closest 3.5 px at 1360); Preston's phone did, with a two-line
+"Memoir & Biography". The margin applies only By the orbs: Lenses, List and Marks keep host 481 / 541 / 481 (390) and 463.5 / 523.5 /
+463.5 (1360), field 300 / 360 / 300, hero 724.4 / 1746.4 / 724.4 — identical BEFORE and AFTER; the canvas follows the host. Captures
+`hotfix2-orbs-gap-390-night-{before,after}.jpg`.
+
+**2.2e — the focus ring** (focus the element before, then a real Tab key over CDP; `:focus-visible` true every time): BEFORE 2px
+solid, offset **2px**, ring box 16..374 against the list's 20..370 — outside on rows 1 and 17, at 390 and 1360, Night
+(`rgb(227,184,138)`) and Day (`rgb(122,69,32)`); the capture shows only the ring's bottom edge, over the next row. AFTER offset
+**-2px**, the ring box inside the list's box on rows 1 and 17 at both widths and both moods. On the first row's top corners and the
+last row's bottom corners the ring's square corners are trimmed by the list's 14 px radius; the line stays continuous (H2-L5).
+Captures `hotfix2-ring-{first,last}-390-night-{before,after}.{png,jpg}` (PNG: a 3× crop of the row; JPG: the whole frame).
+
+**2.2f — the toast** (`lxToast` with an Undo; shown, opacity 1, 64 px tall, hit-tested on itself; 390 and 1360 alike):
+
+| | BEFORE | AFTER |
+|---|---|---|
+| fill | `rgb(51, 36, 26)` (`--umber`) | `rgb(70, 50, 31)` (`--umber-2`) |
+| text on the fill | 13.63:1 | 11.05:1 |
+| "Undo" on the fill | 8.23:1 | 6.67:1 |
+| hairline | none | `--line-night` 1 px, composites to rgb(96, 79, 62) |
+| fill vs the page behind it, Night (You, Home, Shelf, Open Lens alike) | median 1.21:1 | median **1.49:1** |
+| the hairline vs that page, Night | — | median **2.31:1** |
+| fill vs the page behind it, Day | median 14.06:1 | median 11.40:1 (hairline 7.37:1) |
+
+(The page behind is measured with the toast hidden, in its band + 10 px; the worst pixel there is ~1.0:1 on every page because the
+band takes in the nav bar's own dark fill.) The text floors (4.5) hold. The Night edge is lighter and ringed but stays under 3:1 —
+whether it plainly stands off the page is Preston's eye (H2-L9). In Day `--card-hi` adds a brighter top line (.55), as before this
+build. Captures `hotfix2-toast-{you,home,books,lens}-390-{night,day}-{before,after}.jpg` and `hotfix2-toast-*-1360-*-after.jpg`,
+each taken while the toast showed.
+
+**2.2g — the settings fields.** No input under 120 px at 390 (180) or 1360 (483); no label clipped (0 of 4) at any width. A 77-character
+display name typed by CDP: at 390 the input keeps its width (180), scrolls inside itself (scrollWidth 566 > 160, scrollLeft 406), the
+page stays 390/390; at 1360 the text fits the 483 px field. Captures `hotfix2-fields-typed-{390,1360}-{before,after}.jpg`. At 320 (not
+asked) the inputs are 110 px — H2-L8.
+
+**2.3 the walk, 390, Night** (real hit-tested CDP clicks, a real Tab key, a raw touch drag) — **PASS**: (1) Home: petals and arms
+identical over 8 s (`none`), the orbs drifted (`hotfix2-walk-home-390-after.jpg`). (2) You → Lenses, Categories, Marks: each the same
+over 6 s. (3) Categories → By the orbs: the smallest name-to-caption gap over 10 s 47 px, 10 of 17 names showing, stored "orbs".
+(4) List → Tab ×3: rows 1, 2, 3 each `:focus-visible`, 2px solid, offset -2px, inside the list. (5) Open Lens (`#lens/th_l4_03`, 4
+books; a lens of two disables its minus buttons by design) → Edit → "Leave Weapons of Math Destruction out of this lens": `leftOuts`
+[] → ["bk_l4_07"], the toast shown and hit-tested (`hotfix2-walk-toast-390-after.jpg`) → Undo (a real click at 351,46): `leftOuts`
+[], the toast hidden. (6) You dragged sideways: no movement (and 2.2a's drag). 0 page errors.
+
+**What the rig cannot show:** a real iPhone (WebKit, the notch, touch, Preston's fonts — the likely source of 394 vs 364); a BEFORE
+overlap of a name on the caption (not reproduced here); signed-in data (the rig is signed out with a stub user; this build writes
+nothing); whether the Night toast reads as plainly visible (a felt call); frame rate (R8's build).
+
+### Stage 3 — the red-team and the reviewer
+
+**fix-red-team (Sonnet), on the frozen staged diff: RED-TEAM clean — no BLOCK, no MAJOR.** Its answers: (1) every petal's `--tf` is
+the morph's 0 / 14 / 100 % frame, so none is mid-morph; `.tiltg` with no transform is the tilt's 0 % state. (2) The only producer of
+`.pt` / `.tiltg` in a sky is `bloom()` (hand.js:330); the other `.pt` classes (`.pf-pub`, `.pf-panel-hd`) are text outside any sky;
+marks.js has none; the band's (0,4,0) rules cannot be reached. (3) The reduced-motion block (:17555, `!important`) still wins and is
+now partly redundant. (4) `.pf-field` has two users, the four settings fields and the account-delete field (`.pf-del-field`, margin
+and label font only) — the same shrink, harmless; ≥760's `1fr 1fr` grid only benefits. (5) `lx-orbnames` is toggled only in
+`lxFillCatNames`; the host is `height:auto` and un-capped by hotfix 1's `:has()` line; orb positions do not move. (6) Both toast
+tokens are `:root`-only and the toast hangs off `body`, so fill and ring are the same on every ground; Day's `--card-hi` top line
+predates this build. (7) The focus rule (0,4,0) beats `.lx.lx-catnames button:focus-visible` (0,3,1) on the offset only. No `*/`
+inside the new comment, no hex, the version correct by one.
+
+| # | Sev | Finding | Disposition |
+|---|---|---|---|
+| T1 | MINOR | The spiral-arms group is also a `g.pt`, `--tf:scale(.1)`: it now stays at 10 % for good, so the spiral never shows | as R3 rules ("its wind into a spiral … is off"); ledger H2-L3 |
+| T2 | MINOR | Each petal's inner sway (`.sky .sw`, ±2.5–6°, 5–11 s) still runs, so the petals still wobble | R3 names only the 64 s wind; ledger H2-L4 |
+| T3 | NIT | The ring's square corners meet the list's 14 px rounded clip on the first and last rows | seen in the captures (a few px trimmed, line continuous); ledger H2-L5 |
+
+**praxis-reviewer (Sonnet), on the full set (staged code + the six docs + the captures): CLEARED TO COMMIT — no blocking finding.**
+It re-derived both staged blobs (951,830 `41dda363…`, 6,894 `042099e3…`) and HEAD's, numstat 12/0 · 1/1, EOL `i/lf w/crlf`, the hunk
+line for line against the prompt, hex 0, the only `*/` the comment's own, `--check` clean; the seven locked/unchanged md5s; hook
+ARMED; parse-check sw.js OK; re-ran export 58/58, lens-data 101/101, hotfix-1 unit 74/74, L4b-2b unit 120/120 (read by printed
+total); R1–R8 worded as given; every line reference (:17973–17984, :17979, :17544–17545, :17555, :17532–17533, :17837–17838,
+hand.js:215, theme.css:40/:44); the ledger closures and additions; BOARD / BUILD_STATE / sequence / l4.md; builder.html carrying the
+new text; 48 captures, none empty, 6,734,242 B (30 at 780×1688, 10 at 1360×900, 4 ring crops 2196×480, 4 flower crops 704×704).
+Notes: N1 stage by name — the two code files, the six docs and `docs/checkpoints/l4b-2b-shots/hotfix2-*`, never `.claude/rig/**`;
+N2 builder.html grepped, not regenerated by it; N3 = H2-L2 (hotfix 1's owed lines still name the About version line). Not verified
+by it: the rig's pixel and computed-style measures, WebKit, the live deploy, the Night toast's felt read.
+
+### For Preston (nothing changed for these)
+
+- The Open Lens band: its flower rules (:17837–17838) match no element — the band draws the lens's own mark (`formSvg`), not a
+  flower — so whether it follows changes nothing visible today. My view: leave it; if a later build puts a flower in the band, it
+  should hold still too, by the same rule.
+- The Night toast is lighter and ringed, but its edge on a Night page is 1.49:1 (fill) / 2.31:1 (ring). If it still does not stand
+  off on the phone, the next step is a stronger ring — a new token value, a ruling, not part of this patch.
+
+### Ledger (recorded, not fixed here)
+
+- **H2-L1** (R2) all 17 category names by the orbs waits for LC2's sky engine.
+- **H2-L2** The About page has no version number (its footer reads "version stamped at build"), so phone checks confirm a build by
+  its new feature or by `#diag`, never by "the About version line" — the Owed-after-the-push lines above that say so are wrong.
+- **H2-L3** (T1) the spiral arms never show now (they rested at `scale(.1)` and grew only mid-morph).
+- **H2-L4** (T2) the petals still sway (`.sky .sw`).
+- **H2-L5** (T3) the first and last rows' ring corners are trimmed by the list's radius.
+- **H2-L6** `.lx.ol .ol-band .pt` / `.tiltg` (:17837–17838) are dead rules at 3ecdc38 (no element matches).
+- **H2-L7** `l4b1-rig.js`'s `#__rig_settle` stills every CSS animation; motion-dependent samples taken under it (hotfix 1's
+  names-at-once over 8 samples) were on a still sky. `hf2-rig.js` `HF.motionOn()` is the fix for rig use.
+- **H2-L8** At 320 the settings inputs are 110 px (field 240 − label 120 − gap 10); before this build they were 194 and the page
+  panned 44 px.
+- **H2-L9** The Night toast's edge stays under 3:1 (above).
+- **H-L5 stays open:** hotfix 1's block comment still says "Scoped under .lx.lx-catnames and .sky.lx-orbnames"; correcting it
+  would change this build's expected numbers.
+
+### Separate tasks (pre-existing, not this build's)
+
+- **H-S1, H-S3, H-S4** stand as written under Hotfix 1.
+- **H2-S1** The l4b1 rig's settle style should leave animations on, or each motion probe must opt in (H2-L7).
+
+### Owed after the push
+
+On my phone at v3.333, close the app fully and reopen it. Home: watch the flower for a minute; it should keep its shape while the
+orbs drift. You: drag the page sideways; it should not move. You → Categories → By the orbs: no name should sit on the caption line
+under the sky. Open a lens, leave a book out: the Undo bar at the top should be easy to see; tap Undo. Say PASS, or name what is
+wrong. (This machine cannot reach the live origin; confirm v3.333 by the still flower or `#diag`, not the About page — H2-L2.)

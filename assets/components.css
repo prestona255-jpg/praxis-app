@@ -17970,3 +17970,15 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
 .sky.lx-orbnames .field.many:not(.nonames) .orb .l,.sky.lx-orbnames .field.tight:not(.nonames) .orb .l{display:block;font-size:11px;line-height:13px;max-width:96px}
 .pf-sky-host.lx-you-host:has(> .lx-catnames:not([hidden])){max-height:none}
 /* === L4b-2b HOTFIX 1 — end === */
+/* === L4b-2b HOTFIX 2 — THE SMALL FIXES — begin ===
+   Rulings 18 Nov 2026. (1) The flower holds still: the 64 s morph and tilt are off in the sky; the orbs, the
+   streaks and the slow turn keep moving. (2) By the orbs: room under the field, so a two-line name never runs
+   into the caption. (3) A list row's focus ring sits inside the row, where the list's edge cannot clip it.
+   (4) The settings fields may shrink, so the You page no longer scrolls sideways on a phone. (5) The Undo
+   toast sits on the lighter umber with a hairline, so it stands off a Night page. === */
+.sky .pt,.sky .tiltg{animation:none}
+.sky.lx-orbnames .field{margin-bottom:28px}
+.lx.lx-catnames .lx-cn-row:focus-visible{outline-offset:-2px}
+.pf-field,.pf-field input,.pf-field textarea{min-width:0}
+.lx.lx-toast{background:var(--umber-2);box-shadow:var(--card-hi),inset 0 0 0 1px var(--line-night)}
+/* === L4b-2b HOTFIX 2 — end === */
