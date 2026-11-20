@@ -300,9 +300,11 @@ function setShelfView(v) {
 function getShelfGrouping() {
   // R-SHELF: default 'categories' — the bookcase opens on populated bands (lens
   // mode groups by userThemes, which are barren until the reader makes lenses).
-  var v = ls('praxis_shelf_grouping', 'categories');
+  var v = ls('praxis_shelf_grouping', '');
   if (v !== 'lenses' && v !== 'categories') {
-    return 'categories';
+    // L4b-3a: never chosen. A reader with a lens that holds a shelved book lands on Lenses (as drawn);
+    // everyone else on Categories, so nobody opens to an empty view. Nothing is stored until they choose.
+    return sh3HasLens() ? 'lenses' : 'categories';
   }
   return v;
 }
@@ -4813,11 +4815,12 @@ function renderShelf() {
   }
 
   // Head counts (books · reading · finished) — display-only aggregation.
-  var cReading = 0, cFinished = 0, st;
+  var cReading = 0, cFinished = 0, cWill = 0, st;
   for (i = 0; i < allBooks.length; i = i + 1) {
     st = normalizeStatus(allBooks[i].status);
     if (st === 'read') { cFinished = cFinished + 1; }
     else if (st === 'reading') { cReading = cReading + 1; }
+    else { cWill = cWill + 1; }
   }
 
   // Render context — one source the case/desk/illumination helpers read.
@@ -4831,49 +4834,44 @@ function renderShelf() {
     mode: getShelfGrouping()
   };
 
-  // ---- F9/§3.5 · the horizon strip (filled by buildShelfWheat after mount) ----
-  var strip = document.createElement('div');
-  strip.className = 'horizon-strip';
-  strip.id = 'shelf-horizon';
-  strip.setAttribute('aria-hidden', 'true');
-  wrap.appendChild(strip);
-
+  // L4b-3a: the redraw's class goes on only here, past the signed-out gate (PIN 1), which keeps its own card.
+  wrap.className += ' sh3';
   var inner = document.createElement('div');
-  inner.className = 'shelf-inner';
+  inner.className = 'sh3-inner';
 
-  // ===== F4/§3.8 · the slim header =====
+  // ===== L4b-3a (the Shelf redrawn, Style Study v12) · the head =====
+  // The title's row carries the two actions (the Manage sheet behind three dots, and Add a book);
+  // then the count, the search bar, the Lenses | Categories switch and the status chips.
+  var hasBooks = allBooks.length > 0;
   var header = document.createElement('header');
-  header.className = 'shelf-slim-header';
+  header.className = 'sh3-top';
 
   var top = document.createElement('div');
-  top.className = 'shelf-slim-top';
+  top.className = 'sh3-trow';
   var h1 = document.createElement('h1');
   h1.textContent = 'Shelf';
   top.appendChild(h1);
-  var countEl = document.createElement('span');
-  countEl.className = 'shelf-slim-count';
-  countEl.textContent = allBooks.length + (allBooks.length === 1 ? ' book' : ' books')
-    + ' · ' + cReading + ' reading · ' + cFinished + ' finished';
-  top.appendChild(countEl);
+  var controls = document.createElement('div');
+  controls.className = 'sh3-acts';
+  top.appendChild(controls);
   header.appendChild(top);
 
-  var controls = document.createElement('div');
-  controls.className = 'shelf-slim-controls';
+  var nLens = sh3LensCount(user.uid, allBooks);
+  var countEl = document.createElement('p');
+  countEl.className = 'sh3-count';
+  countEl.textContent = lxPlural(allBooks.length, 'book') + (nLens ? ' · ' + lxPlural(nLens, 'lens') : '');
+  header.appendChild(countEl);
 
-  // Search — illuminates (dims non-matching); never removes (Law 1). A light
-  // re-render of case+desk keeps the input mounted, so focus is never lost.
+  // Search: typing hides the books that do not match (ruled 19 Nov 2026; it used to dim them).
+  // Only the case re-renders, so the input stays mounted and keeps its focus.
   var searchLabel = document.createElement('label');
-  searchLabel.className = 'shelf-search';
-  var sGlyph = document.createElement('span');
-  sGlyph.className = 's-glyph';
-  sGlyph.setAttribute('aria-hidden', 'true');
-  sGlyph.textContent = '⌕';
-  searchLabel.appendChild(sGlyph);
+  searchLabel.className = 'sh3-find';
+  searchLabel.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.6-3.6"></path></svg>';
   var searchInput = document.createElement('input');
   searchInput.id = 'shelf-search-input';
   searchInput.type = 'search';
   searchInput.setAttribute('inputmode', 'search');
-  searchInput.setAttribute('placeholder', 'Search your shelf…');
+  searchInput.setAttribute('placeholder', 'Search your shelf');
   searchInput.setAttribute('aria-label', 'Search your shelf');
   searchInput.value = shelfSearchRaw;
   searchInput.addEventListener('input', function () {
@@ -4885,32 +4883,33 @@ function renderShelf() {
     }, 200);
   });
   searchLabel.appendChild(searchInput);
-  controls.appendChild(searchLabel);
+  if (hasBooks) { header.appendChild(searchLabel); }
 
-  // F1 — Categories <-> Lenses mode toggle (a re-shelving act; the case regroups).
+  // Lenses | Categories: the case regroups. The reader's stored choice (praxis_shelf_grouping) is unchanged.
   var modeSeg = document.createElement('div');
-  modeSeg.className = 'mode-seg';
-  modeSeg.setAttribute('role', 'tablist');
-  modeSeg.setAttribute('aria-label', 'Shelving mode');
-  var modes = [ { k: 'categories', l: 'Categories' }, { k: 'lenses', l: 'Lenses' } ];
+  modeSeg.className = 'sh3-seg';
+  modeSeg.setAttribute('role', 'group');
+  modeSeg.setAttribute('aria-label', 'Group the shelf by');
+  var modes = [ { k: 'lenses', l: 'Lenses' }, { k: 'categories', l: 'Categories' } ];
   var curMode = getShelfGrouping();
   for (i = 0; i < modes.length; i = i + 1) {
     (function (m) {
       var mb = document.createElement('button');
       mb.type = 'button';
-      mb.setAttribute('role', 'tab');
-      mb.className = (curMode === m.k) ? 'is-on' : '';
-      mb.setAttribute('aria-selected', curMode === m.k ? 'true' : 'false');
+      mb.setAttribute('aria-pressed', curMode === m.k ? 'true' : 'false');
+      mb.setAttribute('data-mode', m.k);
       mb.textContent = m.l;
       mb.addEventListener('click', function () {
         if (getShelfGrouping() === m.k) { return; }
         setShelfGrouping(m.k);
         renderShelf();
+        var again = document.querySelector('.sh3-seg button[data-mode="' + m.k + '"]');
+        if (again) { again.focus(); }   // the re-render replaced the button; the keyboard keeps its place
       });
       modeSeg.appendChild(mb);
     })(modes[i]);
   }
-  controls.appendChild(modeSeg);
+  if (hasBooks) { header.appendChild(modeSeg); }
 
   // ---- Manage sheet (CARRIED, NON-GOAL): Covers|Compact + Select + Scan/Bulk/
   //      Resolve/Tidy tuck into one Manage control (MW-1 P1). One code path;
@@ -4921,10 +4920,11 @@ function renderShelf() {
   manageWrap.className = 'shelf-manage';
   var manageBtn = document.createElement('button');
   manageBtn.type = 'button';
-  manageBtn.className = 'btn btn-quiet shelf-manage-btn';
+  manageBtn.className = 'shelf-manage-btn sh3-more';
   manageBtn.setAttribute('aria-haspopup', 'true');
   manageBtn.setAttribute('aria-expanded', 'false');
-  manageBtn.textContent = 'Manage';
+  manageBtn.textContent = '\u2022\u2022\u2022';   // L4b-3a: the Manage sheet, unchanged, behind three dots
+  manageBtn.setAttribute('aria-label', 'Manage shelf');
   var manageBackdrop = document.createElement('div');
   manageBackdrop.className = 'shelf-manage-backdrop';
   var manageSheet = document.createElement('div');
@@ -4977,24 +4977,7 @@ function renderShelf() {
   manageBackdrop.addEventListener('click', closeManageSheet);
   manageClose.addEventListener('click', closeManageSheet);
 
-  // D5 — Covers | Compact density (runtime, session-persistent via shelfDensity).
-  var densitySeg = document.createElement('div');
-  densitySeg.className = 'seg';
-  densitySeg.setAttribute('role', 'tablist');
-  densitySeg.setAttribute('aria-label', 'Cover density');
-  var dens = [ { k: 'covers', l: 'Covers' }, { k: 'compact', l: 'Compact' } ];
-  for (i = 0; i < dens.length; i = i + 1) {
-    (function (d) {
-      var db = document.createElement('button');
-      db.type = 'button';
-      db.className = 'seg-opt' + (shelfDensity === d.k ? ' is-on' : '');
-      db.setAttribute('data-density', d.k);
-      db.textContent = d.l;
-      db.addEventListener('click', function () { shelfDensity = d.k; renderShelf(); });
-      densitySeg.appendChild(db);
-    })(dens[i]);
-  }
-  manageBody.appendChild(densitySeg);
+  // L4b-3a: Covers | Compact is gone from the sheet; the redrawn Shelf has one cover size.
 
   // Select -> Move to an arc (the only bulk action). Carried live behavior.
   var selectBtn = document.createElement('button');
@@ -5055,85 +5038,51 @@ function renderShelf() {
 
   controls.appendChild(manageEntry);
 
-  // Add a book (CARRIED primary; the P2 mobile FAB relocation rides .shelf-add-primary).
+  // Add a book: the yellow pill on the title's row (L4b-3a). It was a fixed button at the bottom-left
+  // on phones, where it covered the first title; it carries no .shelf-add-primary now, so no rule pins it.
   var addBtn = document.createElement('button');
   addBtn.type = 'button';
-  addBtn.className = 'btn btn-primary shelf-add-primary';
-  addBtn.textContent = '＋ Add a book';
+  addBtn.className = 'sh3-add';
+  addBtn.textContent = 'Add a book';
   addBtn.addEventListener('click', function () { openShelfEditor(); });
   controls.appendChild(addBtn);
 
-  header.appendChild(controls);
-
-  // F6 · value chips — illuminate matches, dim the rest. Counts == data (deduped
-  // once per book). Rendered only when the shelf carries value-marks.
-  if (valueList.length > 0) {
-    var chips = document.createElement('div');
-    chips.className = 'value-chips';
-    var vlabel = document.createElement('span');
-    vlabel.className = 'vlabel';
-    vlabel.textContent = 'Values';
-    chips.appendChild(vlabel);
-    for (i = 0; i < valueList.length; i = i + 1) {
-      (function (v) {
-        var ch = document.createElement('button');
-        ch.type = 'button';
-        ch.className = 'vchip' + (shelfFilter.value === v ? ' is-on' : '');
-        ch.setAttribute('data-value', v);
-        ch.appendChild(document.createTextNode(v));
-        var cnt = document.createElement('span');
-        cnt.className = 'vcount';
-        cnt.textContent = '' + (shelfCtx.valueCounts[v] || 0);
-        ch.appendChild(cnt);
-        ch.addEventListener('click', function () {
-          shelfFilter.value = (shelfFilter.value === v) ? null : v;
-          var all = chips.getElementsByClassName('vchip'), j;
-          for (j = 0; j < all.length; j = j + 1) {
-            all[j].className = 'vchip' + (all[j].getAttribute('data-value') === shelfFilter.value ? ' is-on' : '');
-          }
-          applyShelfIllumination();
-        });
-        chips.appendChild(ch);
-      })(valueList[i]);
-    }
-    header.appendChild(chips);
+  // The status chips (L4b-3a): All, Reading, Will read, Have read, each with its count over the whole
+  // shelf. A chip hides the books outside it. The filter is shelfFilter.status, in normalizeStatus's words.
+  var chipRow = document.createElement('div');
+  chipRow.className = 'sh3-chips';
+  chipRow.setAttribute('role', 'group');
+  chipRow.setAttribute('aria-label', 'Show');
+  var chipDefs = [ { k: null, l: 'All', n: allBooks.length }, { k: 'reading', l: 'Reading', n: cReading },
+                   { k: 'will-read', l: 'Will read', n: cWill }, { k: 'read', l: 'Have read', n: cFinished } ];
+  for (i = 0; i < chipDefs.length; i = i + 1) {
+    (function (d) {
+      var ch = document.createElement('button');
+      ch.type = 'button';
+      ch.className = 'sh3-chip';
+      ch.setAttribute('aria-pressed', (shelfFilter.status || null) === d.k ? 'true' : 'false');
+      ch.textContent = d.l + ' ' + d.n;
+      ch.addEventListener('click', function () {
+        shelfFilter.status = d.k;
+        var all = chipRow.getElementsByTagName('button'), j;
+        for (j = 0; j < all.length; j = j + 1) { all[j].setAttribute('aria-pressed', all[j] === ch ? 'true' : 'false'); }
+        applyShelfIllumination();
+      });
+      chipRow.appendChild(ch);
+    })(chipDefs[i]);
   }
+  if (hasBooks) { header.appendChild(chipRow); }
 
-  // search/value empty line (shown by applyShelfIllumination when nothing matches)
-  var emptyLine = document.createElement('div');
-  emptyLine.className = 'search-empty-line';
+  // the no-match line (shown by shelfUpdateSearchEmpty when a chip or a search leaves nothing)
+  var emptyLine = document.createElement('p');
+  emptyLine.className = 'sh3-none';
   emptyLine.id = 'shelf-search-empty';
-  emptyLine.textContent = 'no books match this search — try another title, author, or value';
+  emptyLine.textContent = 'No books match. Try another title or author, or choose All.';
   header.appendChild(emptyLine);
 
   inner.appendChild(header);
 
-  // ===== F2/§3.4 · the desk (NOW) — filled by renderShelfDesk =====
-  var desk = document.createElement('section');
-  desk.className = 'desk';
-  desk.id = 'shelf-desk';
-  var deskHead = document.createElement('div');
-  deskHead.className = 'desk-head';
-  var deskH2 = document.createElement('h2');
-  deskH2.textContent = 'Now';
-  deskHead.appendChild(deskH2);
-  var deskCount = document.createElement('span');
-  deskCount.className = 'count';
-  deskCount.id = 'shelf-desk-count';
-  deskHead.appendChild(deskCount);
-  desk.appendChild(deskHead);
-  // R-CAPTURE CA-1: the carrying-question row — its OWN block above the covers
-  // (the .desk-head baseline flex stays a tight h2+count row). Filled by
-  // renderDeskQuestion(); a question NEVER passes through the capture door.
-  var deskQ = document.createElement('div');
-  deskQ.className = 'desk-question';
-  deskQ.id = 'shelf-desk-question';
-  desk.appendChild(deskQ);
-  var deskRow = document.createElement('div');
-  deskRow.className = 'desk-row';
-  deskRow.id = 'shelf-desk-row';
-  desk.appendChild(deskRow);
-  inner.appendChild(desk);
+  // L4b-3a: the Now desk is gone from the Shelf (ruled 19 Nov 2026); the Reading chip does its job.
 
   // ===== R-FIRSTSHELF (3b) · the one-time lens offer — a beat between desk + case =====
   var fsOffer = buildFirstShelfOffer(user, allBooks.length);
@@ -5141,7 +5090,7 @@ function renderShelf() {
 
   // ===== F1 · the case — filled by renderShelfCase =====
   var caseEl = document.createElement('div');
-  caseEl.className = 'case' + (getShelfGrouping() === 'lenses' ? ' is-lens' : '');
+  caseEl.className = 'sh3-case' + (getShelfGrouping() === 'lenses' ? ' is-lens' : '');
   caseEl.id = 'shelf-case';
   inner.appendChild(caseEl);
 
@@ -5156,7 +5105,7 @@ function renderShelf() {
   // now-deleted showScanStatus/clearScanStatus).
   var editorHost = document.createElement('div');
   editorHost.id = 'shelf-editor-host';
-  inner.appendChild(editorHost);
+  inner.insertBefore(editorHost, header.nextSibling);   // L4b-3a: under the head, not below the last band (the candidate logged at THE REVEAL)
   var arcPickerHost = document.createElement('div');
   arcPickerHost.id = 'shelf-arc-picker-host';
   inner.appendChild(arcPickerHost);
@@ -5191,21 +5140,17 @@ function renderShelf() {
 
   host.appendChild(wrap);
 
-  // Fill the desk + case, set illumination state, grow the wheat.
-  renderShelfCase();   // builds shelfCtx.touch (order-by-life memo) first…
-  renderShelfDesk();   // …which the desk's life-sort (R1) then reuses
+  // Fill the case and set the no-match line.
+  renderShelfCase();
   shelfUpdateSearchEmpty();
-  buildShelfWheat();
 
-  // Rebuild wheat (and re-flow the wall's column count) on resize. Purged/rebound
-  // each render + on route change.
+  // L4b-3a: a band is one sideways row on a phone and wraps from 760, in CSS alone, so a resize
+  // re-renders nothing. (A phone fires resize whenever its address bar folds; re-rendering there would
+  // throw every row back to its start.) The handler keeps one job: the capture door's lift.
+  // Purged and rebound on each render, and purged on route change.
   shelfWheatResizeHandler = function () {
     if (shelfWheatResizeTimer) { clearTimeout(shelfWheatResizeTimer); }
-    shelfWheatResizeTimer = setTimeout(function () {
-      if (!shelfFocused) { renderShelfCase(); renderShelfDesk(); shelfUpdateSearchEmpty(); }
-      buildShelfWheat();
-      capUpdateCreateDoorPos();   // D7: the Add FAB can change height on reflow -- re-derive the lift
-    }, 150);
+    shelfWheatResizeTimer = setTimeout(function () { capUpdateCreateDoorPos(); }, 150);
   };
   window.addEventListener('resize', shelfWheatResizeHandler);
 
@@ -5271,12 +5216,13 @@ function shelfBookValues(book) {
   return out;
 }
 
-function shelfFiltersActive() { return !!(shelfFilter.value || shelfSearchQuery); }
+function shelfFiltersActive() { return !!(shelfFilter.value || shelfFilter.status || shelfSearchQuery); }
 
 // F6/Law-1 · does the book match the active value chip AND search? (illumination
 // only — never removal). shelfFilter.value carries the active chip; shelfSearch-
 // Query the search text.
 function shelfBookMatchesFilter(book) {
+  if (shelfFilter.status && normalizeStatus(book.status) !== shelfFilter.status) { return false; }   // L4b-3a: the status chips
   if (shelfFilter.value) {
     var vals = shelfBookValues(book), ok = false, i;
     for (i = 0; i < vals.length; i = i + 1) { if (vals[i] === shelfFilter.value) { ok = true; break; } }
@@ -5733,14 +5679,14 @@ function shelfWallColumns() {
 // selection gestures win. A band with no books (the pile) is always an inert span.
 function buildShelfBandHeader(container, label, count, groupKey, groupBooks, lensName) {
   var hd = document.createElement('div');
-  hd.className = 'cavity-band-hd';
+  hd.className = 'sh3-bandh';
   var labelEl;
   // R2 (S5): band labels open the focused view on ALL widths (with a real library,
   // wayfinding beats staticness). SUPPRESSED during Select mode (selection wins).
   if (!shelfSelecting && groupBooks && groupBooks.length) {
     labelEl = document.createElement('button');
     labelEl.type = 'button';
-    labelEl.className = 'label';
+    labelEl.className = 'sh3-bname';
     labelEl.addEventListener('click', function () {
       // L4b-2a hotfix 1 (R4): a kept lens's band name opens its page; every other band (and a lens gone since) keeps the focused view
       var lensTid = (typeof groupKey === 'string' && groupKey.indexOf('lens:') === 0) ? groupKey.substring(5) : '';
@@ -5752,27 +5698,36 @@ function buildShelfBandHeader(container, label, count, groupKey, groupBooks, len
     });
   } else {
     labelEl = document.createElement('span');
-    labelEl.className = 'band-label';
+    labelEl.className = 'sh3-bname is-still';
   }
   labelEl.textContent = label;
   var c = document.createElement('span');
-  c.className = 'count';
+  c.className = 'sh3-bcount';
   c.textContent = count + (count === 1 ? ' book' : ' books');
-  // L4.3: on a LENS band, the lens's own mark opens its lens sheet (a tap on a
-  // lens anywhere opens the sheet); the label keeps opening the focused view.
+  // L4b-3a: the whole header is one door. The name is the button and CSS stretches its hit area over
+  // the row, so the mark, the count and "Open" all open the same page. A lens band carries the lens's
+  // own mark, still; it no longer opens the lens sheet from here (the lens page does that work).
   var lxTid = (typeof groupKey === 'string' && groupKey.indexOf('lens:') === 0) ? groupKey.substring(5) : '';
-  if (lxTid && !shelfSelecting && state.userThemes && state.userThemes[lxTid]) {
-    var lxMk = document.createElement('button');
-    lxMk.type = 'button';
-    lxMk.className = 'lx lx-band-lens';
-    lxMk.setAttribute('aria-label', 'Open the lens ' + label);
+  if (lxTid && state.userThemes && state.userThemes[lxTid]) {
     if (!state.userThemes[lxTid].look && typeof ensureLensLooks === 'function') { ensureLensLooks(state.userThemes[lxTid].userId); }   // derived once, stored
+    var lxMk = document.createElement('span');
+    lxMk.className = 'sh3-bmark';
     lxMk.appendChild(lxMark(state.userThemes[lxTid].look, label));
-    lxMk.addEventListener('click', function (e) { e.stopPropagation(); openLensSheet(lxTid); });
     hd.appendChild(lxMk);
   }
-  hd.appendChild(labelEl);
-  hd.appendChild(c);
+  var tx = document.createElement('span');
+  tx.className = 'sh3-btx';
+  tx.appendChild(labelEl);
+  tx.appendChild(c);
+  hd.appendChild(tx);
+  if (labelEl.tagName === 'BUTTON') {
+    labelEl.setAttribute('aria-label', (typeof groupKey === 'string' && groupKey.indexOf('lens:') === 0 ? 'Open the lens ' : 'Open the category ') + label);
+    var op = document.createElement('span');
+    op.className = 'sh3-open';
+    op.setAttribute('aria-hidden', 'true');
+    op.textContent = 'Open';
+    hd.appendChild(op);
+  }
   container.appendChild(hd);
 }
 
@@ -5808,16 +5763,79 @@ function buildShelfShelfline(books, opts) {
 
 function buildShelfBand(label, books, groupKey, lensName) {
   var band = document.createElement('section');
-  band.className = 'cavity-band';
+  band.className = 'sh3-band';
   buildShelfBandHeader(band, label, books.length, groupKey, books, lensName);
-  var cavity = document.createElement('div');
-  cavity.className = 'cavity';
-  var line = document.createElement('div');
-  line.className = 'cavity-shelfline';
-  line.appendChild(buildShelfShelfline(books, { lensName: lensName, groupKey: groupKey, groupBooks: books, groupLabel: label }));
-  cavity.appendChild(line);
-  band.appendChild(cavity);
+  band.appendChild(sh3Row(books, 'Books in ' + label));
   return band;
+}
+
+// L4b-3a · a band's covers: every book of the band, in one group. CSS lays it out (one sideways row
+// on a phone, wrapped rows from 760), so nothing here measures the window.
+function sh3Row(books, name) {
+  var row = document.createElement('div'), i;
+  row.className = 'sh3-covers';
+  row.setAttribute('role', 'group');
+  row.setAttribute('aria-label', name);
+  for (i = 0; i < books.length; i = i + 1) { row.appendChild(sh3Cover(books[i])); }
+  return row;
+}
+// L4b-3a · one large cover, alone: no caption, no status dot, no glow, ember or thread. A real cover
+// fills a fixed 2:3 slot (lazy; the self-healing candidate walk). A book with no cover, or whose every
+// cover fails, shows its title and author on the card instead, so a card is never blank. A tap opens
+// the book; in Select mode a tap picks it.
+function sh3Cover(book) {
+  var a = document.createElement('a');
+  a.className = 'sh3-cv' + (shelfPicked[book.id] ? ' is-picked' : '');
+  a.href = '#book/' + book.id;
+  a.setAttribute('aria-label', (book.title || 'Untitled') + (book.author ? ', ' + book.author : ''));
+  var face = buildSelfHealingCover(book, 'sh3-img', function () {
+    var t = document.createElement('span');
+    t.className = 'sh3-tt';
+    var tb = document.createElement('b');
+    tb.textContent = book.title || 'Untitled';
+    t.appendChild(tb);
+    if (book.author) {
+      var ts = document.createElement('small');
+      ts.textContent = book.author;
+      t.appendChild(ts);
+    }
+    return t;
+  });
+  if (face && face.tagName === 'IMG') { face.setAttribute('loading', 'lazy'); face.setAttribute('decoding', 'async'); }
+  a.appendChild(face);
+  var chk = document.createElement('span');
+  chk.className = 'sh3-chk';
+  chk.setAttribute('aria-hidden', 'true');
+  a.appendChild(chk);
+  a.addEventListener('click', function (ev) {
+    if (shelfSelecting) { ev.preventDefault(); shelfTogglePick(a, book.id); }
+  });
+  return a;
+}
+// L4b-3a · does the signed-in reader have a lens that holds at least one book on their shelf?
+function sh3HasLens() {
+  var u = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+  if (!u || !u.uid) { return false; }
+  var map = state.books || {}, list = [], i, k;
+  var sids = (state.userBooks && state.userBooks[u.uid] && state.userBooks[u.uid].bookIds) ? state.userBooks[u.uid].bookIds : null;
+  if (sids) { for (i = 0; i < sids.length; i = i + 1) { if (map[sids[i]]) { list.push(map[sids[i]]); } } }
+  else { for (k in map) { if (Object.prototype.hasOwnProperty.call(map, k) && map[k]) { list.push(map[k]); } } }
+  return sh3LensCount(u.uid, list) > 0;
+}
+// L4b-3a · how many of the reader's lenses hold at least one book on the shelf: the head's count,
+// and the number of bands the Lenses view shows with no chip or search on.
+function sh3LensCount(uid, books) {
+  var on = {}, n = 0, i, tk, t, ids;
+  if (!uid || !state.userThemes) { return 0; }
+  for (i = 0; i < books.length; i = i + 1) { on[books[i].id] = true; }
+  for (tk in state.userThemes) {
+    if (!Object.prototype.hasOwnProperty.call(state.userThemes, tk)) { continue; }
+    t = state.userThemes[tk];
+    if (!t || t.userId !== uid) { continue; }
+    ids = t.bookIds || [];
+    for (i = 0; i < ids.length; i = i + 1) { if (on[ids[i]]) { n = n + 1; break; } }
+  }
+  return n;
 }
 
 // F5/§3.7 · "the case opens" — the focused full view (mobile). Same carved
@@ -5828,7 +5846,7 @@ function openShelfFocusedBand(groupKey, groupBooks, label, lensName) {
   if (!fv || !groupBooks) { return; }
   var strip = document.getElementById('shelf-horizon');
   var desk = document.getElementById('shelf-desk');
-  var header = document.querySelector('.shelf.lum-amber-deep .shelf-slim-header');
+  var header = document.querySelector('.shelf.lum-amber-deep .sh3-top');
   var caseEl = document.getElementById('shelf-case');
   if (strip) { strip.style.display = 'none'; }
   if (desk) { desk.style.display = 'none'; }
@@ -5866,7 +5884,7 @@ function openShelfFocusedBand(groupKey, groupBooks, label, lensName) {
 function closeShelfFocusedBand() {
   var strip = document.getElementById('shelf-horizon');
   var desk = document.getElementById('shelf-desk');
-  var header = document.querySelector('.shelf.lum-amber-deep .shelf-slim-header');
+  var header = document.querySelector('.shelf.lum-amber-deep .sh3-top');
   var caseEl = document.getElementById('shelf-case');
   if (strip) { strip.style.display = ''; }
   if (desk) { desk.style.display = ''; }
@@ -5914,19 +5932,15 @@ function shelfMaybeClassify(pending) {
 // the unshelved pile (Uncategorized) — outside the case, "in motion", last.
 function shelfBuildPile(books) {
   var pile = document.createElement('section');
-  pile.className = 'cavity-band pile-band';
+  pile.className = 'sh3-band sh3-pile';
   // L3.1: before the yes the sorter never runs, so the pile is the reader's
   // Uncategorized shelf and says so in Day Three's words (not "classify", which
   // would promise a sort that cannot happen yet).
   var yesOk = isYumiYesGranted();
   buildShelfBandHeader(pile, yesOk ? 'Unshelved' : 'Uncategorized', books.length, 'pile', null, null);
-  var prow = document.createElement('div');
-  prow.className = 'pile-row';
-  var i;
-  for (i = 0; i < books.length; i = i + 1) { prow.appendChild(buildCoverNode(books[i], {})); }
-  pile.appendChild(prow);
+  pile.appendChild(sh3Row(books, 'Books with no category yet'));
   var note = document.createElement('p');
-  note.className = 'pile-note';
+  note.className = 'sh3-note';
   note.textContent = yesOk ? 'no shelf yet — classify to give them a home'
     : 'Every book has a shelf. Books that arrive before your yes wait here, by name.';
   pile.appendChild(note);
@@ -5936,7 +5950,7 @@ function shelfBuildPile(books) {
 // F7 · the Ask-Yumi row (lens mode; doubles as the lens-empty state). Live copy.
 function shelfBuildLensRow(bandCount) {
   var yrow = document.createElement('div');
-  yrow.className = 'yumi-lens-row is-shown';
+  yrow.className = 'sh3-yrow';
   var dot = document.createElement('span');
   dot.className = 'dot';
   dot.setAttribute('aria-hidden', 'true');
@@ -6040,7 +6054,7 @@ function renderShelfCase() {
     ezAdd.addEventListener('click', function () { openShelfEditor(); });
     ez.appendChild(ezAdd);
     root.appendChild(ez);
-    root.className = 'case' + (mode === 'lenses' ? ' is-lens' : '');
+    root.className = 'sh3-case' + (mode === 'lenses' ? ' is-lens' : '');
     return;
   }
 
@@ -6049,13 +6063,15 @@ function renderShelfCase() {
   for (i = 0; i < books.length; i = i + 1) { shelfCtx.touch[books[i].id] = shelfLastTouched(books[i]); }
 
   var bands = [], pileBooks = [], pending = [];
+  var filt = shelfFiltersActive();   // L4b-3a: a chip or a search HIDES what does not match
   if (mode === 'categories') {
     var catMap = {}, cat, cti, cl, lst;
     for (i = 0; i < books.length; i = i + 1) {
       b = books[i];
       cat = (typeof classifyBookLocal === 'function') ? classifyBookLocal(b) : (b.category || '');
-      if (cat === null) { pending.push(b); pileBooks.push(b); continue; }
-      if (cat === '' || cat === CATEGORY_UNCATEGORIZED) { pileBooks.push(b); continue; }
+      if (cat === null) { pending.push(b); }   // the sorter is offered every unsorted book, shown or hidden
+      if (filt && !shelfBookMatchesFilter(b)) { continue; }
+      if (cat === null || cat === '' || cat === CATEGORY_UNCATEGORIZED) { pileBooks.push(b); continue; }
       if (!catMap[cat]) { catMap[cat] = []; }
       catMap[cat].push(b);
     }
@@ -6085,50 +6101,28 @@ function renderShelfCase() {
       ids = th.bookIds || [];
       for (bi2 = 0; bi2 < ids.length; bi2 = bi2 + 1) { bset[ids[bi2]] = true; }
       member = [];
-      for (i = 0; i < books.length; i = i + 1) { if (bset[books[i].id]) { member.push(books[i]); } }
+      for (i = 0; i < books.length; i = i + 1) {
+        if (bset[books[i].id] && (!filt || shelfBookMatchesFilter(books[i]))) { member.push(books[i]); }
+      }
       if (member.length) {
         lst2 = shelfLifeSort(member);
         bands.push({ label: th.name, books: lst2, groupKey: 'lens:' + th.id, lensName: th.name, life: shelfBandLifeKey(lst2) });
       }
     }
   }
-
-  // ORDER BY LIFE — bands descending by most-recent member (= masonry fill order).
+  // ORDER BY LIFE: bands descending by their most recent member. One list at every width (L4b-3a: the
+  // desktop wall of columns is gone; each band's covers wrap in CSS from 760).
   bands.sort(function (a, c) { return c.life - a.life; });
-
-  if (isMobileShelf()) {
-    for (i = 0; i < bands.length; i = i + 1) {
-      root.appendChild(buildShelfBand(bands[i].label, bands[i].books, bands[i].groupKey, bands[i].lensName));
-    }
-  } else {
-    // R1 (FS-1): never draw more columns than there are bands, so a small library
-    // can't leave empty columns. A lone column (bandCount 1) takes a width cap and
-    // centers via .wall.is-single (CSS) — it never stretches full-bleed.
-    var ncols = Math.min(bands.length, shelfWallColumns());
-    if (ncols < 1) { ncols = 1; }
-    var wall = document.createElement('div');
-    wall.className = 'wall' + (ncols === 1 ? ' is-single' : '');
-    var cols = [], c2, cd;
-    for (c2 = 0; c2 < ncols; c2 = c2 + 1) { cd = document.createElement('div'); cd.className = 'wall-col'; wall.appendChild(cd); cols.push(cd); }
-    root.appendChild(wall);
-    // masonry: each band (life order) into the currently-shortest column; a band
-    // never splits. offsetHeight forces a live measure per placement.
-    for (i = 0; i < bands.length; i = i + 1) {
-      var el = buildShelfBand(bands[i].label, bands[i].books, bands[i].groupKey, bands[i].lensName);
-      var shortest = 0, sh = cols[0].offsetHeight, cc;
-      for (cc = 1; cc < cols.length; cc = cc + 1) { if (cols[cc].offsetHeight < sh) { sh = cols[cc].offsetHeight; shortest = cc; } }
-      cols[shortest].appendChild(el);
-    }
+  for (i = 0; i < bands.length; i = i + 1) {
+    root.appendChild(buildShelfBand(bands[i].label, bands[i].books, bands[i].groupKey, bands[i].lensName));
   }
-
-  // full-width tails below the wall
+  // the tails
   if (mode === 'categories') {
     if (pileBooks.length) { root.appendChild(shelfBuildPile(pileBooks)); }
   } else {
-    if (isYumiYesGranted()) { root.appendChild(shelfBuildLensRow(bands.length)); }   // L3.1: no Yumi offer before the yes
+    if (!filt && isYumiYesGranted()) { root.appendChild(shelfBuildLensRow(bands.length)); }   // L3.1: no Yumi offer before the yes; none under a chip or a search
   }
-
-  root.className = 'case' + (mode === 'lenses' ? ' is-lens' : '');
+  root.className = 'sh3-case' + (mode === 'lenses' ? ' is-lens' : '');
 }
 
 // F6/Law-1 · re-apply illumination after a chip/search change: re-render the case
@@ -6143,16 +6137,10 @@ function applyShelfIllumination() {
 function shelfUpdateSearchEmpty() {
   var el = document.getElementById('shelf-search-empty');
   if (!el) { return; }
-  var shown = false;
-  if (shelfFiltersActive()) {
-    var covers = document.querySelectorAll('.shelf.lum-amber-deep .cavity-cover');
-    var any = covers.length > 0, litAny = false, i;
-    for (i = 0; i < covers.length; i = i + 1) {
-      if (('' + covers[i].className).indexOf('is-lit') > -1) { litAny = true; break; }
-    }
-    shown = any && !litAny;
-  }
-  el.className = 'search-empty-line' + (shown ? ' is-shown' : '');
+  // L4b-3a: chips and search hide, so "nothing matches" is an empty case under an active filter.
+  var shown = shelfFiltersActive() && !!shelfCtx && shelfCtx.books.length > 0 &&
+    document.querySelectorAll('#shelf-case .sh3-cv').length === 0;
+  el.className = 'sh3-none' + (shown ? ' is-shown' : '');
 }
 
 // Stage 3 (chrome-fidelity): compact List-view row. Whole-row anchor to

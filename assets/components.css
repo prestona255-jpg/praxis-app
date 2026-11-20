@@ -18001,3 +18001,79 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
    the sky is fixed the column is not pinned and scrolls with the page. === */
 @media (min-width:1200px){.home-page.lum-amber-deep.home-sky-on > .sky.lx-sky:has(.field.fixed){position:relative}}
 /* === L4f HOME'S SKY FOLLOWS YOU'S RULE — end === */
+/* === L4b-3a THE SHELF REDRAWN — begin (docs/checkpoints/l4b-3a.md) ===
+   The Style Study's Shelf (v12, "Blue sky, warm ground"; rulings r88, r91, r96 and Preston's four of
+   19 Nov 2026). The title's row carries the Manage dots and the Add a book pill; then the count, the
+   search bar, the Lenses | Categories switch and the status chips; then each lens or category as a band:
+   one header that is one door, over large covers. A band is one sideways row on a phone and wraps from
+   760. Every rule is scoped under .shelf.sh3 and names only sh3- classes (plus the Manage sheet's
+   place), so nothing reaches another surface. Tokens only. === */
+.shelf.sh3{min-height:0;margin:0;padding:0;border-radius:0;background:none;box-shadow:none}
+.shelf.sh3 .sh3-inner{box-sizing:border-box;display:flex;flex-direction:column;gap:30px;width:100%;max-width:1080px;margin:0 auto;padding:18px 20px 40px}
+.shelf.sh3 #shelf-editor-host:empty{display:none}
+.shelf.sh3 .sh3-top{display:flex;flex-direction:column;gap:14px;min-width:0}
+.shelf.sh3 .sh3-trow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px}
+.shelf.sh3 .sh3-trow h1{margin:0;min-width:0;font:500 46px/1 var(--font-serif);letter-spacing:-.03em;color:var(--ink)}
+.shelf.sh3 .sh3-acts{display:flex;align-items:center;gap:8px;flex:none}
+.shelf.sh3 .sh3-add{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:0;border-radius:999px;background:var(--gold);color:var(--on-gold);font:600 15px/1 var(--font-body);white-space:nowrap;cursor:pointer}
+.shelf.sh3 .sh3-more{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:0 0 0 .12em;border:0;border-radius:999px;background:transparent;box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);font:600 14px/1 var(--font-body);letter-spacing:.12em;cursor:pointer}
+.shelf.sh3 .sh3-count{margin:-8px 0 0;font:400 15px/1.35 var(--font-body);color:var(--ink-2)}
+.shelf.sh3 .sh3-find{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 16px;border-radius:14px;background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink-2);cursor:text}
+.shelf.sh3 .sh3-find svg{flex:none;width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.shelf.sh3 .sh3-find input{flex:1;min-width:0;min-height:46px;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;outline:none;-webkit-appearance:none;appearance:none;font:400 16px/1.2 var(--font-body);color:var(--ink)}
+.shelf.sh3 .sh3-find input::placeholder{color:var(--ink-2);opacity:1}
+.shelf.sh3 .sh3-find:focus-within{box-shadow:inset 0 0 0 2px var(--gold-ink)}
+.shelf.sh3 .sh3-seg{display:flex;gap:2px;padding:2px;border-radius:12px;background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line)}
+.shelf.sh3 .sh3-seg button{flex:1;min-width:0;min-height:44px;padding:0 6px;border:0;border-radius:10px;background:transparent;font:500 14.5px/1 var(--font-body);color:var(--ink-2);white-space:nowrap;cursor:pointer}
+.shelf.sh3 .sh3-seg button[aria-pressed="true"]{background:var(--card-2);color:var(--ink);font-weight:600}
+.shelf.sh3 .sh3-chips{display:flex;gap:8px;overflow-x:auto;margin:0 -20px;padding:0 20px;scrollbar-width:none}
+.shelf.sh3 .sh3-chips::-webkit-scrollbar{display:none}
+.shelf.sh3 .sh3-chip{display:inline-flex;align-items:center;flex:none;min-height:44px;padding:0 16px;border:0;border-radius:999px;background:transparent;box-shadow:inset 0 0 0 1px var(--line);font:500 14.5px/1 var(--font-body);color:var(--ink-2);white-space:nowrap;cursor:pointer}
+.shelf.sh3 .sh3-chip[aria-pressed="true"]{background:var(--ink);color:var(--page);box-shadow:none}
+.shelf.sh3 .sh3-none{display:none;margin:0;font:400 15px/1.45 var(--font-body);color:var(--ink-2)}
+.shelf.sh3 .sh3-none.is-shown{display:block}
+.shelf.sh3 .sh3-case{display:flex;flex-direction:column;gap:30px;min-width:0}
+.shelf.sh3 .sh3-band{display:flex;flex-direction:column;gap:14px;min-width:0}
+.shelf.sh3 .sh3-bandh{position:relative;display:flex;align-items:center;gap:12px;min-height:52px;margin-bottom:-6px}
+.shelf.sh3 .sh3-bmark{flex:none;display:block;width:36px;height:36px}
+.shelf.sh3 .sh3-bmark .mark{display:block;width:36px;height:36px}
+.shelf.sh3 .sh3-btx{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.shelf.sh3 .sh3-bname{margin:0;padding:0;border:0;background:transparent;text-align:left;font:italic 500 20px/1.15 var(--font-serif);letter-spacing:-.01em;color:var(--ink);overflow-wrap:anywhere}
+.shelf.sh3 button.sh3-bname{cursor:pointer;outline:none}
+.shelf.sh3 button.sh3-bname::after{content:"";position:absolute;inset:0;border-radius:8px}
+.shelf.sh3 button.sh3-bname:focus-visible::after{outline:2px solid var(--gold-ink);outline-offset:2px}
+.shelf.sh3 .sh3-bcount{font:400 13.5px/1.3 var(--font-body);color:var(--ink-2)}
+.shelf.sh3 .sh3-open{flex:none;font:500 16px/1 var(--font-body);color:var(--gold-ink)}
+.shelf.sh3 .sh3-covers{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;scroll-padding-left:20px;margin:0 -20px;padding:4px 20px 12px;scrollbar-width:none}
+.shelf.sh3 .sh3-covers::-webkit-scrollbar{display:none}
+.shelf.sh3 .sh3-cv{position:relative;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;flex:none;width:116px;height:174px;border-radius:6px;overflow:hidden;background:var(--card-2);color:var(--ink);text-decoration:none;scroll-snap-align:start;box-shadow:inset 5px 0 0 rgba(0,0,0,.14),inset 0 0 0 1px rgba(0,0,0,.12),0 6px 14px rgba(0,0,0,.2);-webkit-touch-callout:none}
+.shelf.sh3 .sh3-img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
+.shelf.sh3 .sh3-tt{display:flex;flex-direction:column;gap:4px;padding:12px 6px 12px 10px}
+.shelf.sh3 .sh3-tt b{font:500 13px/1.18 var(--font-serif);letter-spacing:-.01em;overflow-wrap:anywhere;-webkit-hyphens:auto;hyphens:auto;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.shelf.sh3 .sh3-tt small{font:400 12.5px/1.2 var(--font-body);color:var(--ink-2);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.shelf.sh3 .sh3-chk{display:none}
+.shelf.sh3.is-selecting .sh3-chk{display:block;position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:var(--page);box-shadow:inset 0 0 0 2px var(--ink-2)}
+.shelf.sh3.is-selecting .sh3-cv.is-picked{outline:3px solid var(--gold);outline-offset:2px}
+.shelf.sh3.is-selecting .sh3-cv.is-picked .sh3-chk{background:var(--gold);box-shadow:inset 0 0 0 2px var(--on-gold)}
+.shelf.sh3.is-selecting .sh3-cv.is-picked .sh3-chk::after{content:"";position:absolute;left:8px;top:4px;width:6px;height:11px;border:solid var(--on-gold);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.shelf.sh3 .sh3-note{margin:-4px 0 0;font:400 13.5px/1.45 var(--font-body);color:var(--ink-2)}
+.shelf.sh3 .sh3-yrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:14px 16px;border-radius:14px;background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line)}
+.shelf.sh3 .sh3-yrow .dot{display:none}
+.shelf.sh3 .sh3-yrow p{flex:1;min-width:180px;margin:0;font:400 15px/1.4 var(--font-body);color:var(--ink-2)}
+.shelf.sh3 .sh3-yrow button{flex:none;min-height:44px;padding:0 16px;border:0;border-radius:999px;background:transparent;box-shadow:inset 0 0 0 1px var(--line);font:500 15px/1 var(--font-body);color:var(--gold-ink);cursor:pointer}
+.shelf.sh3 .sh3-add:focus-visible,.shelf.sh3 .sh3-more:focus-visible,.shelf.sh3 .sh3-seg button:focus-visible,.shelf.sh3 .sh3-chip:focus-visible,.shelf.sh3 .sh3-cv:focus-visible,.shelf.sh3 .sh3-yrow button:focus-visible{outline:2px solid var(--gold-ink);outline-offset:2px}
+@media (min-width: 760px){
+  .shelf.sh3 .sh3-inner{padding:22px 40px 64px}
+  .shelf.sh3 .sh3-chips{flex-wrap:wrap;overflow:visible;margin:0;padding:0}
+  .shelf.sh3 .sh3-covers{flex-wrap:wrap;overflow:visible;gap:18px 12px;margin:0;padding:4px 0 12px;scroll-snap-type:none}
+}
+/* On a phone the Shelf's wrap is its own stacking layer (isolation), so its bottom sheet and its Select bar
+   sat UNDER the tab bar: "Tidy library" and "Move to an arc" could not be tapped (so at v3.333). Both now
+   stand on the tab bar's top edge; closed, each drops fully below the screen as before. */
+@media (max-width: 759px){
+  body:not(.l3-gated):not(.tabbar-off) .shelf.sh3 .shelf-manage-sheet{bottom:var(--tabbar-h);padding-bottom:20px}
+  body:not(.l3-gated):not(.tabbar-off) .shelf.sh3 .shelf-manage:not(.is-open) .shelf-manage-sheet{transform:translateY(calc(100% + var(--tabbar-h)))}
+  body:not(.l3-gated):not(.tabbar-off) .shelf.sh3 .shelf-selectbar{bottom:var(--tabbar-h);justify-content:flex-start;padding-right:92px;transform:translateY(calc(110% + var(--tabbar-h)))}
+  body:not(.l3-gated):not(.tabbar-off) .shelf.sh3.is-selecting .shelf-selectbar.has-pick{transform:none}
+}
+/* === L4b-3a THE SHELF REDRAWN — end === */
