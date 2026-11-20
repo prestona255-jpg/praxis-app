@@ -226,6 +226,14 @@ lenses that share a book". Category and book orbs pull the flow canvas as kept l
 `resize` / `orientationchange` listener rebuilds any sky whose width changed (a height-only change does not), and the stars are
 strewn over the field's real height (a turning sky's stars as before).
 
+**Amended at L4f (20 Nov 2026; Preston's R2, `docs/checkpoints/l4f.md`).** "Home none of them (R4, R5)" above is superseded:
+**Home sends `auto` + `drift`, and `stems` from the Threads switch — the same as You → Lenses.** A full Home sky (many or tight)
+is fixed and drifts with every name; a Home sky with few lenses keeps turning; one lens never drifts. The Threads switch sets
+`stems` on whichever sky opened the sheet, and its small print is the one line on both skies: "A thread from each orb to your
+flower, and between lenses that share a book". From 1200 px, Home's sky column (seventh r8's sticky left column) is
+`position: relative` while its field is fixed, so a drifting sky taller than the screen scrolls with the page; with a turning sky
+it stays sticky. js/hand.js is unchanged, still locked at **`dc6a021e5b89652cf5e6c0a84ae249cd` (53,596 B)**.
+
 ## 9 · PASS proofs the build adds to lens-contract §7
 
 8. **The eval set**: a fixture of 12 model replies (3 clean, 2 old-shape, 2 with reader-claims, 1 declined twin, 1 under-2-books, 1 over-length, 1 with a clause for an uncited book, 1 unparseable) runs through `evalLensResponse` v2 with the expected survivors and the expected log lines — in the repo's harness, before any live call.

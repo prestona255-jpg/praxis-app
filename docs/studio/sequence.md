@@ -31,6 +31,15 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-20 (L4e PASSED on Preston's phone; L4f BUILT at v3.336; L4b-3a next, re-cut on this HEAD)** — L4e (v3.335) is
+  pushed at e9119d5 and Preston's phone check PASSED on every step (L4f R1: "It looks amazing"). By his R2 and R3, L4f — Home's
+  sky follows You's rule — is its own small build, next, ahead of the Shelf: a thread from each orb to the flower, and a full Home
+  sky ("many" or "tight") drifts with every name; a few lenses keep turning; from 1200 px the column un-pins while the sky drifts.
+  Built at v3.336, local until pushed; js/hand.js untouched (`dc6a021e…`). By R4 the Motion switch in the sky's sheet (L4e R-1)
+  is entered as its own build before the beta. The Shelf (L4b-3a, being built in another chat) is re-cut on top of L4f and takes
+  v3.337 or later. Placing L4f ahead of the Shelf is Preston's own ruling (R3), and the Motion switch is his addition (R4), so no
+  `PROPOSED:` flag. On the red-team's F2 Preston ruled (20 Nov): accept as residual R-5; a height cap for Home's sky on phones is
+  its own decision before the beta, built alongside the Motion switch. Record: `docs/checkpoints/l4f.md`.
 - **2026-11-19 (L4d PASSED on Preston's phone; L4e BUILT at v3.335; L4b-3a next)** — L4d (v3.334) is pushed at dc2b797 and
   Preston's phone check PASSED (L4e R1: "the still sky works and every category has its name"). L4e, the drifting sky, is built
   at v3.335, local until pushed: js/hand.js unlocked for this build only (R2) and locked again at `dc6a021e…` (`1674586b…` is
@@ -1668,12 +1677,20 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   dc2b797, `docs/checkpoints/l4d.md`): js/hand.js unlocked for this build only and locked again at `1674586b…`; the sky
   reads no layout while it moves; You → Categories → By the orbs is a still sky with every category's name (closes "all 17
   names by the orbs"); everywhere else it turns. Preston's phone check PASSED (19 Nov, L4e R1).
-  · **L4e — the drifting sky (rulings R1–R8, 19 Nov 2026)** — BUILT at v3.335, local until pushed (`docs/checkpoints/l4e.md`):
+  · **L4e — the drifting sky (rulings R1–R8, 19 Nov 2026)** — SHIPPED v3.335 (pushed e9119d5, `docs/checkpoints/l4e.md`):
   js/hand.js unlocked for this build only and locked again at `dc6a021e…`; every orb named and in motion in By the orbs and in a
   full Lenses or Marks sky (L4d's still sky superseded); the flower in the categories' colours; a thread from each orb; the sky
-  re-lays itself on a resize; the stars fill a tall sky. Preston's phone check owed.
+  re-lays itself on a resize; the stars fill a tall sky. Preston's phone check PASSED (20 Nov, L4f R1).
+  · **L4f — Home's sky follows You's rule (rulings R1–R4, 20 Nov 2026)** — BUILT at v3.336, local until pushed
+  (`docs/checkpoints/l4f.md`): a thread from each orb to the flower on Home; a full Home sky drifts with every name; ≥1200 the
+  column un-pins while it drifts; js/hand.js untouched. Preston's phone check owed.
+  · **The Motion switch (L4f R4, 20 Nov 2026)** — a "Motion" switch in the sky's sheet (hold the flower), answering L4e's R-1
+  (only the phone's Reduce Motion can stop the sky). Its own build, before the beta. Not yet scheduled within Now. **Alongside
+  it, Home's sky height cap on phones** (L4f residual R-5, red-team F2, ruled by Preston 20 Nov): a full Home sky pushes Home's
+  own rows one to two screens down; whether to cap it is its own decision before the beta, built with the Motion switch.
   · **L4b-3** — the redrawn rooms, a few per build: Home body, Shelf, book, Notebook, note, You, artifact, the pages under
-  You, Search. Needs L4b-1. Large; split by room. **L4b-3a, its first room, is the next lane.**
+  You, Search. Needs L4b-1. Large; split by room. **L4b-3a, its first room, is the next lane** (being built in another chat;
+  re-cut on L4f's HEAD, v3.337 or later).
   · **Separate task (logged at L4d, older than it):** at 760 px the page scrolls sideways because the top navigation list runs
   past the edge.
   · **L4b-4** — the capture dial, the hold menu, status behind the cover, the hint. Needs L4b-3 (book). Medium.

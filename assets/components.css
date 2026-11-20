@@ -17995,3 +17995,9 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
 .pf-sky-host.lx-you-host:has(.field.fixed){max-height:none}
 @media (prefers-reduced-motion: reduce){.sky .field{transition:none!important}}
 /* === L4e THE DRIFTING SKY — end === */
+/* === L4f HOME'S SKY FOLLOWS YOU'S RULE — begin ===
+   Ruling 20 Nov 2026. On a wide screen Home's sky is the pinned left column (seventh r8). A drifting sky can be taller than
+   the screen, and a pinned column taller than the screen hides its own foot (the counts and the Lenses door), so while
+   the sky is fixed the column is not pinned and scrolls with the page. === */
+@media (min-width:1200px){.home-page.lum-amber-deep.home-sky-on > .sky.lx-sky:has(.field.fixed){position:relative}}
+/* === L4f HOME'S SKY FOLLOWS YOU'S RULE — end === */

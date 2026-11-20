@@ -28508,6 +28508,7 @@ function lxHomeSky(uid) {
   var L = lxLensItems(uid);
   rec.S.set(L.items, L.shares, L.looks);
   rec.S.toggles(lxSkyToggles());
+  rec.S.toggles({ auto: true, drift: true, stems: lxSkyToggles().threads });   // L4f: Home's sky follows You's rule (L4e): a full sky drifts with every name; a thread from each lens to the flower
   maybeAutoLensRead(uid, true);   // the contract §5 bound; never the FIRST read (that waits for the Lenses page)
   lxFillLines(rec, uid, L.items.length, 'home');
   return rec;
@@ -28664,7 +28665,7 @@ function lxSkySheet(rec) {
       var b = lxBtn('togrow', '', function () {
         sv(key, !on);
         rec.S.toggles(rec.key === 'you' && lxYouMode !== 'lenses' ? { threads: false, names: lxSkyToggles().names } : lxSkyToggles());
-        if (rec.key === 'you') { rec.S.toggles({ stems: lxSkyToggles().threads }); }
+        rec.S.toggles({ stems: lxSkyToggles().threads });
         rec.S.build();
         api.rerender();
       });
@@ -28674,7 +28675,7 @@ function lxSkySheet(rec) {
       var kn = lxEl('span', 'knob'); kn.setAttribute('aria-hidden', 'true'); b.appendChild(kn);
       return b;
     }
-    sh.appendChild(tog('praxis_sky_threads', 'Threads', rec.key === 'you' ? 'A thread from each orb to your flower, and between lenses that share a book' : 'Join lenses that share a book', t.threads));
+    sh.appendChild(tog('praxis_sky_threads', 'Threads', 'A thread from each orb to your flower, and between lenses that share a book', t.threads));
     sh.appendChild(tog('praxis_sky_names', 'Names', 'Show each lens’s name; off, names come on touch', t.names));
     var yes = isYumiYesGranted(uid), open = yes ? lensOfferList(uid, 'open').length : 0, later = yes ? lensOfferList(uid, 'later').length : 0,
         kept = lensKeptThemes(uid).length;

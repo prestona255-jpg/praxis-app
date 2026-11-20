@@ -118,10 +118,25 @@ commits: (one L4 commit, pending Preston's word)
 changed: the Yumi dock renders only BEFORE the yes (ruling 84 as amended; consent-copy.md:24 names it) — for everyone. Behind
 `praxis_sky` (dark-launched at v3.317; ON BY DEFAULT since v3.322, L4 Stage 6), the lens sky is Home's head: date · greeting · the field (hand.js) · the honest line or
 hint · counts · the door to #lenses; ≥1200 a sticky 600px left column; the view switch moves under it. The auto re-read bound
-may fire from Home, never the first read.
+may fire from Home, never the first read. *(Amended at L4f, v3.336: the column is sticky only while the sky turns; a full,
+drifting sky un-pins it — see the L4f round record below.)*
 gates: key-off DOM identical to HEAD but for the post-yes dock (same tab, 1360, fixture); sky sweep 29/29 at 390; visual 390 +
 1360, night + day; **felt pass PENDING** (the sky ships dark until the motion gate, Stage 6).
 evidence: docs/checkpoints/l4.md · mockup design/praxis-lens-sky.html.
+
+## Round record — L4f (2026-11-20, v3.336, local until pushed)
+
+commits: (one L4f commit, pending Preston's word)
+changed: Home's sky follows You's Lenses rule (Preston's R2): a thread from each orb to the flower; a full sky ("many" or
+"tight": 7+ lenses on a phone, 13+ from 560 px) is fixed and drifts with every name; a few lenses keep turning. The Threads
+switch's small print is the You line on both skies. ≥1200 the column un-pins while the sky drifts (a turning sky stays sticky).
+gates: 187 drift cases 320–1600 × night/day × 3–30 lenses, 0 overlaps / 0 outside, one stem per orb; Home's other states
+identical to e9119d5 but for the stems; taps, Tab, turning, Reduce Motion, leaving and coming back all PASS. The engine-time bar
+(CPU 4×) fails at 12 and 20 lenses on this host in both builds — accepted by Preston. **Felt pass owed** on his phone.
+gap: on an 844 px phone the view switch moves from 695 px down to 818 / 1,057 / 1,504 / 2,022 px with 7 / 12 / 20 / 30 lenses
+(red-team F2; accepted by Preston as residual R-5, 20 Nov — a phone height cap is its own decision before the beta, built
+alongside the Motion switch).
+evidence: docs/checkpoints/l4f.md · docs/checkpoints/l4f-shots/.
 
 ## Next
 

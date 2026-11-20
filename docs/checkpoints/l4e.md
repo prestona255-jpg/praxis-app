@@ -4,7 +4,8 @@ L4e STARTED 19 Nov 2026 (Opus 5.5, executing the written patch). Base dc2b797 / 
 
 19 Nov 2026 · Opus 5.5 executing an already-written, already-measured patch (the motion was designed and written by Fable in
 the review chat and approved by Preston from a 60-frames-a-second clip), applied byte for byte on main at `dc2b797` (v3.334) ==
-origin/main. Preston's go-ahead included "run fix-red-team on this". **Status: built, local until committed and pushed.**
+origin/main. Preston's go-ahead included "run fix-red-team on this". **Status: pushed at `e9119d5` (v3.335); Preston's phone
+check PASSED on every step (20 Nov 2026, L4f R1, `docs/checkpoints/l4f.md`).**
 CACHE_VERSION `praxis-v3.335`. **js/hand.js is locked again at `dc6a021e5b89652cf5e6c0a84ae249cd` (53,596 B).**
 
 ## Rulings, worded as given (19 Nov 2026)
@@ -18,6 +19,8 @@ CACHE_VERSION `praxis-v3.335`. **js/hand.js is locked again at `dc6a021e5b89652c
   flowing throughout, beautifully, not some generic circle." The orbs are in more motion, not necessarily faster, at the
   quality of an Apple app. I approved the review chat's clip of this build's motion on 19 Nov ("Yes, build it").
 - **R4** The same treatment in all three You modes: Lenses, Categories and Marks. Home's sky does not change.
+  *(Its last sentence is superseded by L4f R2, 20 Nov 2026: Home's sky follows You's Lenses rule — a thread from each orb, and a
+  full sky drifts with every name; `docs/checkpoints/l4f.md`.)*
 - **R5** With few lenses the short turning sky stays as it is. The drifting sky with every name is used only where names
   would otherwise hide: a full sky (the engine's own "many" or "tight"). In Categories, By the orbs always shows every name and
   drifts; the List keeps the turning sky above it.
@@ -249,7 +252,8 @@ height (34 at 870, 31 at 785, 26 at 661, 42 at 1,072; back to 14 / 22 in a turni
 0.0 px moved, 0 rise (390 and 1360). **17 → 16 categories:** all 16 restart from their cells with `rise` (16/16), 0 overlaps.
 **Threads off** in the sky sheet: By the orbs 17 → 0 stems, Lenses 3 → 0, Marks 8 → 0, Lenses 12: 12 stems + 13 shared-book
 threads → 0 + 0; on again: all return; the small print on You reads "A thread from each orb to your flower, and between lenses
-that share a book"; Home's switch still reads "Join lenses that share a book" and Home has no stems. **Names off:** a turning
+that share a book"; Home's switch still reads "Join lenses that share a book" and Home has no stems (as measured at v3.335;
+superseded at L4f, v3.336: Home now reads the same line and draws a stem per orb). **Names off:** a turning
 sky, no names, no inline height, no transform (By the orbs and Lenses 12). Storage: the only keys added in the session are
 `praxis_mood`, `praxis_you_catnames`, `praxis_sky_threads` — all set by the rig or the switch, all existing keys; nothing new.
 
@@ -349,7 +353,8 @@ status` only because the working copy is LF, with no content drift.
   stops it (and stops every sky). At dc2b797 the turning skies (Home, List, Lenses, Marks) were already in that position, and By
   the orbs was the one view a reader could choose to be still. WCAG 2.2.2 asks for a way to pause motion that starts by itself and
   lasts more than five seconds. An in-app "Motion" switch in the sky's sheet (hold the flower) would answer it — new scope,
-  Preston's call.
+  Preston's call. **Carried forward under L4f R4 (20 Nov 2026):** ship as it is; the Motion switch is its own later build,
+  before the beta. Since L4f, a full Home sky drifts too.
 
 ## Ledger (recorded, not fixed here)
 

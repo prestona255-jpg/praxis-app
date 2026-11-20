@@ -6,10 +6,10 @@
 > commits its state as diff-reviewable text and is updated in the **same commit**
 > that finalizes each checkpoint, so it can never go stale on the desktop again.
 
-**Authoritative as of:** 2026-11-19 (refreshed at L4e; before that at L4d, L4b-2b hotfix 2, L4b-2b hotfix 1, L4b-2b, L4b-2a hotfix 1, L4b-2a, the L4b-1 hotfix, L4b-1, the L4c flip, L4c, LC1 hotfix 1 and LC1)
+**Authoritative as of:** 2026-11-20 (refreshed at L4f; before that at L4e, L4d, L4b-2b hotfix 2, L4b-2b hotfix 1, L4b-2b, L4b-2a hotfix 1, L4b-2a, the L4b-1 hotfix, L4b-1, the L4c flip, L4c, LC1 hotfix 1 and LC1)
 **Live:** https://praxis-reading.netlify.app (Netlify's primary URL for the site is now https://praxisreader.com)
-**Live CACHE_VERSION:** `praxis-v3.334` (L4d, the sky engine, pushed dc2b797; Preston's phone check PASS, 19 Nov, L4e R1); L4e, the drifting sky, ships v3.335
-**HEAD == origin/main:** `dc2b797` (L4d, the sky engine, v3.334); L4e (the drifting sky: every orb named and in motion, the flower in your categories' colours, a thread from each orb, v3.335) is built on it, local until pushed — js/hand.js relocked at `dc6a021e…` (53,596 B; `1674586b…` is history), `docs/checkpoints/l4e.md`. Still open from L4d: S-1, S-3, S-4, D-L1, D-L2. Separate task logged: at 760 px the page scrolls sideways (866 against 760) because the top navigation list runs past the edge (older than L4d). Next lane: L4b-3a
+**Live CACHE_VERSION:** `praxis-v3.335` (L4e, the drifting sky, pushed e9119d5; Preston's phone check PASS on every step, 20 Nov, L4f R1); L4f, Home's sky following You's rule, ships v3.336
+**HEAD == origin/main:** `e9119d5` (L4e, the drifting sky, v3.335 — js/hand.js locked at `dc6a021e…`, 53,596 B, `docs/checkpoints/l4e.md`); L4f (Home's sky follows You's rule: a thread from each orb, and a full sky drifts with every name, v3.336) is built on it, local until pushed — js/hand.js untouched, `docs/checkpoints/l4f.md`. The Motion switch in the sky's sheet (L4e R-1, L4f R4) is its own build before the beta. The Shelf (L4b-3a) is being built in another chat and needs a re-cut on this HEAD (v3.337 or later). Still open from L4d: S-1, S-3, S-4, D-L1, D-L2. Separate task logged: at 760 px the page scrolls sideways (866 against 760) because the top navigation list runs past the edge (older than L4d). Next lane: L4b-3a
 **Coverage board:** per-surface coverage now lives in `BOARD.md` at the repo root. The body and
 appendix below reflect detailed state as of `praxis-v3.123` (2026-06-19) and have **not** been
 retro-filled to current HEAD — treat them as historical beyond that point.
