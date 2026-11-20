@@ -308,11 +308,11 @@ var PraxisHand = (function(){
      items = [{name, look, books, state, size?, aria?}] where state is kept · own · offer · deciding · later · cat · book; size (optional) drives the drawn size instead of books; aria (optional) replaces the built label. The list may change at any time (S.set). */
   var SKIES=[], REDUCE=!!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   function Sky(host,opts){
-    var S={host:host,field:host.querySelector('[data-field]'),cv:host.querySelector('canvas.paint'),orbs:[],th:0,last:0,period:300,ready:false,items:[],shares:[],keptLooks:[],sig:'',compact:!!(opts&&opts.compact),threads:true,names:true,many:false,fixed:false};
+    var S={host:host,field:host.querySelector('[data-field]'),cv:host.querySelector('canvas.paint'),orbs:[],th:0,last:0,period:300,ready:false,items:[],shares:[],keptLooks:[],sig:'',compact:!!(opts&&opts.compact),threads:true,names:true,many:false,fixed:false,auto:false,dri:false,stems:false};
     S.flow=Flow(S.cv,host);
     function geo(){var W=S.field.clientWidth,H=S.field.clientHeight,g,many=(S.items.length>((W>=560)?12:8)),tight=(!many&&W<560&&S.items.length>=7);g=Math.round(Math.min(S.compact?118:(many?((W<460)?108:150):(tight?120:((W<460)?136:176))),W*.36,H*.5));return {W:W,H:H,cx:W/2,cy:H/2,g:g,ft:S.field.offsetTop,wide:W>=560};}
     S.set=function(items,shares,keptLooks){ S.items=items||[]; S.shares=shares||[]; S.keptLooks=keptLooks||[]; };
-    S.toggles=function(o){ if(o&&typeof o.threads==='boolean'){S.threads=o.threads;} if(o&&typeof o.names==='boolean'){S.names=o.names;} if(o&&typeof o.fixed==='boolean'){S.fixed=o.fixed;} S.sig=''; };
+    S.toggles=function(o){ if(o&&typeof o.threads==='boolean'){S.threads=o.threads;} if(o&&typeof o.names==='boolean'){S.names=o.names;} if(o&&typeof o.fixed==='boolean'){S.fixed=o.fixed;} if(o&&typeof o.auto==='boolean'){S.auto=o.auto;} if(o&&typeof o.drift==='boolean'){S.dri=o.drift;} if(o&&typeof o.stems==='boolean'){S.stems=o.stems;} S.sig=''; };
     function ovl(a,b,pad){ return a.left<b.right+pad && a.right>b.left-pad && a.top<b.bottom+pad && a.bottom>b.top-pad; }
     function cls(el,name,on){ var c=el.className.replace(new RegExp(' '+name+'\\b','g'),''); el.className=on?(c+' '+name):c; }
     S.build=function(){
@@ -321,18 +321,18 @@ var PraxisHand = (function(){
       S.many=(N>((S.field.clientWidth>=560)?12:8)); S.tight=(!S.many&&S.field.clientWidth<560&&N>=7);
       cls(S.field,'many',S.many); cls(S.field,'tight',S.tight); cls(S.field,'nonames',!S.names); cls(S.field,'one',N===1); cls(S.field,'none',N===0);
       /* L4d: a still sky (By the orbs). Every lens keeps a fixed place in rows about the flower with its name under it; the field grows to hold them. */
-      S.fx=!!(S.fixed&&S.names&&N>1); cls(S.field,'fixed',S.fx);
+      S.fx=!!((S.fixed||(S.auto&&(S.many||S.tight)))&&S.names&&N>1); S.fl=!!(S.fx&&S.dri&&!REDUCE); cls(S.field,'fixed',S.fx); cls(S.field,'flow',S.fl);
       if(S.fx&&S.fxH){ S.field.style.height=S.fxH+'px'; } else if(!S.fx&&S.field.style.height){ S.field.style.height=''; S.fxH=0; }
       G=geo(); if(S.fx){ G.g=gFix(G.W); }
       if(!G.W){return;}
       S.G=G;
       sig=N+':';for(i=0;i<N;i++){sig+=S.items[i].name+'|'+S.items[i].state+'|'+S.items[i].books+';';}
-      sig+='K'+S.keptLooks.length+'/'+G.W+'x'+(S.fx?'f':G.H)+'/'+(S.threads?'t':'-')+(S.names?'n':'-');
+      sig+='K'+S.keptLooks.length+'/'+G.W+'x'+(S.fx?'f':G.H)+'/'+(S.threads?'t':'-')+(S.names?'n':'-')+(S.stems?'s':'-')+(S.fl?'w':'-');
       changed=(sig!==S.sig); S.sig=sig;
       bl=S.field.querySelector('[data-bloom]');
-      if(bl){ bl.style.width=G.g+'px';bl.style.height=G.g+'px'; if(bl.getAttribute('data-n')!==String(S.keptLooks.length)+'/'+G.g){ bl.setAttribute('data-n',String(S.keptLooks.length)+'/'+G.g); bl.innerHTML=bloom(S.keptLooks,11); } }
+      if(bl){ bl.style.width=G.g+'px';bl.style.height=G.g+'px'; k=String(S.keptLooks.length)+'/'+G.g; for(i=0;i<S.keptLooks.length;i++){ k+=S.keptLooks[i].c[0]; } if(bl.getAttribute('data-n')!==k){ bl.setAttribute('data-n',k); bl.innerHTML=bloom(S.keptLooks,11); } }
       st=S.field.querySelector('[data-stars]');
-      if(st && !st.innerHTML){
+      if(st && !st.innerHTML && !S.fx){ st.setAttribute('data-h',String(G.H));
         while(n<(S.compact?9:(G.wide?22:14))&&tries<300){tries++;x=r()*G.W;y=r()*G.H;if(Math.abs(x-G.cx)<G.g*.6&&Math.abs(y-G.cy)<G.g*.6){continue;}
           a=.5+r()*.5;stars+='<g transform="translate('+f(x)+' '+f(y)+')"><g class="pu" style="--d:'+f(2.6+r()*4)+'s;--dl:-'+f(r()*5)+'s">'+halo(5.5*a,'#F5E8C4',.5)+'<circle r="'+f(.9*a)+'" fill="#F3D98B"/></g></g>';n++;}
         st.innerHTML=stars;
@@ -351,7 +351,10 @@ var PraxisHand = (function(){
           b.innerHTML='<span class="art" style="--ax:'+(((k%9)-4)*1.5)+'px;--ay:'+(4+(k>>>3)%5)+'px;--dur:'+(9+(k>>>5)%7)+'s;--del:-'+((k>>>8)%13)+'s"><span class="br" style="--bd:'+(5+(k>>>11)%5)+'s;--bdl:-'+((k>>>14)%9)+'s">'+formSvg(o,k,null,l.state==='offer'||l.state==='deciding'||l.state==='later')+'</span></span><span class="l">'+esc(l.name)+'</span>';
           S.field.appendChild(b);
           S.orbs.push({el:b,lab:b.lastChild,i:i,name:l.name,ring:ring,a:0,x:0,y:0,sz:0,up:null});
+          if(S.fl){ o=S.orbs[S.orbs.length-1]; if(old[l.name]&&old[l.name].px!==undefined&&S.fxN===N&&S.fxW===G.W){ o.px=old[l.name].px; o.py=old[l.name].py; o.vx=old[l.name].vx; o.vy=old[l.name].vy; old[l.name]=null; } }
         }
+        /* a drifting sky keeps its places across a rebuild only when every lens has one to keep; otherwise all start from their cells and fade in */
+        if(S.fl){ k=0; for(i=0;i<S.orbs.length;i++){ if(S.orbs[i].px!==undefined){k++;} } if(k!==S.orbs.length){ for(i=0;i<S.orbs.length;i++){ S.orbs[i].px=undefined; cls(S.orbs[i].el,'rise',true); S.orbs[i].el.style.animationDelay=(i*45)+'ms'; } } }
         /* even spacing on each ring; the inner ring starts half a step round so it never sits under the outer */
         for(i=0;i<S.orbs.length;i++){ if(S.orbs[i].ring){inner=(inner||0)+1;} }
         inner=inner||0; outer=S.orbs.length-inner;
@@ -362,12 +365,19 @@ var PraxisHand = (function(){
         if(S.many||S.tight){ order=S.orbs.slice(0); order.sort(function(p,q){ return (S.items[q.i].size||S.items[q.i].books||0)-(S.items[p.i].size||S.items[p.i].books||0); }); for(i=0;i<order.length;i++){ cls(order[i].el,'named',i<(S.many?3:4)||S.items[order[i].i].state==='offer'||S.items[order[i].i].state==='deciding'); } }
         tg='';
         if(S.threads){ minShare=S.many?2:1; for(i=0;i<S.shares.length;i++){ if(S.shares[i][2]<minShare){continue;} tg+='<g data-a="'+S.shares[i][0]+'" data-b="'+S.shares[i][1]+'"><path class="thread" stroke="#E2B954" stroke-opacity=".5" stroke-width="'+f(.5+.24*S.shares[i][2])+'"/></g>'; } }
+        if(S.stems){ for(i=0;i<S.orbs.length;i++){ l=S.items[S.orbs[i].i]; tg+='<g data-s="'+S.orbs[i].i+'"><path class="stem" stroke="'+mix((l.look&&l.look.c&&l.look.c[0])||'#E2B954','#E2B954',.4)+'" stroke-opacity=".3" stroke-width="'+f(.7+Math.min(1,(l.size||l.books||0)*.03))+'"/></g>'; } }
         S.field.querySelector('[data-threads]').innerHTML=tg;
       }
       for(i=0;i<S.orbs.length;i++){o=S.orbs[i];l=S.items[o.i];o.sz=Math.max(44,Math.round(sizeFor(l.size||l.books,N,G.wide,S.compact)*(l.state==='deciding'?1.18:1)*(o.ring?.84:1)));
         o.el.firstChild.style.width=o.sz+'px';o.el.firstChild.style.height=o.sz+'px';o.lh=o.lab.offsetHeight||16;}
       if(S.fx){ G=fixedRows(G); S.G=G; S.field.querySelector('svg.bg').setAttribute('viewBox','0 0 '+G.W+' '+G.H); }
       else { for(i=0;i<S.orbs.length;i++){ if(S.orbs[i].lab.style.maxWidth){ S.orbs[i].lab.style.maxWidth=''; S.orbs[i].el.style.width=''; } } S.cells=null; S.hw=70; }
+      /* the stars are strewn over the field as it stands now, and strewn again when its height changes */
+      if(st && st.getAttribute('data-h')!==String(G.H) && (S.fx||st.getAttribute('data-h')===null||S.fxWas)){ st.setAttribute('data-h',String(G.H)); r=rng(5); stars=''; n=0; tries=0; k=Math.round((S.compact?9:(G.wide?22:14))*Math.max(1,G.H/360));
+        while(n<k&&tries<900){tries++;x=r()*G.W;y=r()*G.H;if(Math.abs(x-G.cx)<G.g*.6&&Math.abs(y-G.cy)<G.g*.6){continue;}
+          a=.5+r()*.5;stars+='<g transform="translate('+f(x)+' '+f(y)+')"><g class="pu" style="--d:'+f(2.6+r()*4)+'s;--dl:-'+f(r()*5)+'s">'+halo(5.5*a,'#F5E8C4',.5)+'<circle r="'+f(.9*a)+'" fill="#F3D98B"/></g></g>';n++;}
+        st.innerHTML=stars; }
+      S.fxWas=S.fx;
       S.rx=Math.min(G.W/2-72,G.wide?230:((G.W<460)?124:190));S.ry=Math.min(G.H/2-(S.compact?70:74),G.wide?176:((G.W<460)?(S.compact?54:(S.tight?112:94)):150));
       if(S.many){ S.rx=Math.min(G.W/2-46,G.wide?250:160); S.ry=Math.min(G.H/2-48,G.wide?190:136); S.rx2=S.rx*.56; S.ry2=S.ry*.52; }
       S.ready=true;S.place(true);
@@ -387,19 +397,25 @@ var PraxisHand = (function(){
     /* the still sky's flower takes its size from the width alone: the field's height there is made from the rows, and must not feed back into the flower */
     function gFix(W){ return Math.round(Math.min(S.compact?118:(S.many?((W<460)?108:150):(S.tight?120:((W<460)?136:176))),W*.36)); }
     function fixedRows(G){
-      var n=S.orbs.length,W=G.W,cols=(W<460)?4:((W<900)?5:7),cw=Math.min(W/cols,150),cm,mid,M,R,cnt=[],i,j,k,r,c,base,extra,ord=[],sl=[],mh,rh,lhm=0,szm=0,H,y,x,o,q=0,cells=[];
+      var n=S.orbs.length,W=G.W,cols=(W<460)?4:((W<900)?5:7),cw=Math.min(W/cols,150),cm,mid,M,R,cnt=[],i,j,k,r,c,base,extra,ord=[],sl=[],mh,rh,lhm=0,szm=0,H,y,x,o,q=0,cells=[],cap=cw-14,lm=cw-14,ar=0,Hd;
+      if(S.fl&&W<460){ cap=Math.min(cap,66); lm=Math.min(lm,76); }
       for(k=0;k<cols;k++){ if((cols%2)?(k!==(cols-1)/2):(k!==cols/2-1&&k!==cols/2)){ x=(k-(cols-1)/2)*cw; y=Math.max(0,G.g/2+cw/2-8-((cols%2)?cw:1.5*cw)); x=G.cx+x+((x<0)?-y:y); if(x-cw/2>=-.5&&x+cw/2<=W+.5){ sl.push(x); } } }
       cm=sl.length; mid=Math.min(n,cm); M=n-mid; R=Math.ceil(M/(2*cols));
-      S.hw=Math.min(140,cw)/2; for(i=0;i<n;i++){ o=S.orbs[i]; o.lab.style.maxWidth=f(cw-14)+'px'; o.el.style.width=f(S.hw*2)+'px'; if(o.sz>cw-14){ o.sz=Math.max(44,Math.floor(cw-14)); o.el.firstChild.style.width=o.sz+'px'; o.el.firstChild.style.height=o.sz+'px'; } }
-      for(i=0;i<n;i++){ o=S.orbs[i]; lhm=Math.max(lhm,o.lab.offsetHeight||0); szm=Math.max(szm,o.sz); }
+      S.hw=Math.min(140,cw)/2; for(i=0;i<n;i++){ o=S.orbs[i]; o.lab.style.maxWidth=f(lm)+'px'; o.el.style.width=f(S.hw*2)+'px'; if(o.sz>cap){ o.sz=Math.max(44,Math.floor(cap)); o.el.firstChild.style.width=o.sz+'px'; o.el.firstChild.style.height=o.sz+'px'; } }
+      for(i=0;i<n;i++){ o=S.orbs[i]; lhm=Math.max(lhm,o.lab.offsetHeight||0); szm=Math.max(szm,o.sz); ar+=(Math.max(o.sz,o.lab.offsetWidth||0)+4)*(o.sz+(o.lab.offsetHeight||0)+6); }
       rh=szm+lhm+16; mh=Math.max(rh,G.g+20); H=2*R*rh+mh;
+      /* a drifting sky is given room to move: its lenses and their names fill a little over a third of it */
+      if(S.fl){ Hd=gFix(W); Hd=Math.max(360,Math.round((ar+Hd*Hd*.64)/(W*.36))); if(Hd>H){ if(R){ rh=(Hd-mh)/(2*R); } else { mh=Hd; } H=Hd; } }
       if(S.fxH!==H){ S.fxH=H; S.field.style.height=H+'px'; G=geo(); G.g=gFix(G.W); }
+      /* the height is the one just set, not the one read back: with Reduce Motion on, every property is given a 0.01 ms transition (L1.2b), so a height read in the same breath is still the old one, and the rows were laid about a middle that was not there */
+      G.H=H; G.cy=H/2;
       if(R){ base=Math.floor(M/(2*R)); extra=M-base*2*R; for(r=0;r<2*R;r++){cnt.push(base);} for(k=0;k<2*R;k++){ ord.push((k%2)?(R+(k>>1)):(R-1-(k>>1))); } for(k=0;k<extra;k++){ cnt[ord[k]]++; } }
       sl.sort(function(a,b){ return Math.abs(a-G.cx)-Math.abs(b-G.cx)||a-b; }); sl=sl.slice(0,mid); sl.sort(function(a,b){ return a-b; });
       for(r=0;r<=2*R;r++){
         if(r===R){ for(j=0;j<mid;j++){ cells[q++]=[sl[j],G.cy-lhm/2]; } continue; }
         c=cnt[(r<R)?r:(r-1)]; y=(r<R)?(G.cy-mh/2-(R-r-.5)*rh):(G.cy+mh/2+(r-R-.5)*rh);
         for(j=0;j<c;j++){ x=G.cx+(j-(c-1)/2)*cw; cells[q++]=[x,y-lhm/2]; } }
+      for(i=0;i<n;i++){ o=S.orbs[i]; if(S.fl&&(o.px===undefined||S.fxW!==W||S.fxN!==n)){ o.px=cells[i][0]; o.py=cells[i][1]; o.vx=0; o.vy=0; } } S.fxW=W; S.fxN=n;
       S.cells=cells; return G; }
     function readDims(all){ var i,o,w,h;
       for(i=0;i<S.orbs.length;i++){ o=S.orbs[i]; if(!all&&!o.dirty){continue;} o.dirty=false;
@@ -430,28 +446,53 @@ var PraxisHand = (function(){
         if(pos==='rgt'||pos==='lft'){ d=dimOf(o,pos); h=Math.max(o.sz,d[1]);
           o.el.style.left=f(pos==='rgt'?(o.x-o.sz/2):(o.x+o.sz/2-(o.sz+6+d[0])))+'px'; o.el.style.top=f(o.y-h/2)+'px';
           if(o.dx){ o.dx=0; o.lab.style.transform=''; } }
-        else { d=o.dc||[0,0]; o.el.style.left=f(o.x-(S.hw||70))+'px'; o.el.style.top=f(o.y-o.sz/2-(pos.charAt(0)==='u'?(d[1]||16):0))+'px';
+        else { d=o.dc||[0,0]; if(S.fl){ if(!o.tf){ o.tf=1; o.el.style.left='0px'; o.el.style.top='0px'; } o.el.style.transform='translate3d('+f2(o.x-(S.hw||70))+'px,'+f2(o.y-o.sz/2)+'px,0)'; } else { o.el.style.left=f(o.x-(S.hw||70))+'px'; o.el.style.top=f(o.y-o.sz/2-(pos.charAt(0)==='u'?(d[1]||16):0))+'px'; }
           c=rr?rr.dx:0; if(c!==o.dx){ o.dx=c; o.lab.style.transform=c?('translateX('+f(c)+'px)'):''; } }
         if(!!o.hidNext!==!!o.hid){ o.hid=!!o.hidNext; cls(o.lab,'hid',o.hid); } } }
+    /* L4e (19 Nov 2026): a still sky may drift. Every lens rides one slow current: a few wide turns of water that swell, fade and change places, bent round the flower, with a small turn of each lens's own so none ever rests. A lens carries weight, so it gathers and sheds speed gradually and is never faster than 26 px a second. A lens and its name keep one clear box; boxes that near each other, the flower or an edge are eased apart by a push that grows smoothly from nothing, so no name meets another and nothing snaps. Pure arithmetic: no layout is read. A slow frame is taken in two half-steps. */
+    function drift(dtAll){
+      var G=S.G,n=S.orbs.length,i,j,o,q,t,m,w,nx,ny,d,gx,gy,gl,D0=1.1,Z=.3,R=95,fl=G.g*.4,zone=22,fx,fy,sp,ph,tall=G.H>=G.W,L=tall?G.H:G.W,Sh=tall?G.W:G.H,kk=Math.max(1,Math.round(L/Sh)),K=13.3*Sh,st=(dtAll>.02)?2:1,dt=dtAll/st,s,px,py;
+      function pf(x,y){ var p=(tall?y:x)/L,qq=(tall?x:y)/Sh,dx=x-G.cx,dy=y-G.cy,mm=(Math.sqrt(dx*dx+dy*dy)-G.g*.4)/(G.g*.6); mm=mm<0?0:(mm>1?1:mm*mm*(3-2*mm));
+        return mm*(Math.sin(PI*qq)*(.9*Math.sin(.05*t)*Math.sin(PI*p)+.6*Math.sin(PI*p)*Math.sin(kk*PI*p+1.2*Math.sin(.037*t))+.35*Math.cos(.061*t+1)*Math.sin((kk+1)*PI*p))+.15*Math.sin(.045*t+2)*Math.sin(TAU*qq)*Math.sin(kk*PI*p))*(tall?1:-1); }
+      function push(a,b,dx,dy,hw,hh){ nx=Math.abs(dx/hw); ny=Math.abs(dy/hh); if(nx>=D0+Z||ny>=D0+Z){return;} gx=nx*nx; gy=ny*ny; d=Math.pow(gx*gx*gx+gy*gy*gy,1/6); if(d>=D0+Z){return;} if(d<.001){nx=.01;ny=.01;gx=gy=.0001;d=.012;}
+        m=(D0+Z-d)/Z; m=m*m*R*(d<D0?1+20*(D0-d)/D0:1); gx=gx*gx*nx/hw*(dx<0?-1:1); gy=gy*gy*ny/hh*(dy<0?-1:1); gl=Math.sqrt(gx*gx+gy*gy)||1; gx=gx/gl*m; gy=gy/gl*m; if(b){ a.ux-=gx/2; a.uy-=gy/2; b.ux+=gx/2; b.uy+=gy/2; } else { a.ux-=gx; a.uy-=gy; } }
+      for(i=0;i<n;i++){ o=S.orbs[i]; q=o.dc||[0,0]; o.bw=Math.max(o.sz,q[0])/2+2; o.bh=(o.sz+q[1])/2+3; o.oy=q[1]/2; }
+      for(s=0;s<st;s++){ t=(S.tm||0)-(st-1-s)*dt;
+        for(i=0;i<n;i++){ S.orbs[i].ux=0; S.orbs[i].uy=0; }
+        for(i=0;i<n;i++){ o=S.orbs[i];
+          for(j=i+1;j<n;j++){ q=S.orbs[j]; push(o,q,q.px-o.px,(q.py+q.oy)-(o.py+o.oy),o.bw+q.bw,o.bh+q.bh); }
+          push(o,null,G.cx-o.px,G.cy-(o.py+o.oy),o.bw+fl,o.bh+fl);
+          w=o.px-o.bw-4; if(w<zone){ m=1-w/zone; o.ux+=m*m*R; } w=G.W-4-(o.px+o.bw); if(w<zone){ m=1-w/zone; o.ux-=m*m*R; }
+          w=o.py-o.sz/2-8; if(w<zone){ m=1-w/zone; o.uy+=m*m*R; } w=G.H-8-(o.py+o.sz/2+2*o.oy); if(w<zone){ m=1-w/zone; o.uy-=m*m*R; } }
+        for(i=0;i<n;i++){ o=S.orbs[i]; px=o.px; py=o.py+o.oy; ph=i*2.39996+t*(.16+.05*((i*7)%5));
+          fx=(pf(px,py+1)-pf(px,py-1))/2*K+7*Math.cos(ph); fy=-(pf(px+1,py)-pf(px-1,py))/2*K+7*Math.sin(ph);
+          o.vx=(o.vx||0)+((fx-(o.vx||0))*1.2+o.ux*2.2)*dt; o.vy=(o.vy||0)+((fy-(o.vy||0))*1.2+o.uy*2.2)*dt; sp=Math.sqrt(o.vx*o.vx+o.vy*o.vy); if(sp>26){ o.vx*=26/sp; o.vy*=26/sp; } o.px+=o.vx*dt; o.py+=o.vy*dt;
+          w=o.bw+2; if(o.px<w){ o.px=w; if(o.vx<0){o.vx=0;} } else if(o.px>G.W-w){ o.px=G.W-w; if(o.vx>0){o.vx=0;} }
+          w=o.sz/2+4; if(o.py<w){ o.py=w; if(o.vy<0){o.vy=0;} } w=G.H-4-o.sz/2-2*o.oy; if(o.py>w){ o.py=w; if(o.vy>0){o.vy=0;} } } } }
     S.place=function(snap){
       var i,o,ang,G=S.G,L=[],l,up,rx,ry,cx,side;
       S.fr=(S.fr||0)+1;
       if(snap){ for(i=0;i<S.orbs.length;i++){ S.orbs[i].dirty=true; } }
       readDims(snap||S.fr%90===0);
+      if(S.fl&&S.cells&&!snap){ drift(S.dt||.016); }
       for(i=0;i<S.orbs.length;i++){o=S.orbs[i];l=S.items[o.i];
         if(o.ring){ ang=o.a-S.th*.8; rx=S.rx2; ry=S.ry2; } else { ang=o.a+S.th; rx=S.rx; ry=S.ry; }
         if(S.orbs.length===1){ o.x=G.cx+rx*.62*Math.cos(ang);o.y=G.cy+ry*Math.sin(ang); } else { o.x=G.cx+rx*Math.cos(ang);o.y=G.cy+ry*Math.sin(ang); }
-        if(S.fx&&S.cells&&S.cells[i]){ o.x=S.cells[i][0]; o.y=S.cells[i][1]; ang=PI/2; }
+        if(S.fx&&S.cells&&S.cells[i]){ o.x=S.cells[i][0]; o.y=S.cells[i][1]; ang=PI/2; if(S.fl&&o.px!==undefined){ o.x=o.px; o.y=o.py; } }
         cx=Math.cos(ang);side=(S.fx)?'':(G.W>=900&&S.orbs.length>=5&&!S.many)?((cx<-.5)?'lft':((cx>.5)?'rgt':'')):'';
         up=(!S.fx&&o.y<G.cy-8);
         if(up!==o.up||side!==o.side){ o.up=up;o.side=side; if(!side&&(!o.pos||o.pos.charAt(0)==='u'||o.pos.charAt(0)==='d'||o.pos===o.wasSide)){ o.pos=up?'up':'dn'; } o.wasSide=side; }
-        L.push([o.x,G.ft+o.y,(l.state==='kept'||l.state==='own'||l.state==='deciding')?.42:.2,o.sz*.5,mix(l.look.c[0],'#4A3220',.4)]);}
+        L.push([o.x,G.ft+o.y,(l.state==='kept'||l.state==='own'||l.state==='deciding'||l.state==='cat'||l.state==='book')?.42:.2,o.sz*.5,mix(l.look.c[0],'#4A3220',.4)]);}
       S.flow.L=[[G.cx,G.ft+G.cy,1.3,G.g*.52,'#8A6226']].concat(L);
       solve(snap);
       if(snap){ readDims(true); solve(true); readDims(true); solve(true); }
       var tg=S.field.querySelector('[data-threads]'),el,p,q,dx,dy,d,ux,uy,x0,y0,x1,y1,mx,my,j;
       for(j=0;j<tg.children.length;j++){
         el=tg.children[j];p=null;q=null;
+        if(el.hasAttribute('data-s')){ for(i=0;i<S.orbs.length;i++){ if(S.orbs[i].i===+el.getAttribute('data-s')){p=S.orbs[i];} } if(!p){continue;}
+          dx=p.x-G.cx;dy=p.y-G.cy;d=Math.sqrt(dx*dx+dy*dy)||1;ux=dx/d;uy=dy/d;x0=G.cx+ux*G.g*.3;y0=G.cy+uy*G.g*.3;x1=p.x-ux*p.sz*.42;y1=p.y-uy*p.sz*.42;
+          mx=d*.14*((j%2)?1:-1)*(1+.3*Math.sin((S.tm||0)*.35+j)); my=(y0+y1)/2+ux*mx; mx=(x0+x1)/2-uy*mx;
+          el.firstChild.setAttribute('d','M'+f(x0)+' '+f(y0)+'Q'+f(mx)+' '+f(my)+' '+f(x1)+' '+f(y1)); continue; }
         for(i=0;i<S.orbs.length;i++){ if(S.orbs[i].i===+el.getAttribute('data-a')){p=S.orbs[i];} if(S.orbs[i].i===+el.getAttribute('data-b')){q=S.orbs[i];} }
         if(!p||!q){continue;}
         dx=q.x-p.x;dy=q.y-p.y;d=Math.sqrt(dx*dx+dy*dy)||1;ux=dx/d;uy=dy/d;
@@ -462,7 +503,7 @@ var PraxisHand = (function(){
     S.tick=function(now){
       var dt=S.last?Math.min(.05,(now-S.last)/1000):.016;S.last=now;
       if(REDUCE||!S.ready){return;}
-      S.th+=dt*TAU/S.period;S.place(false);
+      S.th+=dt*TAU/S.period;S.dt=dt;S.tm=(S.tm||0)+dt;S.place(false);
       if(S.flowOn){S.flow.step(1);}
     };
     S.visible=function(){ var r; if(!S.host.offsetWidth){return false;} r=S.host.getBoundingClientRect(); return r.bottom>0 && r.top<window.innerHeight; };
@@ -495,6 +536,10 @@ var PraxisHand = (function(){
     TICKS++; if(!FT0){FT0=now;} FT.push(now); if(FT.length>36000){ FT.splice(0,18000); FT0=FT[0]; }
     for(i=0;i<SKIES.length;i++){S=SKIES[i];if(S.ready&&S.visible()){S.tick(now);}}
   }
+  /* L4e: a sky lays itself out again when its width changes (a turned phone, a resized window) */
+  var RZT=0;
+  function onResize(){ if(RZT){window.clearTimeout(RZT);} RZT=window.setTimeout(function(){ var i,S; RZT=0; for(i=0;i<SKIES.length;i++){ S=SKIES[i]; if(S.place&&S.ready&&S.G&&S.host.offsetWidth&&S.field.clientWidth!==S.G.W){ S.sig=''; S.build(); } } },180); }
+  if(window.addEventListener){ window.addEventListener('resize',onResize); window.addEventListener('orientationchange',onResize); }
   function startSkies(){ if(LOOPING||REDUCE){return;} LOOPING=true; window.requestAnimationFrame(skyLoop); }
   /* THE BLOOM: Yumi's live presence (buildYumiBloom, yumi-ui.js), carried over as is. Colours are tokens on the screen (--bl-*). */
   var BLN=0;
@@ -511,7 +556,7 @@ var PraxisHand = (function(){
       '<circle class="bl-ember bl-ember-a" cx="49" cy="17" r="1.7" fill="var(--bl-light)"/><circle class="bl-ember bl-ember-b" cx="15" cy="47" r="1.4" fill="var(--bl-light)"/></svg>';
   }
   return {
-    VERSION:'hand.js L4d · 2026-11-19 · Fable 5.2',
+    VERSION:'hand.js L4e · 2026-11-19 · Fable 5.2',
     SKY_NIGHT:SKYD, SKY_DAY:SKYDAY, LIGHT:LITE, GARDEN:GARDEN, GARDEN_NAMES:GARDEN_NAMES,
     hash:hash, rng:rng, mix:mix, contrast:contrast, gardenColour:gardenColour, sizeFor:sizeFor,
     makeLook:makeLook, formSvg:formSvg, bloom:bloom, svgEl:svgEl, yumiSeed:yumiSeed, bloomSvg:bloomSvg,

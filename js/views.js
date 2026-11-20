@@ -28523,6 +28523,7 @@ function lxFillYouSky(rec, uid) {
     var L = lxLensItems(uid);
     rec.S.set(L.items, L.shares, L.looks);
     rec.S.toggles(lxSkyToggles());
+    rec.S.toggles({ auto: true, drift: true, stems: lxSkyToggles().threads });   // L4e: a full sky drifts with every name; a thread from each lens to the flower
     lxFillLines(rec, uid, L.items.length, 'you');
     lxFillCatNames(rec, null);
     return;
@@ -28583,8 +28584,15 @@ function lxFillYouSky(rec, uid) {
   hint.hidden = false;
   rec.host.querySelector('.homecnt').hidden = true;
   rec.host.querySelector('.door').hidden = true;
+  if (lxYouMode === 'cats' && items.length) {         // L4e: in Categories the flower wears the shelf: a petal for every category, more for the fuller ones
+    var fl = [], tb = 0, extra;
+    for (i = 0; i < items.length; i++) { tb += items[i].books; }
+    for (i = items.length - 1; i >= 0; i--) { fl.push(items[i].look); }
+    for (i = 0; i < items.length && fl.length < 30; i++) { extra = Math.round((30 - items.length) * items[i].books / (tb || 1)); while (extra-- > 0 && fl.length < 30) { fl.push(items[i].look); } }
+    looks = fl;
+  }
   rec.S.set(items, [], looks);                       // no threads in the statistics modes
-  rec.S.toggles({ threads: false, names: lxSkyToggles().names });
+  rec.S.toggles({ threads: false, names: lxSkyToggles().names, auto: lxYouMode !== 'cats', drift: true, stems: lxSkyToggles().threads });
   lxFillCatNames(rec, lxYouMode === 'cats' ? items : null);
 }
 // L4b-2b hotfix 1: the category names. With more than eight orbs on a phone the sky
@@ -28600,7 +28608,7 @@ function lxFillCatNames(rec, items) {
   if (!items || !items.length) { box.hidden = true; rec.host.classList.remove('lx-orbnames'); rec.S.toggles({ fixed: false }); return; }
   box.hidden = false;
   if (mode === 'orbs') { rec.host.classList.add('lx-orbnames'); } else { rec.host.classList.remove('lx-orbnames'); }
-  rec.S.toggles({ fixed: mode === 'orbs' });   // L4d: By the orbs is a still sky, every name showing
+  rec.S.toggles({ fixed: mode === 'orbs' });   // By the orbs: every name showing (L4d), and the sky adrift (L4e, hand.js)
   var seg = lxEl('div', 'lx-cn-seg');
   seg.setAttribute('role', 'group');
   seg.setAttribute('aria-label', 'Where the category names show');
@@ -28656,6 +28664,7 @@ function lxSkySheet(rec) {
       var b = lxBtn('togrow', '', function () {
         sv(key, !on);
         rec.S.toggles(rec.key === 'you' && lxYouMode !== 'lenses' ? { threads: false, names: lxSkyToggles().names } : lxSkyToggles());
+        if (rec.key === 'you') { rec.S.toggles({ stems: lxSkyToggles().threads }); }
         rec.S.build();
         api.rerender();
       });
@@ -28665,7 +28674,7 @@ function lxSkySheet(rec) {
       var kn = lxEl('span', 'knob'); kn.setAttribute('aria-hidden', 'true'); b.appendChild(kn);
       return b;
     }
-    sh.appendChild(tog('praxis_sky_threads', 'Threads', 'Join lenses that share a book', t.threads));
+    sh.appendChild(tog('praxis_sky_threads', 'Threads', rec.key === 'you' ? 'A thread from each orb to your flower, and between lenses that share a book' : 'Join lenses that share a book', t.threads));
     sh.appendChild(tog('praxis_sky_names', 'Names', 'Show each lens’s name; off, names come on touch', t.names));
     var yes = isYumiYesGranted(uid), open = yes ? lensOfferList(uid, 'open').length : 0, later = yes ? lensOfferList(uid, 'later').length : 0,
         kept = lensKeptThemes(uid).length;

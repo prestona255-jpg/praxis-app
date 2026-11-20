@@ -31,6 +31,15 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-19 (L4d PASSED on Preston's phone; L4e BUILT at v3.335; L4b-3a next)** — L4d (v3.334) is pushed at dc2b797 and
+  Preston's phone check PASSED (L4e R1: "the still sky works and every category has its name"). L4e, the drifting sky, is built
+  at v3.335, local until pushed: js/hand.js unlocked for this build only (R2) and locked again at `dc6a021e…` (`1674586b…` is
+  history); every orb shows its name AND moves on one slow current in Categories → By the orbs and in a full Lenses or Marks sky
+  (R3–R5; L4d's still sky superseded, its rows kept for Reduce Motion); the flower wears the categories' colours in Categories
+  (R6); a thread from each orb to the flower, behind the Threads switch (R7); the sky re-lays itself on a resize and its stars fill
+  a tall sky (R8, closing L4d's S-2 and F7). Found and fixed on the way: under Reduce Motion, By the orbs laid its rows about the
+  wrong middle. Still open: S-1, S-3, S-4, D-L1, D-L2. The next lane is still L4b-3a. Nothing reordered or retired, so no
+  `PROPOSED:` flag. Record: `docs/checkpoints/l4e.md`.
 - **2026-11-19 (L4b-2b hotfix 2 PASSED on Preston's phone; L4d BUILT at v3.334; L4b-3a next)** — hotfix 2 (v3.333) is pushed
   at b0005cb and Preston's phone check PASSED (19 Nov, L4d R1). L4d, the sky engine (the "sky's frame rate" build that R8 of
   hotfix 2 named), is built at v3.334, local until pushed: js/hand.js unlocked for this build only (R2) and locked again at
@@ -1655,10 +1664,14 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   phone check PASSED (18 Nov). **L4b-2b hotfix 2** — the small fixes and the still flower (the sky's flower holds still, room
   under By the orbs, the row focus ring inside the row, no sideways scroll on You, the Undo toast off a Night page), SHIPPED
   v3.333 (pushed b0005cb, `docs/checkpoints/l4b-2b.md` § Hotfix 2); Preston's phone check PASSED (19 Nov).
-  · **L4d — the sky engine (was "the sky's frame rate (js/hand.js unlock)", ruling R8, 18 Nov 2026)** — BUILT at v3.334, local
-  until pushed (`docs/checkpoints/l4d.md`): js/hand.js unlocked for this build only and locked again at `1674586b…`; the sky
+  · **L4d — the sky engine (was "the sky's frame rate (js/hand.js unlock)", ruling R8, 18 Nov 2026)** — SHIPPED v3.334 (pushed
+  dc2b797, `docs/checkpoints/l4d.md`): js/hand.js unlocked for this build only and locked again at `1674586b…`; the sky
   reads no layout while it moves; You → Categories → By the orbs is a still sky with every category's name (closes "all 17
-  names by the orbs"); everywhere else it turns. Preston's phone check owed.
+  names by the orbs"); everywhere else it turns. Preston's phone check PASSED (19 Nov, L4e R1).
+  · **L4e — the drifting sky (rulings R1–R8, 19 Nov 2026)** — BUILT at v3.335, local until pushed (`docs/checkpoints/l4e.md`):
+  js/hand.js unlocked for this build only and locked again at `dc6a021e…`; every orb named and in motion in By the orbs and in a
+  full Lenses or Marks sky (L4d's still sky superseded); the flower in the categories' colours; a thread from each orb; the sky
+  re-lays itself on a resize; the stars fill a tall sky. Preston's phone check owed.
   · **L4b-3** — the redrawn rooms, a few per build: Home body, Shelf, book, Notebook, note, You, artifact, the pages under
   You, Search. Needs L4b-1. Large; split by room. **L4b-3a, its first room, is the next lane.**
   · **Separate task (logged at L4d, older than it):** at 760 px the page scrolls sideways because the top navigation list runs

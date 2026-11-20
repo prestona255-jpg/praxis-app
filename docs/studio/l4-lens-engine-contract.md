@@ -150,7 +150,7 @@ A heavy reader's day — a first read, two Ask-agains, four say-back lines, two 
 
 ## 6 · The iPhone motion gate — PASS before the sky lands live
 
-The sky is never still (seventh r9). Before it ships, a **10-minute check on Preston's installed PWA (iPhone, Safari standalone), Home, night, the test library**, three runs on a charged phone with no other apps in the foreground, brightness fixed:
+The sky is never still (seventh r9; L4d's still By the orbs was the one exception, and L4e's R3 ended it — only Reduce Motion stills the sky). Before it ships, a **10-minute check on Preston's installed PWA (iPhone, Safari standalone), Home, night, the test library**, three runs on a charged phone with no other apps in the foreground, brightness fixed:
 
 | Run | Screen | Pass line |
 |---|---|---|
@@ -188,7 +188,8 @@ Also proven in the same session: the loop stops when the tab is hidden (`documen
 `hand.js` (L4 edition, published with both mockups; md5 recorded in the carry) is the one engine. The build lifts it as `js/hand.js`, unchanged except: nothing. Its host contract: a `.sky` element holding `canvas.paint`, a `[data-field]` with `svg.bg > [data-stars] + [data-threads]`, a `[data-core] > svg[data-bloom]`; the host CSS from the mockup's `/* THE SKY */` block (orb, label, threads, the keyframes, the reduced-motion rule) lifted as `css/sky.css`. Load order: after state (it reads nothing from state; views call it), before views. Public surface: `Sky(host,{compact}) → set(items, shares, keptLooks) · toggles({threads,names}) · build() · tick()`, `startSkies()`, `makeLook`, `formSvg`, `bloom`, `yumiSeed`, `bloomSvg`, `gardenColour`, `sizeFor`, `contrast`, `GARDEN`. Items: `{name, look, books, state, size?, aria?}`; `shares`: `[[i, j, sharedBooks]]`. Design calls S1–S9 (sizes, rings, names, threads) are in the engine, not the views.
 
 **Amended at L4d (19 Nov 2026; Preston's R2 and R4, `docs/checkpoints/l4d.md`).** `js/hand.js` is no longer the carry's bytes:
-it was unlocked by ruling for L4d and is locked again at **`1674586b3645239d832c7b63832268d2` (46,181 B)**; `fd51ca7e…`
+it was unlocked by ruling for L4d and is locked again at **`1674586b3645239d832c7b63832268d2` (46,181 B)** (history since L4e —
+the standing lock is the L4e amendment's below); `fd51ca7e…`
 (40,981 B) is the L4 lift and stays as history. The public surface adds one switch: **`toggles({threads, names, fixed})`** —
 `fixed: true` (sent by `lxFillCatNames` when You's Categories mode shows names "By the orbs") makes the sky STILL when names are on
 and it holds more than one lens: the orbs stop circling and sit in rows about the flower (4 across under 460 px, 5 under 900, 7
@@ -201,6 +202,29 @@ Everywhere else the sky turns as before (R5): a name keeps the place it has whil
 first free place among its natural side (above or below) and the opposite side, and in a full sky also beside the orb (outward,
 then inward) and above or below shifted left or right; otherwise it steps back. It never sits on another orb, on another name, or
 (in a full sky) on the flower's middle (a square of 0.6 × the flower's size). The engine reads no layout while the sky moves.
+
+**Amended at L4e (19 Nov 2026; Preston's R2–R8, `docs/checkpoints/l4e.md`).** js/hand.js was unlocked by ruling for L4e and
+is locked again at **`dc6a021e5b89652cf5e6c0a84ae249cd` (53,596 B)**; `1674586b…` (L4d) and `fd51ca7e…` (the L4 lift) are
+history. The public surface adds three switches: **`toggles({threads, names, fixed, auto, drift, stems})`**. A sky is
+*fixed* (rows about the flower, every name under its orb) when `fixed` is on, or when `auto` is on and the sky is full (many
+or tight), with names on and more than one lens. **A fixed sky DRIFTS** when `drift` is on and Reduce Motion is off (the field
+carries the class `flow`): **the L4d "STILL sky" of By the orbs is superseded (R3)** — every orb shows its name and moves, not
+on an orbit or a track but carried by one slow current (a stream function of a few wide gyres whose strengths and places change
+over minutes, zero at the field's edges and bent round the flower) plus a small turn of its own, with inertia, never faster than
+26 px a second; each orb-and-name box is eased apart from every other box, from the flower and from the edges, and clamped
+inside the field; a frame longer than 20 ms is taken in two half-steps; the orb moves by `translate3d` and no layout is read.
+The rows remain as each orb's starting cell and as the still sky under Reduce Motion. A drifting sky is at least 360 px tall and
+tall enough that its orbs and names fill no more than 36 % of it; under 460 px an orb is at most 66 px and a name at most 76 px
+wide. A rebuild that keeps the width, the count and every name keeps every orb's place and speed; otherwise every orb starts
+again from its cell and rises in (class `rise`). Who sends what (views.js): You → Lenses `auto` + `drift`; Marks `auto` +
+`drift`; Categories `drift` with `fixed` from By the orbs (List turns); Home none of them (R4, R5). **The flower (R6):** in
+Categories its looks are the categories' own — one petal each, then extra petals by share of books, up to 30; in Lenses and
+Marks the kept lenses' looks; it redraws when its looks' colours change. **The threads (R7):** with `stems` on, a fine bowed
+thread runs from the flower's edge to each orb's edge, in the orb's colour mixed toward gold at .3 opacity; You sends `stems`
+from the Threads switch (`praxis_sky_threads`), which on You now reads "A thread from each orb to your flower, and between
+lenses that share a book". Category and book orbs pull the flow canvas as kept lenses do (.42). **R8:** one debounced
+`resize` / `orientationchange` listener rebuilds any sky whose width changed (a height-only change does not), and the stars are
+strewn over the field's real height (a turning sky's stars as before).
 
 ## 9 · PASS proofs the build adds to lens-contract §7
 

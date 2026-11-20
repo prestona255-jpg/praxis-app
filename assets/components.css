@@ -17982,3 +17982,16 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
 .pf-field,.pf-field input,.pf-field textarea{min-width:0}
 .lx.lx-toast{background:var(--umber-2);box-shadow:var(--card-hi),inset 0 0 0 1px var(--line-night)}
 /* === L4b-2b HOTFIX 2 — end === */
+/* === L4e THE DRIFTING SKY — begin ===
+   Rulings 19 Nov 2026. A sky the engine marks fixed shows every lens's name; one it marks flow moves each lens by a
+   transform, so a slow drift is drawn between pixels and never steps; a new lens rises in; a stem runs from each lens
+   to the flower. === */
+.sky .field.fixed:not(.nonames) .orb .l{display:block}
+.sky .field.fixed.many:not(.nonames) .orb .l,.sky .field.fixed.tight:not(.nonames) .orb .l{font-size:11px;line-height:13px}
+.sky .field.flow .orb{will-change:transform}
+.sky .field.flow .orb.rise{animation:lxOrbRise .8s cubic-bezier(.2,.7,.2,1) backwards}
+@keyframes lxOrbRise{from{opacity:0}}
+.sky .stem{fill:none;stroke-linecap:round}
+.pf-sky-host.lx-you-host:has(.field.fixed){max-height:none}
+@media (prefers-reduced-motion: reduce){.sky .field{transition:none!important}}
+/* === L4e THE DRIFTING SKY — end === */

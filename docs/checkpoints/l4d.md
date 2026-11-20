@@ -4,10 +4,12 @@ L4d STARTED 19 Nov 2026 (Opus 5.5, executing the written patch). Base b0005cb / 
 
 19 Nov 2026 · Opus 5.5 executing an already-written, already-measured patch (the engine change was designed and written by
 Fable in the review chat), applied byte for byte on main at `b0005cb` (v3.333) == origin/main. Preston's go-ahead included
-"run fix-red-team on this". **Status: committed locally in the commit that carries this file (Preston's "Commit the working
-tree changes", 19 Nov 2026); NOT pushed.** The round halted once at Stage 3 on a red-team BLOCK (F1);
+"run fix-red-team on this". **Status: PUSHED at `dc2b797` (== origin/main, v3.334); Preston's phone check PASSED (L4e R1, 19
+Nov 2026: "the still sky works and every category has its name").** (Was: committed locally, not pushed.) The round halted once at Stage 3 on a red-team BLOCK (F1);
 Preston ruled the tested F1–F3 fix folded in ("Yes, fold in the tested F1–F3 fix to js/hand.js and finish the round"), and the
 round finished. CACHE_VERSION `praxis-v3.334`. **js/hand.js is locked again at `1674586b3645239d832c7b63832268d2` (46,181 B).**
+(History since L4e: hand.js was unlocked by ruling for L4e and is locked at `dc6a021e5b89652cf5e6c0a84ae249cd`, 53,596 B —
+`docs/checkpoints/l4e.md`.)
 
 ## Rulings, worded as given (19 Nov 2026)
 
@@ -21,6 +23,8 @@ round finished. CACHE_VERSION `praxis-v3.334`. **js/hand.js is locked again at `
 - **R4** By the orbs is a STILL sky. In that mode the orbs stop circling and sit in fixed rows about the flower, the fullest
   categories first, each with its name under it. Every category's name shows, all the time. The sky grows as tall as the rows
   need, in that mode only. I approved this from the review chat's captures at 390 and 1360 on 19 Nov.
+  **SUPERSEDED by L4e's R3 (19 Nov 2026, `docs/checkpoints/l4e.md`): every orb shows its name AND moves; the still rows are
+  kept as each orb's starting cell and as the sky under Reduce Motion.**
 - **R5** Everywhere else the sky still turns: Home, and You in Lenses, Marks and Categories with the List. In a full turning sky
   a name may sit above or below its orb, beside it, or above or below it shifted to one side; it never sits on another orb, on
   another name, or on the flower's middle; a name with nowhere to go still steps back.
@@ -225,8 +229,8 @@ flower square only in a full sky (Q13); the 44 px floor (Q5); reading order = vi
 | F3 | MAJOR | A late web font never re-rows the still sky (rows are fixed at build; no font or resize hook) | **Mechanism YES.** A late face (size-adjust 170 %) grows a name to 4 lines at 390: the field stays 536, the lowest name drops 13 px, the caption gap falls 56.5 → 43.5 (no overlap at this size). |
 | F4 | MINOR | 3 middle-row orbs on a 5-column row sit lopsided (two left, one right) | not measured |
 | F5 | MINOR | Turning sky: name boxes are nominal (no CSS drift / sway); `o.pos` is sticky; a side name's width is estimated for one frame | (a) 1 sample in 60 at 390 List; (b) = 2.6's discriminator |
-| F6 | MINOR | The still sky never rebuilds on resize/rotation (cells frozen at the old width) | = separate task S-2 (true of every mode at b0005cb) |
-| F7 | MINOR | Stars are generated once, before the still sky grows, so they fill only the top ~300 px | visible in the captures (sparser lower half) |
+| F6 | MINOR | The still sky never rebuilds on resize/rotation (cells frozen at the old width) | = separate task S-2 (true of every mode at b0005cb) — **closed at L4e (R8)** |
+| F7 | MINOR | Stars are generated once, before the still sky grows, so they fill only the top ~300 px | visible in the captures (sparser lower half) — **closed at L4e (R8)** |
 | F8 | NIT | (a) a still sky still runs place/solve each frame; (b) `.l` has no `overflow-wrap`; (c) hovering a hidden name in a full sky uses stale `[0,0]` dims up to 90 frames | — |
 
 **The smallest fix, tested in the rig and NOT applied** (scratch `fixtest/js/hand.js`, 46,181 B, md5
@@ -291,7 +295,8 @@ they are; (N4) builder.html is mixed EOL in the working tree, LF in the index (g
 - **S-1** At 760 px the page scrolls sideways: scrollWidth 861 against 760 (and 945 against 900), the widest element
   `ul.app-nav-list` — the top navigation list runs past the edge. Same at b0005cb.
 - **S-2** Nothing rebuilds the sky on a window resize or a phone rotation; every mode keeps the layout of the width it was built at
-  until the next render.
+  until the next render. **CLOSED at L4e (R8, v3.335):** one debounced resize / orientationchange listener rebuilds a sky whose
+  width changed (F6 closed with it).
 - **S-3** At ≥ 900 px with 5–12 lenses (the wide side layout, not a full sky), names placed beside their orbs are never
   collision-checked in either engine; at 1360 with 9 and 12 lenses they overlap other names and orbs.
 - **S-4** In a full turning sky one orb can sit under a neighbour's 140 px button (16/17 hittable at 390 List in both engines).
@@ -307,7 +312,8 @@ they are; (N4) builder.html is mixed EOL in the working tree, LF in the index (g
   its natural side — the source of three of 2.6's differences (shown by clearing the memory).
 - **D-L4** (F5c) Before a side name has been measured its width is estimated (`min(width,104)`), so its orb can shift for one
   frame at ≥ 900 px.
-- **D-L5** (F7) The stars are made once, before the still sky grows taller, so they fill only its top ~300–360 px.
+- **D-L5** (F7) The stars are made once, before the still sky grows taller, so they fill only its top ~300–360 px. **CLOSED at
+  L4e (R8, v3.335):** the stars are strewn over the field's real height, and again when it changes.
 - **D-L6** (F8a) A still sky still runs `place` and `solve` each frame (0.09–0.11 ms unthrottled); it could stop after the snap.
 - **D-L7** (F8b) A name has no `overflow-wrap`: one unbroken word longer than its cell (none of the 17 categories) would run past
   it.
