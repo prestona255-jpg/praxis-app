@@ -306,7 +306,9 @@ wrote BOARD.md's working copy LF (`w/lf`); the blob is LF either way, so nothing
 - **N-1** "Shelf" overruns its own box by 3.7 px at 320 (8.4 px clear of the dots). **N-2** the editor's reveal scroll (381 px at
   390). **N-3** Cancel on its own line in the Select bar. For Preston's eye.
 - **N-4** In the Select bar at 390, Cancel is 19 px tall and "Move to an arc…" is 35 px tall (both under 44), measured by the
-  review chat; older styling, reachable on phones for the first time in this build; a separate small task.
+  review chat; older styling, reachable on phones for the first time in this build; a separate small task. **CLOSED by
+  L4b-3a.1 (v3.338, 21 Nov 2026, `docs/checkpoints/l4b-3a-1.md`): Move and Cancel are 44 px tall at every width (390: 136×44
+  and 66×44 on one row).**
 
 ## Preston's ruling on the residuals (20 Nov 2026)
 

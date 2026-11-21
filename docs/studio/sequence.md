@@ -31,6 +31,12 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-21 (L4b-3a pushed 08f8ded; L4b-3a.1 BUILT at v3.338)** — L4b-3a (v3.337) is pushed at 08f8ded. Preston's phone
+  check (20 Nov) passed steps 1–7 and found four phone bugs: the Title field under the clock with the keyboard up, the closed
+  Manage sheet showing behind the keyboard, the flower on "Tidy library", and a 19 px Cancel (N-4). By his ruling ("Own small
+  build now") they ship as L4b-3a.1, applied byte for byte from the review chat's written patch on 08f8ded and built at v3.338,
+  local until pushed; js/hand.js untouched (`docs/checkpoints/l4b-3a-1.md`, residuals R-1–R-5). The Shelf's look is redrawn
+  separately (ruled 20 Nov: direction A, "The Library"). Nothing reordered or retired, so no `PROPOSED:` flag.
 - **2026-11-20 (L4f pushed 249cae1; L4b-3a BUILT at v3.337)** — L4f (v3.336) is pushed at 249cae1; Preston's phone check of it
   is owed. L4b-3a, the Shelf redrawn (rulings S1–S7, 19 Nov), was applied byte for byte from the review chat's written patch on
   249cae1 and is built at v3.337, local until pushed; js/hand.js untouched. Its residuals R-1–R-6 are logged in
@@ -1695,12 +1701,17 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   it, Home's sky height cap on phones** (L4f residual R-5, red-team F2, ruled by Preston 20 Nov): a full Home sky pushes Home's
   own rows one to two screens down; whether to cap it is its own decision before the beta, built with the Motion switch.
   · **L4b-3** — the redrawn rooms, a few per build: Home body, Shelf, book, Notebook, note, You, artifact, the pages under
-  You, Search. Needs L4b-1. Large; split by room. **L4b-3a, its first room (the Shelf), is BUILT at v3.337, local until pushed**
+  You, Search. Needs L4b-1. Large; split by room. **L4b-3a, its first room (the Shelf), SHIPPED v3.337 (pushed 08f8ded)**
   (`docs/checkpoints/l4b-3a.md`; rulings S1–S7, 19 Nov; the chat's choices C1–C7 Preston's to overrule): search, Lenses /
   Categories, status chips that hide, each lens or category as a band of large covers; ••• opens the Manage sheet; the sheet and
-  the Select bar stand above the tab bar. Preston's phone check owed. Residuals R-1–R-6 (the focused band view still live and
-  drawn the old way; the Notebook's "Carry on the desk"; hidden picks; the clipped chip ring; the unstored default; counts under
-  a filter). The next room is not yet chosen.
+  the Select bar stand above the tab bar. Preston's phone check (20 Nov) passed steps 1–7 and found four phone bugs. Residuals
+  R-1–R-6 (the focused band view still live and drawn the old way; the Notebook's "Carry on the desk"; hidden picks; the clipped
+  chip ring; the unstored default; counts under a filter). **L4b-3a.1 — the Shelf: four phone fixes (ruling "Own small build
+  now", 20 Nov) — BUILT at v3.338, local until pushed** (`docs/checkpoints/l4b-3a-1.md`; the chat's choices F1–F4 Preston's to
+  overrule): panels the Shelf reveals land below the status band (the Title field clear of the clock with the keyboard up); the
+  closed sheet and Select bar not painted on phones; the flower steps aside while the sheet is open or Select is on; Move and
+  Cancel 44 px (closes L4b-3a N-4). Preston's phone check owed; residuals R-1–R-5. The Shelf's look ("The Library", direction
+  A, ruled 20 Nov) is redrawn separately. The next room is not yet chosen.
   · **Separate task (logged at L4d, older than it):** at 760 px the page scrolls sideways because the top navigation list runs
   past the edge.
   · **L4b-4** — the capture dial, the hold menu, status behind the cover, the hint. Needs L4b-3 (book). Medium.

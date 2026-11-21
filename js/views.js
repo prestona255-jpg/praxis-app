@@ -6914,7 +6914,12 @@ function revealShelfPanel(panelEl) {
   if (head && window.getComputedStyle(head).position === 'sticky') {
     headH = head.getBoundingClientRect().height;
   }
-  var target = panelEl.getBoundingClientRect().top + se.scrollTop - headH - 8;
+  // L4b-3a.1: on a phone with a notch the panel used to land 8 px from the very top, under the status bar,
+  // so with the keyboard up the Title field sat behind the clock. The status band (#statusbar-scrim) is
+  // exactly as tall as the safe area and 0 on every other screen, so its height is the room to leave.
+  var sbar = document.getElementById('statusbar-scrim');
+  var safeTop = sbar ? sbar.getBoundingClientRect().height : 0;
+  var target = panelEl.getBoundingClientRect().top + se.scrollTop - headH - 8 - safeTop;
   if (target < 0) { target = 0; }
   se.scrollTop = target;
 }

@@ -18077,3 +18077,22 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
   body:not(.l3-gated):not(.tabbar-off) .shelf.sh3.is-selecting .shelf-selectbar.has-pick{transform:none}
 }
 /* === L4b-3a THE SHELF REDRAWN — end === */
+/* === L4b-3a.1 THE SHELF: FOUR PHONE FIXES — begin (docs/checkpoints/l4b-3a-1.md) ===
+   From Preston's phone check of v3.337 (20 Nov 2026). Every rule is scoped under .shelf.sh3. Tokens only.
+   The Select bar's two buttons were 35 and 19 px tall; both are now a full 44. === */
+.shelf.sh3 .shelf-selectbar .move,.shelf.sh3 .shelf-selectbar .cancel{min-height:44px}
+.shelf.sh3 .shelf-selectbar .cancel{min-width:44px;padding:0 12px}
+@media (max-width: 759px){
+  /* Closed, the Manage sheet and the Select bar wait just below the screen. With the keyboard up iOS lifts
+     every fixed layer, so they rose into view behind it. Closed now also means not painted; the visibility
+     waits out the slide, so each still closes as before. */
+  .shelf.sh3 .shelf-manage-sheet{visibility:hidden;transition:transform var(--dur) var(--ease),visibility 0s linear var(--dur)}
+  .shelf.sh3 .shelf-manage.is-open .shelf-manage-sheet{visibility:visible;transition:transform var(--dur) var(--ease),visibility 0s}
+  .shelf.sh3 .shelf-selectbar{visibility:hidden;transition:transform var(--motion-base,var(--dur-half)) var(--ease),visibility 0s linear var(--motion-base,var(--dur-half))}
+  .shelf.sh3.is-selecting .shelf-selectbar.has-pick{visibility:visible;transition:transform var(--motion-base,var(--dur-half)) var(--ease),visibility 0s}
+  /* The Yumi flower sat on "Tidy library" and beside Cancel. It steps aside while the sheet is open or
+     Select is on, so the Select bar no longer needs to leave it 92 px. */
+  body:has(.shelf.sh3 .shelf-manage.is-open) #yumi-bloom,body:has(.shelf.sh3.is-selecting) #yumi-bloom{visibility:hidden}
+  body:not(.l3-gated):not(.tabbar-off) .shelf.sh3 .shelf-selectbar{justify-content:center;padding-right:22px}
+}
+/* === L4b-3a.1 THE SHELF: FOUR PHONE FIXES — end === */
