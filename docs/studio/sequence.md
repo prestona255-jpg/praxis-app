@@ -31,6 +31,13 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-22 (L4b-3a.1 pushed 23672b8; L4b-3a.2 BUILT at v3.339)** — L4b-3a.1 (v3.338) is pushed at 23672b8; Preston's phone
+  check of it is owed. L4b-3a.2, the Shelf as The Library (direction A, ruled 20 Nov; rulings A1–A12, 21 Nov), was applied byte
+  for byte from the Shelf chat's written patch (r3) on 23672b8 and built at v3.339, local until pushed; js/hand.js untouched
+  (`docs/checkpoints/l4b-3a-2.md`). Held once at Stage 2 (two failed covers in one desktop row ran 10 px past a ruled 8 px
+  bound); Preston ruled 22 Nov "Accept, fix it later" and it was re-applied on the same blobs. Residuals R-1–R-5; A10 closes
+  L4b-3a.1 R-5. Next: his phone checks, the phone-gaps audit, then the first fix build after it (R-1's fix: re-trim a row when a
+  cover fails). Nothing reordered or retired, so no `PROPOSED:` flag.
 - **2026-11-21 (L4b-3a pushed 08f8ded; L4b-3a.1 BUILT at v3.338)** — L4b-3a (v3.337) is pushed at 08f8ded. Preston's phone
   check (20 Nov) passed steps 1–7 and found four phone bugs: the Title field under the clock with the keyboard up, the closed
   Manage sheet showing behind the keyboard, the flower on "Tidy library", and a 19 px Cancel (N-4). By his ruling ("Own small
@@ -1707,11 +1714,18 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   the Select bar stand above the tab bar. Preston's phone check (20 Nov) passed steps 1–7 and found four phone bugs. Residuals
   R-1–R-6 (the focused band view still live and drawn the old way; the Notebook's "Carry on the desk"; hidden picks; the clipped
   chip ring; the unstored default; counts under a filter). **L4b-3a.1 — the Shelf: four phone fixes (ruling "Own small build
-  now", 20 Nov) — BUILT at v3.338, local until pushed** (`docs/checkpoints/l4b-3a-1.md`; the chat's choices F1–F4 Preston's to
+  now", 20 Nov) — SHIPPED v3.338 (pushed 23672b8)** (`docs/checkpoints/l4b-3a-1.md`; the chat's choices F1–F4 Preston's to
   overrule): panels the Shelf reveals land below the status band (the Title field clear of the clock with the keyboard up); the
   closed sheet and Select bar not painted on phones; the flower steps aside while the sheet is open or Select is on; Move and
-  Cancel 44 px (closes L4b-3a N-4). Preston's phone check owed; residuals R-1–R-5. The Shelf's look ("The Library", direction
-  A, ruled 20 Nov) is redrawn separately. The next room is not yet chosen.
+  Cancel 44 px (closes L4b-3a N-4). Preston's phone check owed; residuals R-1–R-4 (R-5 closed by L4b-3a.2's A10).
+  **L4b-3a.2 — the Shelf as The Library (direction A, ruled 20 Nov; rulings A1–A12, 21 Nov) — BUILT at v3.339, local until
+  pushed** (`docs/checkpoints/l4b-3a-2.md`; the chat's choices C1–C12 Preston's to overrule): each lens or category a shelf of up
+  to twelve whole covers at their own widths on one ledge (from 760 as many as fit, one row), titles beneath, "See all N" /
+  "N of M"; one flat ground; the switch and a search button in one row; a compact bar on phones; one-book groups listed under
+  "More shelves" / "More lenses" or sharing one "Your books" shelf. Held once at Stage 2, re-applied after Preston's ruling of
+  22 Nov. Residuals R-1–R-5 (R-1: failed covers in one desktop row, accepted; its fix — re-trim a row when a cover fails — is the
+  first fix build after the phone-gaps audit). Preston's phone check owed, the notch seam included. The next room is not yet
+  chosen.
   · **Separate task (logged at L4d, older than it):** at 760 px the page scrolls sideways because the top navigation list runs
   past the edge.
   · **L4b-4** — the capture dial, the hold menu, status behind the cover, the hint. Needs L4b-3 (book). Medium.

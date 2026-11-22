@@ -18096,3 +18096,95 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
   body:not(.l3-gated):not(.tabbar-off) .shelf.sh3 .shelf-selectbar{justify-content:center;padding-right:22px}
 }
 /* === L4b-3a.1 THE SHELF: FOUR PHONE FIXES — end === */
+/* === L4b-3a.2 THE SHELF: THE LIBRARY — begin (docs/checkpoints/l4b-3a-2.md) ===
+   The look Preston ruled on 20 and 21 Nov 2026 (direction A, "The Library"). Each category or lens is a
+   section: its name and "See all N", then a shelf: whole covers at one height and their own widths,
+   standing on a slim ledge, with the title and author under it. Groups of one book gather in a "More
+   shelves" card. The head is shorter, and a compact bar holds the switch once the head has scrolled away.
+   Every rule is scoped under .shelf.sh3. Tokens only: the ledge, the shade and the ground are mixed
+   from --page, --page-2, --page-3, --ink-2, --line and --shadow-float, so both moods follow. === */
+.shelf.sh3{background:color-mix(in srgb,var(--page) 75%,var(--page-2));box-shadow:0 0 0 100vmax color-mix(in srgb,var(--page) 75%,var(--page-2))}
+.shelf.sh3 .sh3-inner{gap:24px;padding-top:12px}
+.shelf.sh3 .sh3-top{gap:12px}
+.shelf.sh3 .sh3-trow{min-height:48px}
+.shelf.sh3 .sh3-trow h1{font-size:40px}
+.shelf.sh3 .sh3-count{margin-top:-10px}
+.shelf.sh3 .sh3-tools{display:flex;align-items:center;gap:10px;min-width:0}
+.shelf.sh3 .sh3-tools .sh3-seg{flex:1;min-width:0}
+.shelf.sh3 .sh3-findbtn{flex:none;display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;padding:0;border:0;border-radius:12px;background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);cursor:pointer}
+.shelf.sh3 .sh3-findbtn svg,.shelf.sh3 .sh3-findx svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.shelf.sh3 .sh3-find{display:none;padding-right:2px}
+.shelf.sh3 .sh3-top.is-searching .sh3-find{display:flex}
+.shelf.sh3 .sh3-find input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+.shelf.sh3 .sh3-top.is-searching .sh3-tools{display:none}
+.shelf.sh3 .sh3-findx{flex:none;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--ink-2);cursor:pointer}
+.shelf.sh3 .sh3-case{gap:28px}
+.shelf.sh3 .sh3-band{gap:10px}
+.shelf.sh3 .sh3-bandh{min-height:44px;margin-bottom:0}
+.shelf.sh3 .sh3-bmark,.shelf.sh3 .sh3-bmark .mark{width:30px;height:30px}
+.shelf.sh3 .sh3-bname{font:500 24px/1.15 var(--font-serif);letter-spacing:-.015em}
+.shelf.sh3 .sh3-open{display:inline-flex;align-items:center;gap:2px;font:500 15px/1 var(--font-body);white-space:nowrap}
+.shelf.sh3 .sh3-open svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.shelf.sh3 .sh3-bcount{flex:none;font:400 14px/1 var(--font-body);white-space:nowrap}
+.shelf.sh3 .sh3-shelf{position:relative;margin:0 -20px}
+.shelf.sh3 .sh3-shelf::before{content:"";position:absolute;left:0;right:0;top:168px;height:9px;transform:scaleY(-1);box-shadow:var(--shadow-float);pointer-events:none}
+.shelf.sh3 .sh3-ledge{position:absolute;left:0;right:0;top:168px;height:9px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.2)),color-mix(in srgb,var(--page-3) 85%,var(--ink-2));box-shadow:inset 0 1px 0 var(--line),var(--shadow-float);pointer-events:none}
+.shelf.sh3 .sh3-covers{position:relative;z-index:1;align-items:flex-start;gap:14px;margin:0;padding:0 20px 2px}
+.shelf.sh3 .sh3-cv{display:flex;flex-direction:column;justify-content:flex-start;width:112px;height:auto;border-radius:0;overflow:visible;background:none;box-shadow:none}
+.shelf.sh3 .sh3-face{position:relative;display:flex;align-items:stretch;height:168px;border-radius:3px 5px 5px 3px;overflow:hidden;background:var(--card-2);box-shadow:inset 4px 0 0 rgba(0,0,0,.12),inset 0 0 0 1px rgba(0,0,0,.12),0 3px 8px rgba(0,0,0,.22)}
+.shelf.sh3 .sh3-img{position:static;inset:auto;flex:1;min-width:0;width:100%;height:100%;object-fit:cover}
+/* A book with no cover image: its card is 120 px wide so a 12-letter word in the title stays whole (S6). */
+.shelf.sh3 .sh3-cv:has(.sh3-tt){width:120px}
+.shelf.sh3 .sh3-tt{flex:1;min-width:0;justify-content:space-between;gap:8px;padding:12px 9px 10px 11px}
+.shelf.sh3 .sh3-tt b{-webkit-line-clamp:6}
+.shelf.sh3 .sh3-tt small{font-size:11.5px}
+.shelf.sh3 .sh3-cap{display:flex;flex-direction:column;gap:2px;min-width:0;padding-top:25px;color:var(--ink)}
+.shelf.sh3 .sh3-cap b{font:600 13.5px/1.25 var(--font-body);overflow-wrap:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.shelf.sh3 .sh3-cap small{font:400 12.5px/1.3 var(--font-body);color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shelf.sh3 .sh3-cv:focus-visible{outline:none}
+/* The rings sit INSIDE the face: a row clips at its top edge (it scrolls or hides its overflow), and a ring
+   outside the face would also lie on the ledge. The focus ring is two-tone so it shows on any cover art. */
+.shelf.sh3 .sh3-cv:focus-visible .sh3-face{outline:2px solid var(--gold-ink);outline-offset:-2px}
+.shelf.sh3 .sh3-cv:focus-visible .sh3-face::after{content:"";position:absolute;top:2px;right:2px;bottom:2px;left:2px;border-radius:2px 3px 3px 2px;box-shadow:inset 0 0 0 2px var(--page);pointer-events:none}
+.shelf.sh3.is-selecting .sh3-cv.is-picked{outline:none}
+.shelf.sh3.is-selecting .sh3-cv.is-picked .sh3-face{outline:3px solid var(--gold);outline-offset:-3px}
+.shelf.sh3 .sh3-small{display:flex;flex-direction:column;gap:12px;min-width:0}
+.shelf.sh3 .sh3-small h2{margin:0;font:500 24px/1.15 var(--font-serif);letter-spacing:-.015em;color:var(--ink)}
+.shelf.sh3 .sh3-mcard{border-radius:18px;overflow:hidden;background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line)}
+.shelf.sh3 .sh3-mrow{box-sizing:border-box;display:flex;align-items:center;gap:14px;min-height:68px;padding:8px 12px 8px 16px;color:var(--ink);text-decoration:none}
+.shelf.sh3 .sh3-mrow + .sh3-mrow{box-shadow:inset 0 1px 0 var(--line)}
+.shelf.sh3 .sh3-mrow:focus-visible{outline:2px solid var(--gold-ink);outline-offset:-2px}
+.shelf.sh3 .sh3-mth{flex:none;display:block;width:30px;height:45px;border-radius:2px;overflow:hidden;background:var(--card-2);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.shelf.sh3 .sh3-mth.is-mark{width:36px;height:36px;border-radius:0;background:none;box-shadow:none}
+.shelf.sh3 .sh3-mth .mark{display:block;width:36px;height:36px}
+.shelf.sh3 .sh3-mimg{display:block;width:100%;height:100%;object-fit:cover}
+.shelf.sh3 .sh3-mtx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.shelf.sh3 .sh3-mtx b{font:500 18px/1.2 var(--font-serif);letter-spacing:-.01em;overflow-wrap:anywhere}
+.shelf.sh3 .sh3-mtx small{font:400 13.5px/1.3 var(--font-body);color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shelf.sh3 .sh3-mch{flex:none;display:block;width:18px;height:18px;color:var(--ink-2)}
+.shelf.sh3 .sh3-mch svg{display:block;width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.shelf.sh3 .sh3-pile .sh3-note{margin:6px 0 0}
+.shelf.sh3 .sh3-bar{display:none}
+.shelf.sh3 .sh3-findbtn:focus-visible,.shelf.sh3 .sh3-findx:focus-visible{outline:2px solid var(--gold-ink);outline-offset:2px}
+@media (max-width: 759px){
+  .shelf.sh3 .sh3-bar{box-sizing:border-box;position:fixed;top:0;left:0;right:0;z-index:40;display:flex;align-items:center;gap:10px;height:calc(60px + env(safe-area-inset-top, 0px));padding:env(safe-area-inset-top, 0px) 14px 0 20px;background:color-mix(in srgb,var(--page) 75%,var(--page-2));box-shadow:inset 0 -1px 0 var(--line);visibility:hidden;opacity:0;transition:opacity var(--dur-half) var(--ease),visibility 0s linear var(--dur-half)}
+  .shelf.sh3 .sh3-bar.is-on{visibility:visible;opacity:1;transition:opacity var(--dur-half) var(--ease),visibility 0s}
+  .shelf.sh3 .sh3-bar-t{flex:none;font:500 22px/1 var(--font-serif);letter-spacing:-.02em;color:var(--ink)}
+  .shelf.sh3 .sh3-bar-seg{flex:1;min-width:0}
+  .shelf.sh3 .sh3-bar .sh3-findbtn{width:48px;height:48px}
+  /* Ruled 21 Nov 2026 ("Commit as built, narrow it later"): the Yumi flower steps aside only while the
+     Select bar is showing, not from the moment Select is tapped. The Manage sheet's rule is unchanged. */
+  body:has(.shelf.sh3.is-selecting) #yumi-bloom{visibility:visible}
+  body:has(.shelf.sh3.is-selecting .shelf-selectbar.has-pick) #yumi-bloom{visibility:hidden}
+}
+@media (min-width: 760px){
+  .shelf.sh3 .sh3-shelf{margin:0}
+  .shelf.sh3 .sh3-ledge,.shelf.sh3 .sh3-shelf::before{border-radius:3px}
+  .shelf.sh3 .sh3-covers{flex-wrap:nowrap;overflow:hidden;gap:14px;margin:0;padding:0 14px 2px}
+  /* The pile, Select mode and a search show every book, so from 760 they wrap; each book then carries
+     its own length of ledge, and the lengths join into one ledge per line. */
+  .shelf.sh3 .sh3-pile .sh3-covers,.shelf.sh3 .sh3-shared .sh3-covers,.shelf.sh3.is-selecting .sh3-covers,.shelf.sh3 .sh3-case.is-finding .sh3-covers{flex-wrap:wrap;overflow:visible;row-gap:22px}
+  .shelf.sh3 .sh3-pile .sh3-ledge,.shelf.sh3 .sh3-pile .sh3-shelf::before,.shelf.sh3 .sh3-shared .sh3-ledge,.shelf.sh3 .sh3-shared .sh3-shelf::before,.shelf.sh3.is-selecting .sh3-ledge,.shelf.sh3.is-selecting .sh3-shelf::before,.shelf.sh3 .sh3-case.is-finding .sh3-ledge,.shelf.sh3 .sh3-case.is-finding .sh3-shelf::before{display:none}
+  .shelf.sh3 .sh3-pile .sh3-cv::before,.shelf.sh3 .sh3-shared .sh3-cv::before,.shelf.sh3.is-selecting .sh3-cv::before,.shelf.sh3 .sh3-case.is-finding .sh3-cv::before{content:"";position:absolute;left:-7px;right:-7px;top:168px;height:9px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.2)),color-mix(in srgb,var(--page-3) 85%,var(--ink-2));box-shadow:inset 0 1px 0 var(--line);pointer-events:none}
+}
+/* === L4b-3a.2 THE SHELF: THE LIBRARY — end === */
