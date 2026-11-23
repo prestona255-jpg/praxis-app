@@ -1,0 +1,164 @@
+== FB-1a behaviour rig on LEG M4 (staged r4, one mechanism removed) == (port of fb1a_rig.py: page + iframes + bridge.js, headless Chrome)
+
+[S0] control: online, nothing failing
+  PASS  S0 three books reach the cloud
+  PASS  S0 the note reaches the cloud
+  PASS  S0 every latch is open after a good load
+  PASS  S0 no pending notebook ids once the save is confirmed
+  PASS  S0 reopen: shelf and note still here
+  PASS  S0 no notice on a clean load
+  PASS  S0 the patch prints a book by the same fields as the repo's mergeBookFingerprint
+
+[S1] BR-01: the laptop is behind, its reads fail, the reader changes something, the signal returns
+  PASS  S1 laptop starts with the 3 books
+  PASS  S1 phone week: cloud holds 7 books, 2 notes, 2 arcs
+  PASS  S1 laptop opens on its old copy (3 books)
+  PASS  S1 NO shelf, notebook or arc write leaves the laptop while its reads fail
+  PASS  S1 cloud shelf still whole while the laptop waits (7 books)
+  PASS  S1 laptop latches shut while failing
+  PASS  S1 after the retry: cloud shelf = the phone's 7 + the laptop's 1
+  PASS  S1 the laptop's status edit reached the cloud
+  PASS  S1 cloud notes = phone's 2 + laptop's 1, phone's rewrite intact
+  PASS  S1 cloud arcs: laptop rename kept, phone's second arc kept
+  PASS  S1 laptop now shows all 8 books
+  PASS  S1 laptop took the phone's rewrite of the untouched note
+  PASS  S1 laptop latches open after the retry
+
+[S2] BR-01: a new device, the shelf read fails, the reader adds one book
+  PASS  S2 new device shows an empty shelf
+  PASS  S2 cloud shelf untouched after the add (8 books)
+  PASS  S2 after the retry: cloud shelf = 8 + the new one
+  PASS  S2 the new device now shows all 9
+
+[S3] BR-02: a note written with no signal, the app closed before the signal returns
+  PASS  S3 the offline note is on the phone
+  PASS  S3 it is marked pending
+  PASS  S3 the cloud never saw it
+  PASS  S3 reopened online: the note is STILL on the phone
+  PASS  S3 and it has now been pushed to the cloud
+  PASS  S3 pending set cleared after the confirmed save
+  PASS  S3 the other notes are all still there
+
+[S4] a note deleted with no signal, the app closed, a stale cloud copy at the next open
+  PASS  S4 the cloud still lists the deleted note
+  FAIL  S4 reopened: the deleted note does NOT come back
+        got  true
+        want false
+  FAIL  S4 and the delete has now reached the cloud
+        got  true
+        want false
+  FAIL  S4 one more open: the delete mark is cleared
+        got  ["entry_1795462967019_883925"]
+        want []
+
+[S5] control: a note deleted on the laptop disappears from the phone at its next open
+  PASS  S5 the phone dropped the note the laptop deleted
+
+[S6] a new account, first reads fail, the reader writes, then the read answers "no document yet"
+  PASS  S6 nothing written while the reads fail
+  PASS  S6 after the retry (absent): the book and the note are pushed
+
+[S7] the retry timer: reads fail at open, recover a moment later, no "online" event
+  PASS  S7 shut while failing
+  PASS  S7 the notice is said once, not six times
+  PASS  S7 the 5-second retry opened the latches
+
+[S8] sign-out while a load is failing leaves nothing behind
+  PASS  S8 no read or write after sign-out
+  PASS  S8 signing back in loads normally (latches open, 9 books)
+
+[S9] Delete account while the library cannot be read: refused before anything is touched
+  PASS  S9 refused, through the existing "nothing was deleted" branch
+  PASS  S9 no sign-in window was opened and no document was touched
+
+[S10] arcs fail, sub-theories load; the arcs retry must not load sub-theories a second time
+  PASS  S10 sub-theories read once per sign-in
+  PASS  S10 arcs latch open after its retry
+
+[S11] the laptop is behind, its reads fail, the reader only LOOKS AROUND, the signal returns
+  PASS  S11 the laptop wrote nothing to shelf, notebook or arcs
+  PASS  S11 cloud still holds the phone's edits
+  PASS  S11 the laptop now shows the phone's edits
+
+[S12] three retry triggers at once make one read per collection
+  PASS  S12 still shut after two failed retries
+  PASS  S12 one retry read for the shelf, not three
+  PASS  S12 coming back to the front is a retry trigger too (latches open)
+
+[S13] known limit, unchanged by this build: an EDIT made while failing, app closed before recovery
+  PASS  S13 the NEW note survives the close and is pushed
+  PASS  S13 the EDIT reverted to the cloud copy (BR-03, next build)
+
+[S14] a sub-theory written while its read is failing
+  PASS  S14 held while failing, pushed after the retry
+
+[S15] reads take 4 s to fail (as a real offline read does); the reader edits in those first seconds
+  PASS  S15 the reads have not answered yet
+  PASS  S15 latches shut once the reads fail
+  PASS  S15 the four first-seconds edits reached the cloud
+  PASS  S15 and the laptop still shows them
+  PASS  S15 the phone's new book is still in the cloud, and on the laptop
+
+[S16] Delete account on a loaded device: the failed-login recovery, then the real thing, with a retry trigger fired mid-way
+  PASS  S16 the throwaway account is loaded and has its documents
+  PASS  S16 login removal fails: reported as recoverable
+  PASS  S16 and the data really was re-uploaded (the panel says so)
+  PASS  S16 the account is deleted
+  PASS  S16 and nothing of it is written back afterwards
+
+[S17] a device with a failing load: deletion refused; after the load succeeds it runs, and no retry re-creates a document
+  PASS  S17 refused while failing; the cloud copy is untouched
+  PASS  S17 still refused on a second ask
+  PASS  S17 the load succeeded and the held note was pushed
+  PASS  S17 deleted, and nothing written back
+
+[S18] a second sign-in event for the SAME account, while a load is failing, with an edit already made
+  PASS  S18 the edit survived the new load and reached the cloud
+  PASS  S18 latches open
+
+[S19] a device that is behind, reads failing: the app stamps categories, a cover lookup lands, a lens gets its look
+  PASS  S19 the lens was given a look by the app's own maker
+  PASS  S19 the stamp touched several books
+  PASS  S19 the phone's status changes survive in the cloud
+  PASS  S19 and reach the laptop
+  PASS  S19 the phone's lens rename survives in the cloud and reaches the laptop
+  PASS  S19 the laptop reader's own edit still wins
+  PASS  S19 prints still agree with mergeBookFingerprint
+
+[S20] the sign-in event comes 3 s after start-up; the reader edits before it; the reads then fail
+  PASS  S20 the app is up as the cached reader before the sign-in event
+  PASS  S20 both edits reached the cloud
+
+[S21] a new device reads the arcs but not the sub-theories, then the reader renames a live arc
+  PASS  S21 the phone published the arc (a public copy exists)
+  PASS  S21 the new device has the arc and no sub-theories yet
+  PASS  S21 the public copy was NOT deleted
+  PASS  S21 and it still carries the old title (the refresh is owed, not made on half a library)
+  PASS  S21 still there once everything has loaded; the arc is still marked published
+  PASS  S21 the owed refresh was paid: the public copy now carries the new title
+
+[S24] a live arc renamed while every read is failing; the reads then succeed
+  PASS  S24 nothing reached the public copy while the reads fail
+  PASS  S24 the rename is in the cloud, the public copy carries it, and the arc is still published
+
+[S22] a sub-theory and an artifact edited while failing; the phone deleted the arc and the book meanwhile
+  PASS  S22 the phone's deletes reached the cloud: arc gone, its sub-theory re-homed (arcId null), book gone, artifact gone
+  PASS  S22 the laptop still holds all four (it is behind)
+  PASS  S22 the phone's deletes hold on the laptop: the arc and the book are gone
+  PASS  S22 the reader's two edits are kept, here and in the cloud
+        reading: the kept sub-theory's arcId is "arc_1795463097235_594985" (the deleted arc was arc_1795463097235_594985); the kept artifact's bookId is "bk_A_book_the_phone_will_delete"
+  PASS  S22 every room opens without a page error with those two records present
+        reading: the kept words are on screen in #subtheory/subtheory_1795463097236_873871, #subtheory/subtheory_1795463097236_873871/build, #arcs
+  PASS  S22 and each of those rooms drew something
+  PASS  S22 the kept sub-theory is listed on the Arcs page, under Unrooted
+
+[S23] the laptop signs out and back in; reads take 4 s to fail; the reader edits in those seconds
+  PASS  S23 latches shut once the reads fail
+  PASS  S23 both edits reached the cloud
+  PASS  page errors across every device
+
+notice shown on a failed load: ["Can’t reach your library right now. New notes and books are kept on this device."]
+
+LEG M4 (staged r4, one mechanism removed): 96 / 99 passed, 3 failed
+RIG-DONE
+RUNNER: LEG M4 (staged r4, one mechanism removed) took 165 s, 2026-11-23 13:45

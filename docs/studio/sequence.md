@@ -31,9 +31,18 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-23 (FB-1a BUILT at v3.340, local until pushed)** — the first fix build after the beta-readiness audit, cut small
+  on Preston's ruling of 22 Nov ("1a" = the audit's rows BR-01 and BR-02; "1b", the rest of data safety, comes next; then
+  2, platform guard rails; then his phone walk; then the book page). Applied byte for byte from the build chat's written
+  patch, fourth cut (r4: the first three were stopped at Stage 0 by the recon gate — F1; F4, F5, F6, R-B; D), on 3ce6a7b; the
+  audit commit stays local, parked on its own branch, held by R1. Failed sign-in reads now hold each collection's writes until
+  a read succeeds and put the reader's changes back; notes get the FX-1b add half and the FX-1c delete half; FX-1 is NOT
+  complete (the mergeBookDuplicates artifact site is owed). Proved on a port of the chat's rig: AFTER 99/99 twice, BEFORE
+  22/46 then stopped, eleven mechanism-removed legs each caught. Known limits L1–L15, residuals G1–G6
+  (`docs/checkpoints/fb-1a.md`). Nothing reordered or retired, so no `PROPOSED:` flag.
 - **2026-11-22 (L4b-3a.1 pushed 23672b8; L4b-3a.2 BUILT at v3.339)** — L4b-3a.1 (v3.338) is pushed at 23672b8; Preston's phone
-  check of it is owed. L4b-3a.2, the Shelf as The Library (direction A, ruled 20 Nov; rulings A1–A12, 21 Nov), was applied byte
-  for byte from the Shelf chat's written patch (r3) on 23672b8 and built at v3.339, local until pushed; js/hand.js untouched
+  check of it passed 21 Nov, all four steps. L4b-3a.2, the Shelf as The Library (direction A, ruled 20 Nov; rulings A1–A12, 21 Nov), was applied byte
+  for byte from the Shelf chat's written patch (r3) on 23672b8 and built at v3.339, pushed at 3ce6a7b (Preston's phone check passed 22 Nov at Night, six of six; Day mode not yet looked at on his phone); js/hand.js untouched
   (`docs/checkpoints/l4b-3a-2.md`). Held once at Stage 2 (two failed covers in one desktop row ran 10 px past a ruled 8 px
   bound); Preston ruled 22 Nov "Accept, fix it later" and it was re-applied on the same blobs. Residuals R-1–R-5; A10 closes
   L4b-3a.1 R-5. Next: his phone checks, the phone-gaps audit, then the first fix build after it (R-1's fix: re-trim a row when a

@@ -84,7 +84,8 @@ var KINDS = {
   arcs:        { resultVar: 'arcResult',   field: 'arcs',          map: 'arcs' },
   subTheories: { resultVar: 'stResult',    field: 'subTheories',   map: 'subTheories' },
   themes:      { resultVar: 'themeResult', field: 'userThemes',    map: 'userThemes' },
-  artifacts:   { resultVar: 'artResult',   field: 'bookArtifacts', map: 'bookArtifacts' }
+  artifacts:   { resultVar: 'artResult',   field: 'bookArtifacts', map: 'bookArtifacts' },
+  notebook:    { resultVar: 'nbResult',    field: 'notebookEntries', map: 'notebookEntries' }   // FB-1a
 };
 // `cscript //nologo //E:jscript tools/fx1c-sim unguarded` strips the FX-1c skip
 // line out of each sliced block before evaluating it -- the §3 "mechanism
@@ -121,13 +122,14 @@ WScript.Echo('harness self-check: a wrong expectation fails -> OK');
 var mk, missing = [];
 for (mk in KINDS) { if (sliceBlock(mk) === null) { missing.push(mk); } }
 if (missing.length) { WScript.Echo('NO MARKERS for: ' + missing.join(', ') + ' (the guarded splat is not in the tree)'); WScript.Quit(2); }
-WScript.Echo('splat blocks sliced from real integrations.js: arcs, subTheories, themes, artifacts');
+WScript.Echo('splat blocks sliced from real integrations.js: arcs, subTheories, themes, artifacts, notebook');
 
 function seedRecord(kind, id, owner) {
   var rec;
   if (kind === 'arcs') { rec = { id: id, userId: owner, title: 'Arc ' + id, bookIds: [], entryIds: [], valueMarks: [], createdAt: 1, updatedAt: 1 }; }
   else if (kind === 'subTheories') { rec = { id: id, userId: owner, arcId: null, header: 'Sub ' + id, evidence: [], linkedSubTheories: [], valueMarks: [], createdAt: 1, updatedAt: 1 }; }
   else if (kind === 'themes') { rec = { id: id, userId: owner, name: 'Theme ' + id, bookIds: [], createdAt: 1, updatedAt: 1 }; }
+  else if (kind === 'notebook') { rec = { id: id, userId: owner, register: 'marginalia', isPrivate: false, body: 'authored note ' + id, bookIds: [], arcIds: [], images: [], filed: false, createdAt: 1, updatedAt: 1 }; }   // FB-1a
   else { rec = { userId: owner, bookId: id, title: 'Artifact ' + id, body: 'authored prose ' + id, updatedAt: 1 }; }
   state[KINDS[kind].map][id] = rec;
   return rec;
@@ -136,6 +138,7 @@ function realDelete(kind, id) {
   if (kind === 'arcs') { return api.deleteArc(id); }
   if (kind === 'subTheories') { return api.deleteSubTheory(id); }
   if (kind === 'themes') { return api.deleteUserTheme(id); }
+  if (kind === 'notebook') { return api.deleteEntry(id); }   // FB-1a: the real state.js delete (marks through noteRecordDeleted)
   // artifacts: the app's delete site is deleteBook step 7 (views.js) -- not
   // loadable here; the sim performs the SAME two-call bookkeeping that site does
   // (proven present by grep in the checkpoint) and then the real record removal.
@@ -145,7 +148,7 @@ function realDelete(kind, id) {
   return true;
 }
 
-var kinds = ['arcs', 'subTheories', 'themes', 'artifacts'];
+var kinds = ['arcs', 'subTheories', 'themes', 'artifacts', 'notebook'];
 var ki, kind, R, Y, P, Z, remote;
 for (ki = 0; ki < kinds.length; ki++) {
   kind = kinds[ki];

@@ -36,7 +36,8 @@ firebase.initializeApp(firebaseConfig);
 // pre-load LOCAL subset and .set() overwrites the fuller remote doc,
 // destroying remote-only records (F-DL1). These per-collection latches
 // gate the OUTGOING write: false until that collection's load has
-// SETTLED (found / absent / error all count as settled). While a latch
+// SETTLED (found / absent; since FB-1a an ERROR no longer counts -- the latch
+// stays shut and the load is retried, see the FB-1a block below). While a latch
 // is false, saveXToFirestore does NOT write -- it re-marks the dirty
 // flag (markXDirty) and returns, so the existing saveState retry re-runs
 // once the latch opens and the payload is built from POST-merge state.
@@ -56,13 +57,13 @@ var notebookLoaded     = false;
 var subTheoriesLoaded  = false;
 var themesLoaded       = false;
 // L4 hotfix R4 (14 Nov 2026): true ONLY when this session's themes load SUCCEEDED
-// (found or absent). themesLoaded (F-DL1) also opens on error; the automatic
+// (found or absent). Since FB-1a themesLoaded opens on those two only as well; the automatic
 // look-save (state.js ensureLensLooks) waits on this instead, so a failed load
 // can never let it .set() a partial local copy over the cloud doc.
 var themesLoadOk       = false;
 // L4.2 (lens-contract rule 4): the lens-offers latch opens ONLY on a found or
 // absent load -- never on an error -- so a failed read can never let a .set() of
-// a partial local copy overwrite the cloud doc (the themes latch opens on error).
+// a partial local copy overwrite the cloud doc (FB-1a: so does every other collection now).
 var lensOffersLoaded   = false;
 var lensOffersLoadFailed = false;   // L4c flip (F1): the last offers load ERRORED (views.js lxReadOffer)
 var artifactsLoaded    = false;
@@ -83,6 +84,306 @@ var L3_RECHECK               = null;
 // sign-in -- even of the SAME uid -- is stale and is dropped, so loaders never run twice.
 var l3SignInSeq              = 0;
 var readerModelWritePending  = false;
+
+// =====================================================================
+// FB-1a (audit BR-01, 22 Nov 2026) -- a FAILED load keeps the write latch shut.
+//
+// F-DL1/F-DL2 opened each latch once the sign-in load had SETTLED, and an
+// errored read counted as settled. So a device whose copy was behind (or
+// empty) could fail its read, open the latch, and .set() that copy over the
+// fuller cloud doc. Now the six collection latches (books, arcs, subTheories,
+// themes, artifacts, notebook) open on found or absent ONLY -- the rule the
+// lens offers already keep (rule 4).
+//
+// A shut latch must not strand the reader's work, so three things go with it:
+//  1. RETRY. fb1aLoad asks again -- when the device comes back online, when
+//     the app comes back to the front, and on a slowing timer -- until the
+//     read answers found or absent. Then the usual branch runs: merge, open
+//     the latch, and its saveState flushes the deferred write.
+//  2. WHAT CHANGED WHILE WAITING. As soon as the uid's state is in memory --
+//     at start-up (app.js, straight after loadState) and again at the sign-in
+//     event -- a print of each record is remembered (fb1aBegin -> fb1aBase).
+//     Not at the first failure: a real offline read takes ten seconds or more
+//     to give up, and an edit made in those seconds must count as changed.
+//     When a read that FAILED at least once finally lands found, every record
+//     created or changed since then is put back over the merge (fb1aReapply),
+//     so that edit is not undone by the cloud copy; every untouched record
+//     takes the cloud's version. Without this the shut latch would trade one
+//     loss for another: before FB-1a such an edit reached the cloud inside the
+//     whole-doc overwrite. A load whose FIRST answer is found or absent is
+//     merged exactly as before FB-1a.
+//     The print (fb1aPrint) is of what the READER authors, not of the whole
+//     record: the app writes into records by itself -- the shelf classifier
+//     stamps 'category', the cover backfill rewrites cover and bibliographic
+//     fields, a lens gets its 'look' at render -- and a machine write must
+//     not make this device's copy of an untouched record beat the cloud's.
+//  3. A SEQUENCE CHECK. Every answer and every retry carries the sign-in
+//     number (l3SignInSeq) it was started for; a stale one is dropped.
+//
+// In memory only: if the app closes before a retry succeeds, creates and
+// deletes are still held by the pending sets (FX-1 / FX-1c, and from this
+// build the notebook's too); an EDIT to a synced record then reverts at the
+// next load, exactly as it did before this build (audit BR-03, the next build).
+// Profile and reader model keep their F-DL3 latches unchanged (BR-29, next build).
+// =====================================================================
+var fb1aBase    = {};     // kind -> { id: print } of the uid's records as they stood when their state was loaded
+var fb1aBaseUid = null;   // whose records fb1aBase holds
+var fb1aKept    = {};     // kind -> { id: record } changed since the failure; set just before a retried merge
+var fb1aTries   = {};     // kind -> the ask() of a kind whose load has not succeeded yet
+var fb1aBusy    = {};     // kind -> the sign-in number whose read is in flight (0 = none)
+var fb1aStarted = {};     // kind -> the sign-in number its load was started for
+var fb1aTimer   = null;
+var fb1aStep    = 0;
+var fb1aTold    = false;
+
+function fb1aReset() {
+  fb1aBase = {}; fb1aBaseUid = null; fb1aKept = {}; fb1aTries = {}; fb1aBusy = {}; fb1aStarted = {};
+  if (fb1aTimer) { clearTimeout(fb1aTimer); fb1aTimer = null; }
+  fb1aStep = 0;
+  fb1aTold = false;
+}
+
+function fb1aMap(kind) {
+  if (kind === 'arcs') { return state.arcs; }
+  if (kind === 'subTheories') { return state.subTheories; }
+  if (kind === 'themes') { return state.userThemes; }
+  if (kind === 'artifacts') { return state.bookArtifacts; }
+  if (kind === 'notebook') { return state.notebookEntries; }
+  return null;
+}
+
+// This uid's records of one kind as { id: record }: the same ownership each
+// buildUser<X>Doc uses (books by the uid's bookIds index, the rest by userId).
+function fb1aOwned(kind, uid) {
+  var out = {}, k, src, ids, i;
+  if (kind === 'books') {
+    ids = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds) ? state.userBooks[uid].bookIds : [];
+    for (i = 0; i < ids.length; i++) {
+      if (state.books && state.books[ids[i]]) { out[ids[i]] = state.books[ids[i]]; }
+    }
+    return out;
+  }
+  src = fb1aMap(kind);
+  if (!src) { return out; }
+  for (k in src) {
+    if (Object.prototype.hasOwnProperty.call(src, k) && src[k] && src[k].userId === uid) { out[k] = src[k]; }
+  }
+  return out;
+}
+
+// What the reader has authored in one record, as a string to compare.
+// BOOKS: exactly the fields mergeBookFingerprint (views.js) names -- the list
+// that work settled on after whole-record comparison was shown to trip on the
+// classifier's 'category' stamp and on the cover backfill. It is repeated here,
+// not called, so that this file does not come to depend on views.js, which loads
+// after it; the two must stay field for field the same.
+// LENSES: the whole record except 'look', which the app assigns by itself.
+// The other kinds: the whole record.
+function fb1aPrint(kind, rec) {
+  var copy, k;
+  try {
+    if (kind === 'books') {
+      return JSON.stringify([rec.title || '', rec.author || '', rec.isbn || '',
+        ((typeof normalizeStatus === 'function') ? normalizeStatus(rec.status) : rec.status) || '',
+        (typeof rec.finishedAt === 'number') ? rec.finishedAt : null,
+        (typeof rec.rating === 'undefined') ? null : rec.rating,
+        (typeof rec.dateRead === 'undefined') ? null : rec.dateRead,
+        rec.categoryOverride || '', (typeof rec.traditionOverride === 'undefined') ? null : rec.traditionOverride,
+        rec.movedMe === true, (rec.valueMarks instanceof Array) ? rec.valueMarks : []]);
+    }
+    if (kind === 'themes') {
+      copy = {};
+      for (k in rec) {
+        if (Object.prototype.hasOwnProperty.call(rec, k) && k !== 'look') { copy[k] = rec[k]; }
+      }
+      return JSON.stringify(copy);
+    }
+    return JSON.stringify(rec);
+  } catch (e) { return ''; }
+}
+
+function fb1aSnapshot(kind, uid) {
+  var own = fb1aOwned(kind, uid), base = {}, k;
+  for (k in own) {
+    if (Object.prototype.hasOwnProperty.call(own, k)) { base[k] = fb1aPrint(kind, own[k]); }
+  }
+  return base;
+}
+
+// Called whenever a uid's state has just been loaded: at start-up for the cached
+// user (app.js) and at the sign-in event. The FIRST call for a uid is the one
+// that counts -- a kind that already holds a base for this uid keeps it, so an
+// edit made between start-up and the sign-in event is not swallowed into it.
+function fb1aBegin(uid) {
+  var kinds = ['books', 'arcs', 'subTheories', 'themes', 'artifacts', 'notebook'], i;
+  if (fb1aBaseUid !== uid) { fb1aBase = {}; fb1aBaseUid = uid; }
+  for (i = 0; i < kinds.length; i++) {
+    if (!fb1aBase[kinds[i]]) { fb1aBase[kinds[i]] = fb1aSnapshot(kinds[i], uid); }
+  }
+}
+
+// True while any of the six sign-in loads is in flight or still failing.
+// deleteAccount asks this before it starts.
+function fb1aUnfinished() {
+  var k;
+  for (k in fb1aTries) {
+    if (Object.prototype.hasOwnProperty.call(fb1aTries, k)) { return true; }
+  }
+  for (k in fb1aBusy) {
+    if (Object.prototype.hasOwnProperty.call(fb1aBusy, k) && fb1aBusy[k]) { return true; }
+  }
+  return false;
+}
+
+// The records created or changed since their state was loaded, or null when there are none.
+function fb1aChanged(kind, uid) {
+  var base = fb1aBase[kind], own = fb1aOwned(kind, uid), kept = {}, k, n = 0;
+  if (!base) { return null; }
+  for (k in own) {
+    if (Object.prototype.hasOwnProperty.call(own, k) &&
+        (!Object.prototype.hasOwnProperty.call(base, k) || base[k] !== fb1aPrint(kind, own[k]))) {
+      kept[k] = own[k];
+      n = n + 1;
+    }
+  }
+  return n ? kept : null;
+}
+
+function fb1aMarkDirty(kind) {
+  if (kind === 'books' && typeof markBooksDirty === 'function') { markBooksDirty(); }
+  if (kind === 'arcs' && typeof markArcsDirty === 'function') { markArcsDirty(); }
+  if (kind === 'subTheories' && typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
+  if (kind === 'themes' && typeof markThemesDirty === 'function') { markThemesDirty(); }
+  if (kind === 'artifacts' && typeof markArtifactsDirty === 'function') { markArtifactsDirty(); }
+  if (kind === 'notebook' && typeof markNotebookDirty === 'function') { markNotebookDirty(); }
+}
+
+// Called inside each found branch, straight after its merge and before its
+// saveState. A no-op unless this is a RETRIED load with something to put back.
+// Books: only a book still on the shelf after the merge takes its local record
+// (its adds and deletes are already held by pendingBookSync / pendingBookDeletes,
+// and the bookIds index is the merge's to build). The other kinds: the record
+// goes back even when the merge dropped it -- it was written on this device
+// while the read was failing, and the reader's words are never the ones dropped.
+function fb1aReapply(kind, uid) {
+  var kept = fb1aKept[kind], k, n = 0, map, ids, i, has;
+  fb1aKept[kind] = null;
+  if (!kept) { return 0; }
+  if (kind === 'books') {
+    ids = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds) ? state.userBooks[uid].bookIds : [];
+    has = {};
+    for (i = 0; i < ids.length; i++) { has[ids[i]] = true; }
+    for (k in kept) {
+      if (Object.prototype.hasOwnProperty.call(kept, k) && has[k] && state.books[k] !== kept[k]) {
+        state.books[k] = kept[k];
+        n = n + 1;
+      }
+    }
+  } else {
+    map = fb1aMap(kind);
+    if (!map) { return 0; }
+    for (k in kept) {
+      if (Object.prototype.hasOwnProperty.call(kept, k) && map[k] !== kept[k]) {
+        map[k] = kept[k];
+        n = n + 1;
+      }
+    }
+  }
+  if (n) { fb1aMarkDirty(kind); }
+  return n;
+}
+
+function fb1aRetryAll() {
+  var k, any = false;
+  for (k in fb1aTries) {
+    if (Object.prototype.hasOwnProperty.call(fb1aTries, k) && typeof fb1aTries[k] === 'function') {
+      any = true;
+      fb1aTries[k]();
+    }
+  }
+  return any;
+}
+
+// One pending timer at most: 5 s, 15 s, 45 s, then every 2 minutes while a load is still failing.
+function fb1aSchedule() {
+  var waits = [5000, 15000, 45000], wait;
+  if (fb1aTimer) { return; }
+  wait = (fb1aStep < waits.length) ? waits[fb1aStep] : 120000;
+  fb1aStep = fb1aStep + 1;
+  fb1aTimer = setTimeout(function () {
+    fb1aTimer = null;
+    fb1aRetryAll();
+  }, wait);
+}
+
+// Said once per sign-in, the first time any of the six reads fails. The first
+// failure can arrive before views.js has defined showToast (the scripts load in
+// order and this file comes first), so the notice waits for it rather than
+// being spent unseen -- and is dropped if every load has succeeded meanwhile.
+function fb1aTell() {
+  var k, failing = false;
+  if (fb1aTold) { return; }
+  for (k in fb1aTries) {
+    if (Object.prototype.hasOwnProperty.call(fb1aTries, k)) { failing = true; break; }
+  }
+  if (!failing) { return; }
+  if (typeof showToast !== 'function' || typeof document === 'undefined' || !document.body) {
+    setTimeout(fb1aTell, 400);
+    return;
+  }
+  fb1aTold = true;
+  showToast(FB1A_NOTICE);
+}
+var FB1A_NOTICE = 'Can’t reach your library right now. New notes and books are kept on this device.';
+
+// One sign-in load of one collection. Replaces the bare load<X>FromFirestore(u.uid, cb)
+// call: same loader, same callback, plus the retry and the bookkeeping above.
+// The callback runs for the FIRST failure (its error branch still logs) and for
+// the answer that finally succeeds; it opens its own latch only on that one.
+function fb1aLoad(kind, uid, seq, loader, cb) {
+  if (fb1aStarted[kind] === seq) { return; }   // the arcs callback runs again on a retry; its nested load starts once
+  fb1aStarted[kind] = seq;
+  // A retry still registered for this kind means an EARLIER sign-in number's load of it was failing (the same uid
+  // signed in again without a sign-out): this load inherits that, so what changed meanwhile is still put back.
+  var settled = false, failed = !!fb1aTries[kind];
+  var ask = function () {
+    if (settled || seq !== l3SignInSeq || fb1aBusy[kind] === seq) { return; }
+    fb1aBusy[kind] = seq;
+    loader(uid, function (result) {
+      if (fb1aBusy[kind] === seq) { fb1aBusy[kind] = 0; }
+      if (settled || seq !== l3SignInSeq) { return; }   // signed out, or another sign-in, since this was asked
+      if (!result) { result = { status: 'error', error: new Error('fb1aLoad: no result') }; }
+      if (result.status === 'error') {
+        fb1aTries[kind] = ask;
+        fb1aSchedule();
+        if (failed) { return; }   // a repeat failure: the callback's error branch has run once already; just wait for the next ask
+        failed = true;
+        if (!fb1aBase[kind]) { fb1aBase[kind] = fb1aSnapshot(kind, uid); }   // fb1aBegin took it at sign-in; this is only a floor
+        fb1aTell();
+      } else {
+        settled = true;
+        delete fb1aTries[kind];
+        fb1aKept[kind] = (failed && result.status === 'found') ? fb1aChanged(kind, uid) : null;   // a first-answer success merges as before FB-1a
+        delete fb1aBase[kind];
+      }
+      cb(result);
+      fb1aKept[kind] = null;
+    });
+  };
+  ask();
+}
+
+if (typeof window !== 'undefined' && window.addEventListener) {
+  window.addEventListener('online', function () {
+    fb1aStep = 0;
+    fb1aRetryAll();
+  });
+}
+if (typeof document !== 'undefined' && document.addEventListener) {
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') { fb1aRetryAll(); }
+  });
+}
 
 // F-DL4: reset ALL ten cloud-sync latches on a same-tab account switch. On an
 // A->B switch clearUserState() (state.js) wipes state.* but these module-global
@@ -108,6 +409,7 @@ function resetSyncLatches() {
   readerModelLoaded       = false;
   profileWritePending     = false;
   readerModelWritePending = false;
+  fb1aReset();   // FB-1a: the retry state belongs to the session that is ending
 }
 
 // Auth state is persisted to localStorage via sv()/ls() so
@@ -139,6 +441,7 @@ firebase.auth().onAuthStateChanged(function (u) {
     // the Firestore book load fires. Firestore is the source of truth
     // and REPLACE-wins over any stale localStorage book cache below.
     loadState();
+    fb1aBegin(u.uid);   // FB-1a: remember this uid's records before any read is waited for (a kind that still holds its start-up base keeps it)
     console.log('onAuthStateChanged: signed in', userObj);
 
     // 6.2b.1: clear any stale onboarding transcript left in the body-level
@@ -201,8 +504,8 @@ firebase.auth().onAuthStateChanged(function (u) {
     // the expected hit. The found branch must still be correct now
     // because Stage 2 will start writing the doc and Stage 3 will
     // migrate existing localStorage shelves into it.
-    loadBooksFromFirestore(u.uid, function (result) {
-      booksLoaded = true;   // F-DL2: load settled -> open the outgoing-write latch.
+    fb1aLoad('books', u.uid, l3MySeq, loadBooksFromFirestore, function (result) {
+      if (result.status !== 'error') { booksLoaded = true; }   // F-DL2 latch. FB-1a: a FAILED load keeps it shut.
       if (result.status === 'found') {
         // P0: the REPLACE merge now lives in mergeRemoteBookDoc, which
         // preserves locally-added-but-unsynced books (pendingBookSync)
@@ -211,6 +514,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         // saveState persists the merged shelf; the 3.10i conditional
         // flush-back is unchanged (fires only when a coverUrl was rewritten).
         var coversNormalized = mergeRemoteBookDoc(u.uid, result.data);
+        fb1aReapply('books', u.uid);   // FB-1a: after a RETRIED load, what changed while it was failing goes back
         saveState();
         if (coversNormalized) {
           markBooksDirty();
@@ -238,7 +542,8 @@ firebase.auth().onAuthStateChanged(function (u) {
         // Network / permission / other failure. Keep cache, log
         // and continue; the cached shelf stays visible.
         console.warn('loadBooksFromFirestore: fetch failed, keeping cache', result.error);
-        // F-DL2 (R2): errored load -> latch open; flush any deferred write.
+        // FB-1a: errored load -> the latch STAYS SHUT and fb1aLoad retries. This saveState
+        // only re-marks a deferred write; it goes out once a retried load succeeds.
         saveState();
       }
       // 6.2b: second (idempotent) first-run greeting trigger. The shelf-
@@ -258,8 +563,8 @@ firebase.auth().onAuthStateChanged(function (u) {
     // does not resurrect from cache. Ownership is arc.userId (direct),
     // so clear-predicate and remote-set share the key. Cold open still
     // runs migrate(); this listener fires post-first-render.
-    loadArcsFromFirestore(u.uid, function (arcResult) {
-      arcsLoaded = true;   // F-DL1: load settled -> open the outgoing-write latch.
+    fb1aLoad('arcs', u.uid, l3MySeq, loadArcsFromFirestore, function (arcResult) {
+      if (arcResult.status !== 'error') { arcsLoaded = true; }   // F-DL1 latch. FB-1a: a FAILED load keeps it shut.
       if (arcResult.status === 'found') {
         // FX-1: the remote id set, computed BEFORE the clear-loop so the guard
         // can distinguish "absent from remote because created locally and not
@@ -302,6 +607,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         }
         if (arcConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('arcs', u.uid, arcConfirmed); }   // FX-1c: confirmed
         // FX-1c splat-end:arcs
+        fb1aReapply('arcs', u.uid);   // FB-1a (see the books branch)
         // 2.0 hardening (batch 2a): the REPLACE-splat above bypasses migrate()
         // and (unlike books / subTheories) had no field backfill, so a remote
         // arc from an older schema landed missing bookIds / entryIds -- the
@@ -325,8 +631,8 @@ firebase.auth().onAuthStateChanged(function (u) {
         saveState();
       } else {
         console.warn('loadArcsFromFirestore: fetch failed, keeping cache', arcResult.error);
-        // F-DL1 (R2): load errored -> latch is open; flush any deferred write.
-        // localStorage stayed durable; this pushes the local set.
+        // FB-1a: load errored -> the latch STAYS SHUT and fb1aLoad retries. localStorage
+        // stayed durable; this saveState only re-marks a deferred write.
         saveState();
       }
 
@@ -335,8 +641,8 @@ firebase.auth().onAuthStateChanged(function (u) {
       // (subTheories[id].arcId -> arcs[arcId].userId), so both the clear-
       // predicate and buildUserSubTheoriesDoc need arcs present. Fires once
       // per sign-in regardless of the arc branch above.
-      loadSubTheoriesFromFirestore(u.uid, function (stResult) {
-        subTheoriesLoaded = true;   // F-DL1: load settled -> open the latch.
+      fb1aLoad('subTheories', u.uid, l3MySeq, loadSubTheoriesFromFirestore, function (stResult) {
+        if (stResult.status !== 'error') { subTheoriesLoaded = true; }   // F-DL1 latch. FB-1a: a FAILED load keeps it shut.
         if (stResult.status === 'found') {
           // FX-1: remote id set before the clear-loop (see the arcs guard).
           // subTheories are the required pair to arcs — both guards ship in this
@@ -379,6 +685,7 @@ firebase.auth().onAuthStateChanged(function (u) {
           }
           if (stConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('subTheories', u.uid, stConfirmed); }   // FX-1c
           // FX-1c splat-end:subTheories
+          fb1aReapply('subTheories', u.uid);   // FB-1a (see the books branch)
           if (typeof backfillSubTheoryUserId === 'function') {
             backfillSubTheoryUserId(state.subTheories, state.arcs);
           }
@@ -415,7 +722,7 @@ firebase.auth().onAuthStateChanged(function (u) {
           saveState();   // F-DL1: flush any write deferred during the load window.
         } else {
           console.warn('loadSubTheoriesFromFirestore: fetch failed, keeping cache', stResult.error);
-          saveState();   // F-DL1 (R2): errored load; latch open; flush deferred write.
+          saveState();   // FB-1a: errored load; latch STAYS SHUT (retried); this only re-marks a deferred write.
         }
       });
     });
@@ -425,8 +732,8 @@ firebase.auth().onAuthStateChanged(function (u) {
     // of the other docs. REPLACE: clear THIS uid's locally-known themes before
     // splatting the remote set, so a delete on another device does not
     // resurrect from cache. Ownership is theme.userId (direct).
-    loadThemesFromFirestore(u.uid, function (themeResult) {
-      themesLoaded = true;   // F-DL1: load settled -> open the latch.
+    fb1aLoad('themes', u.uid, l3MySeq, loadThemesFromFirestore, function (themeResult) {
+      if (themeResult.status !== 'error') { themesLoaded = true; }   // F-DL1 latch. FB-1a: a FAILED load keeps it shut.
       themesLoadOk = (themeResult.status === 'found' || themeResult.status === 'absent');   // L4 hotfix R4
       if (themeResult.status === 'found') {
         if (!state.userThemes) { state.userThemes = {}; }
@@ -466,6 +773,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         }
         if (thConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('themes', u.uid, thConfirmed); }   // FX-1c
         // FX-1c splat-end:themes
+        fb1aReapply('themes', u.uid);   // FB-1a (see the books branch)
         // 2.0 hardening (batch 2a): the REPLACE-splat above bypasses migrate()
         // and had no field backfill, so a remote theme from an older schema
         // landed missing name / bookIds. Backfill on the merge path, mirroring
@@ -483,7 +791,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         saveState();   // F-DL1: flush any write deferred during the load window.
       } else {
         console.warn('loadThemesFromFirestore: fetch failed, keeping cache', themeResult.error);
-        saveState();   // F-DL1 (R2): errored load; latch open; flush deferred write.
+        saveState();   // FB-1a: errored load; latch STAYS SHUT (retried); this only re-marks a deferred write.
       }
     });
 
@@ -502,8 +810,8 @@ firebase.auth().onAuthStateChanged(function (u) {
     // saveState) -- the one-time migration that pushes a user's pre-existing
     // localStorage artifacts to the cloud so they appear on a fresh device
     // (artifacts were localStorage-only before this batch; audit CRIT #2).
-    loadArtifactsFromFirestore(u.uid, function (artResult) {
-      artifactsLoaded = true;   // F-DL1: load settled -> open the latch.
+    fb1aLoad('artifacts', u.uid, l3MySeq, loadArtifactsFromFirestore, function (artResult) {
+      if (artResult.status !== 'error') { artifactsLoaded = true; }   // F-DL1 latch. FB-1a: a FAILED load keeps it shut.
       if (artResult.status === 'found') {
         if (!state.bookArtifacts) { state.bookArtifacts = {}; }
         // FX-1: remote key set before the clear-loop. artifacts key by the
@@ -544,6 +852,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         }
         if (artConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('artifacts', u.uid, artConfirmed); }   // FX-1c
         // FX-1c splat-end:artifacts
+        fb1aReapply('artifacts', u.uid);   // FB-1a (see the books branch)
         if (typeof ensureArtifactFieldsAll === 'function') {
           ensureArtifactFieldsAll(state.bookArtifacts);
         }
@@ -578,7 +887,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         }
       } else {
         console.warn('loadArtifactsFromFirestore: fetch failed, keeping cache', artResult.error);
-        saveState();   // F-DL1 (R2): errored load; latch open; flush deferred write.
+        saveState();   // FB-1a: errored load; latch STAYS SHUT (retried); this only re-marks a deferred write.
       }
     });
 
@@ -588,25 +897,47 @@ firebase.auth().onAuthStateChanged(function (u) {
     // known entries before splatting the remote set, so a delete on another
     // device does not resurrect from cache. Ownership is entry.userId
     // (direct), so clear-predicate and remote-set share the key.
-    loadNotebookFromFirestore(u.uid, function (nbResult) {
-      notebookLoaded = true;   // F-DL1: load settled -> open the latch.
+    fb1aLoad('notebook', u.uid, l3MySeq, loadNotebookFromFirestore, function (nbResult) {
+      if (nbResult.status !== 'error') { notebookLoaded = true; }   // F-DL1 latch. FB-1a: a FAILED load keeps it shut.
       if (nbResult.status === 'found') {
+        // FB-1a (FX-1b + FX-1c for the notebook, audit BR-02). The clear-loop used to
+        // delete EVERY local note of this uid before laying in the cloud copy, so a note
+        // the cloud had never seen (written offline, or whose save never landed) was
+        // deleted at the next good load. Now, as for arcs: a local note absent from the
+        // remote doc is dropped only if it is NOT pending sync, and a note deleted here
+        // whose removal has not reached the cloud is never copied back.
+        // FX-1c splat-begin:notebook
+        var remoteEntries = (nbResult.data && nbResult.data.notebookEntries)
+          ? nbResult.data.notebookEntries
+          : {};
+        var nbRemoteHas = {};
+        var rhnid;
+        for (rhnid in remoteEntries) {
+          if (Object.prototype.hasOwnProperty.call(remoteEntries, rhnid)) { nbRemoteHas[rhnid] = true; }
+        }
+        var nbDelPend = (typeof getPendingDeletes === 'function') ? getPendingDeletes('notebook', u.uid) : [];
+        var nbDelSet = {}, nbDk, nbConfirmed = [];
+        for (nbDk = 0; nbDk < nbDelPend.length; nbDk++) {
+          nbDelSet[nbDelPend[nbDk]] = true;
+          if (!nbRemoteHas[nbDelPend[nbDk]]) { nbConfirmed.push(nbDelPend[nbDk]); }
+        }
+        var nbKeptPending = 0;
         var eid;
         if (state.notebookEntries) {
           for (eid in state.notebookEntries) {
             if (Object.prototype.hasOwnProperty.call(state.notebookEntries, eid) &&
-                state.notebookEntries[eid] && state.notebookEntries[eid].userId === u.uid) {
-              delete state.notebookEntries[eid];
+                state.notebookEntries[eid] && state.notebookEntries[eid].userId === u.uid &&
+                !nbRemoteHas[eid]) {
+              if (isPendingSync('notebook', u.uid, eid)) { nbKeptPending = nbKeptPending + 1; }
+              else { delete state.notebookEntries[eid]; }
             }
           }
         }
-        var remoteEntries = (nbResult.data && nbResult.data.notebookEntries)
-          ? nbResult.data.notebookEntries
-          : {};
         var reid;
         var journalPrivacyChanged = false;
         for (reid in remoteEntries) {
           if (Object.prototype.hasOwnProperty.call(remoteEntries, reid)) {
+            if (nbDelSet[reid]) { if (state.notebookEntries[reid]) { delete state.notebookEntries[reid]; } continue; }   // FX-1c: pending delete, never resurrected
             state.notebookEntries[reid] = remoteEntries[reid];
             // N-epic: merge-boundary 'filed' default. The REPLACE-splat
             // bypasses migrate(), so a remote entry lacking 'filed' (a device
@@ -647,7 +978,13 @@ firebase.auth().onAuthStateChanged(function (u) {
             }
           }
         }
-        if (journalPrivacyChanged && typeof markNotebookDirty === 'function') {
+        if (nbConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('notebook', u.uid, nbConfirmed); }   // FX-1c: confirmed
+        // FX-1c splat-end:notebook
+        fb1aReapply('notebook', u.uid);   // FB-1a (see the books branch)
+        // FB-1a: a note kept because the cloud has not got it yet, and a delete the cloud
+        // still lists, are pushed NOW (the latch is open on this branch) -- not left
+        // waiting for the next unrelated change to the notebook.
+        if ((journalPrivacyChanged || nbKeptPending > 0 || nbDelPend.length > nbConfirmed.length) && typeof markNotebookDirty === 'function') {
           markNotebookDirty();
         }
         // 2.0 hardening (batch 2a): the REPLACE-splat + inline backfill above
@@ -669,7 +1006,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         saveState();   // F-DL1: flush any write deferred during the load window.
       } else {
         console.warn('loadNotebookFromFirestore: fetch failed, keeping cache', nbResult.error);
-        saveState();   // F-DL1 (R2): errored load; latch open; flush deferred write.
+        saveState();   // FB-1a: errored load; latch STAYS SHUT (retried); this only re-marks a deferred write.
       }
     });
 
@@ -1387,6 +1724,19 @@ function deleteAccount(callback, progress) {
   var authUser = firebase.auth().currentUser;
   if (!authUser || authUser.uid !== uid) { finish({ status: 'error', phase: 'reauth', error: new Error('auth user missing or mismatched') }); return; }
 
+  // FB-1a: NOT while one of the six sign-in loads is in flight or has a retry
+  // registered (fb1aUnfinished). A retry landing in the middle of a deletion
+  // would answer 'absent', open its latch, and push this device's copy back
+  // under a uid that is being removed. Nothing has been touched at this point,
+  // so the reader is told exactly that, through the existing 'firestore'
+  // message. What this does NOT cover: a uid still waiting at the invite list
+  // has started no load, so the guard passes and the deletion runs as it did
+  // before FB-1a.
+  if (typeof fb1aUnfinished === 'function' && fb1aUnfinished()) {
+    finish({ status: 'error', phase: 'firestore', error: new Error('your library has not finished loading on this device') });
+    return;
+  }
+
   // 1. re-auth FIRST.
   phase('reauth');
   var provider = new firebase.auth.GoogleAuthProvider();
@@ -1475,8 +1825,9 @@ function deleteAccountCloudData(uid) {
 
 // After the cloud record was removed but the Auth delete FAILED: push the local
 // record straight back up. Every collection's outgoing write is dirty-flag
-// driven and latch-gated on its load having settled (F-DL1), which in a live
-// signed-in session it has; the re-auth that just succeeded means the token is
+// driven and latch-gated on its load having succeeded (F-DL1; FB-1a). deleteAccount
+// refuses to start while one of the six loads is in flight or failing (fb1aUnfinished),
+// so in a session that has started its loads every latch is open here; the re-auth that just succeeded means the token is
 // fresh. Profile + reader model have no dirty flag and are saved directly.
 function restoreCloudFromLocal(uid) {
   var jobs = [];

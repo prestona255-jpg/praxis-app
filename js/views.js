@@ -3613,6 +3613,7 @@ function captureNote(register, body, activeKey, images, noNav) {
     createdAt: now,
     updatedAt: now
   };
+  if (typeof markPendingSync === 'function') { markPendingSync('notebook', user.uid, id); }   // FB-1a (FX-1b): kept through the sign-in merge until its save is confirmed
   markNotebookDirty();
   saveState();
   nbJustSavedId = id;          // B1/MO-1: the render below answers the hand
@@ -3952,6 +3953,7 @@ function openJournalEditor() {
         updatedAt:  now
       };
       state.notebookEntries[id] = entry;
+      if (typeof markPendingSync === 'function') { markPendingSync('notebook', user.uid, id); }   // FB-1a (FX-1b): kept through the sign-in merge until its save is confirmed
       markNotebookDirty();
       saveState();
       renderNotebook();
@@ -19017,6 +19019,7 @@ function openMarginaliaEditor(bookId, editEntryId) {
           createdAt:  now,
           updatedAt:  now
         };
+        if (typeof markPendingSync === 'function') { markPendingSync('notebook', user.uid, id); }   // FB-1a (FX-1b): kept through the sign-in merge until its save is confirmed
         entryId = id;
         markNotebookDirty();
         if (report && report.setLocal) { report.setLocal(saveState()); } else { saveState(); }
@@ -26439,6 +26442,7 @@ function capUndo() {
   if (!capLastFiled) { return; }
   var lf = capLastFiled;
   if (lf.id && state.notebookEntries && state.notebookEntries[lf.id]) {
+    if (typeof noteRecordDeleted === 'function') { noteRecordDeleted('notebook', state.notebookEntries[lf.id].userId, lf.id); }   // FB-1a (FX-1c): an undone note is not copied back by a stale cloud read
     delete state.notebookEntries[lf.id];
     markNotebookDirty();
     saveState();
@@ -26671,14 +26675,14 @@ function capAcceptSplit() {
     else { okAll = false; break; }
   }
   if (!okAll || !childIds.length) {                     // CA-2 partial-failure: undo the children, keep parent
-    for (i = 0; i < childIds.length; i++) { if (state.notebookEntries[childIds[i]]) { delete state.notebookEntries[childIds[i]]; } }
+    for (i = 0; i < childIds.length; i++) { if (state.notebookEntries[childIds[i]]) { if (typeof noteRecordDeleted === 'function') { noteRecordDeleted('notebook', state.notebookEntries[childIds[i]].userId, childIds[i]); } delete state.notebookEntries[childIds[i]]; } }   // FB-1a (FX-1c)
     markNotebookDirty(); saveState();
     capCancelSplit();
     capShowToast('Couldn’t split — your note is kept as one', null);
     return;
   }
   // all children landed -> NOW remove the parent (never before; raw present the whole time)
-  if (state.notebookEntries[st.parentId]) { delete state.notebookEntries[st.parentId]; }
+  if (state.notebookEntries[st.parentId]) { if (typeof noteRecordDeleted === 'function') { noteRecordDeleted('notebook', state.notebookEntries[st.parentId].userId, st.parentId); } delete state.notebookEntries[st.parentId]; }   // FB-1a (FX-1c)
   markNotebookDirty(); saveState();
   capSplitUndo = { snap: st.snap, childIds: childIds };
   var kept = [], k;
@@ -26706,7 +26710,7 @@ function capUndoSplit() {
     if (!(parentId && state.notebookEntries[parentId])) { capShowToast('Couldn’t undo the split', null); return; }
   }
   var i, cset = {};
-  for (i = 0; i < us.childIds.length; i++) { cset[us.childIds[i]] = true; if (state.notebookEntries[us.childIds[i]]) { delete state.notebookEntries[us.childIds[i]]; } }
+  for (i = 0; i < us.childIds.length; i++) { cset[us.childIds[i]] = true; if (state.notebookEntries[us.childIds[i]]) { if (typeof noteRecordDeleted === 'function') { noteRecordDeleted('notebook', state.notebookEntries[us.childIds[i]].userId, us.childIds[i]); } delete state.notebookEntries[us.childIds[i]]; } }   // FB-1a (FX-1c)
   markNotebookDirty(); saveState();
   var kept = [], k;
   for (k = 0; k < capCaught.length; k++) { if (!cset[capCaught[k].id]) { kept.push(capCaught[k]); } }

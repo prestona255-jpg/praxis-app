@@ -10,7 +10,17 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
-**L4b-3a.2 (2026-11-22, v3.339, local until pushed) — the Shelf as The Library (direction A, ruled 20 Nov; rulings A1–A12,
+**FB-1a (2026-11-23, v3.340, local until pushed) — the shelf lock and the notes guard (closes the beta-readiness audit's rows
+BR-01 and BR-02 only; a data-safety build, no surface cell changes).** Every surface that writes to the cloud: after a failed
+sign-in read, each collection's whole-document write stays held until a read succeeds (retried on 'online', on returning to the
+front, and on a 5 / 15 / 45 / 120 s timer; a toast says once "Can’t reach your library right now. New notes and books are kept
+on this device."), and what the reader changed meanwhile is put back over the cloud copy when the read lands. Notes written or
+deleted with no signal are kept (pending) or held deleted through the next load. Delete account waits while a load is
+unfinished. A live arc's public copy is refreshed only once both the arcs and sub-theories reads have succeeded. Applied byte
+for byte from the build chat's fourth cut (r4); FX-1 is NOT complete (the mergeBookDuplicates artifact site is owed). Known
+limits L1–L15 and residuals G1–G6. Record: `docs/checkpoints/fb-1a.md`.
+
+**L4b-3a.2 (2026-11-22, v3.339, pushed 3ce6a7b; Preston's phone check passed 22 Nov at Night, six of six — Day mode not yet looked at on his phone) — the Shelf as The Library (direction A, ruled 20 Nov; rulings A1–A12,
 21 Nov; the chat's choices C1–C12 are Preston's to overrule).** Row 4 (Shelf), past the signed-out gate (pixel-identical): each
 lens or category is a shelf — its name (a lens with its mark) and "See all N" ("N of M" under a chip or a search, "See it" for
 one book), then up to twelve whole covers 168 px high at their own widths standing on one ledge (from 760 as many as fit, one
@@ -21,7 +31,7 @@ when every category holds one, share one "Your books" shelf. Select mode and the
 steps aside only while a book is picked (A10, closing L4b-3a.1 R-5). Residuals R-1–R-5 (R-1, failed covers in one row on a
 desktop, accepted 22 Nov); the notch seam for his phone check. Record: `docs/checkpoints/l4b-3a-2.md`.
 
-**L4b-3a.1 (2026-11-21, v3.338, pushed 23672b8; Preston's phone check owed) — the Shelf: four phone fixes from Preston's phone check of v3.337
+**L4b-3a.1 (2026-11-21, v3.338, pushed 23672b8; Preston's phone check passed 21 Nov, all four steps) — the Shelf: four phone fixes from Preston's phone check of v3.337
 (ruling "Own small build now"; the chat's choices F1–F4 are Preston's to overrule).** Row 4 (Shelf), phones: Add a book (and every
 panel the Shelf reveals) lands below the status band, so with the keyboard up the Title field is clear of the clock (P1); the
 closed Manage sheet and the closed Select bar are no longer painted, so nothing shows behind the keyboard (P2); the Yumi flower

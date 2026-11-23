@@ -27,6 +27,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // handler; it touches no state, so it is safe this early.
   if (window.PraxisMeasure) { PraxisMeasure.install(); }
   loadState();
+  // FB-1a: remember the cached reader's records as they stand NOW, before a page is
+  // drawn and before the sign-in event (which can come a moment later), so an edit
+  // made in that moment still counts as changed if a read then fails (see the FB-1a
+  // block in integrations.js). No cached reader, no call: sign-in makes it instead.
+  if (typeof fb1aBegin === 'function' && typeof getCurrentUser === 'function' && getCurrentUser() && getCurrentUser().uid) {
+    fb1aBegin(getCurrentUser().uid);
+  }
   saveState();
   // NO checkActivation() call here: renderRoute() below calls it as its first
   // act (views.js), so a call at this point is pure duplication. ACTIVATION is

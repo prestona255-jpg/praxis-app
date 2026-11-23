@@ -1,0 +1,100 @@
+== FB-1a behaviour rig on LEG M2 (staged r4, one mechanism removed) == (port of fb1a_rig.py: page + iframes + bridge.js, headless Chrome)
+
+[S0] control: online, nothing failing
+  PASS  S0 three books reach the cloud
+  PASS  S0 the note reaches the cloud
+  PASS  S0 every latch is open after a good load
+  PASS  S0 no pending notebook ids once the save is confirmed
+  PASS  S0 reopen: shelf and note still here
+  PASS  S0 no notice on a clean load
+  PASS  S0 the patch prints a book by the same fields as the repo's mergeBookFingerprint
+
+[S1] BR-01: the laptop is behind, its reads fail, the reader changes something, the signal returns
+  PASS  S1 laptop starts with the 3 books
+  PASS  S1 phone week: cloud holds 7 books, 2 notes, 2 arcs
+  PASS  S1 laptop opens on its old copy (3 books)
+  FAIL  S1 NO shelf, notebook or arc write leaves the laptop while its reads fail
+        got  ["userBooks/reader1","userBooks/reader1"]
+        want []
+  FAIL  S1 cloud shelf still whole while the laptop waits (7 books)
+        got  4
+        want 7
+  FAIL  S1 laptop latches shut while failing
+        got  [true,false,false]
+        want [false,false,false]
+  FAIL  S1 after the retry: cloud shelf = the phone's 7 + the laptop's 1
+        got  ["bk_All_About_Love","bk_Beloved","bk_Pedagogy_of_the_Oppressed","bk_The_Fire_Next_Time"]
+        want ["bk_All_About_Love","bk_Beloved","bk_Black_Marxism","bk_Cruel_Optimism","bk_Freedom_Dreams","bk_Pedagogy_of_the_Oppressed","bk_Sister_Outsider","bk_The_Fire_Next_Time"]
+  PASS  S1 the laptop's status edit reached the cloud
+  PASS  S1 cloud notes = phone's 2 + laptop's 1, phone's rewrite intact
+  PASS  S1 cloud arcs: laptop rename kept, phone's second arc kept
+  FAIL  S1 laptop now shows all 8 books
+        got  ["bk_All_About_Love","bk_Beloved","bk_Pedagogy_of_the_Oppressed","bk_The_Fire_Next_Time"]
+        want ["bk_All_About_Love","bk_Beloved","bk_Black_Marxism","bk_Cruel_Optimism","bk_Freedom_Dreams","bk_Pedagogy_of_the_Oppressed","bk_Sister_Outsider","bk_The_Fire_Next_Time"]
+  PASS  S1 laptop took the phone's rewrite of the untouched note
+  PASS  S1 laptop latches open after the retry
+
+[S2] BR-01: a new device, the shelf read fails, the reader adds one book
+  PASS  S2 new device shows an empty shelf
+  FAIL  S2 cloud shelf untouched after the add (8 books)
+        got  1
+        want 8
+  FAIL  S2 after the retry: cloud shelf = 8 + the new one
+        got  ["bk_Braiding_Sweetgrass"]
+        want ["bk_All_About_Love","bk_Beloved","bk_Black_Marxism","bk_Braiding_Sweetgrass","bk_Cruel_Optimism","bk_Freedom_Dreams","bk_Pedagogy_of_the_Oppressed","bk_Sister_Outsider","bk_The_Fire_Next_Time"]
+  FAIL  S2 the new device now shows all 9
+        got  1
+        want 9
+
+[S3] BR-02: a note written with no signal, the app closed before the signal returns
+  PASS  S3 the offline note is on the phone
+  PASS  S3 it is marked pending
+  PASS  S3 the cloud never saw it
+  PASS  S3 reopened online: the note is STILL on the phone
+  PASS  S3 and it has now been pushed to the cloud
+  PASS  S3 pending set cleared after the confirmed save
+  PASS  S3 the other notes are all still there
+
+[S4] a note deleted with no signal, the app closed, a stale cloud copy at the next open
+  PASS  S4 the cloud still lists the deleted note
+  PASS  S4 reopened: the deleted note does NOT come back
+  PASS  S4 and the delete has now reached the cloud
+  PASS  S4 one more open: the delete mark is cleared
+
+[S5] control: a note deleted on the laptop disappears from the phone at its next open
+  PASS  S5 the phone dropped the note the laptop deleted
+
+[S6] a new account, first reads fail, the reader writes, then the read answers "no document yet"
+  FAIL  S6 nothing written while the reads fail
+        got  [["tablet","set","userBooks/reader2"]]
+        want []
+  PASS  S6 after the retry (absent): the book and the note are pushed
+
+[S7] the retry timer: reads fail at open, recover a moment later, no "online" event
+  FAIL  S7 shut while failing
+        got  true
+        want false
+  PASS  S7 the notice is said once, not six times
+  PASS  S7 the 5-second retry opened the latches
+
+[S8] sign-out while a load is failing leaves nothing behind
+  PASS  S8 no read or write after sign-out
+  FAIL  S8 signing back in loads normally (latches open, 9 books)
+        got  [true,1]
+        want [true,9]
+
+[S9] Delete account while the library cannot be read: refused before anything is touched
+  PASS  S9 refused, through the existing "nothing was deleted" branch
+  PASS  S9 no sign-in window was opened and no document was touched
+
+[S10] arcs fail, sub-theories load; the arcs retry must not load sub-theories a second time
+  PASS  S10 sub-theories read once per sign-in
+  PASS  S10 arcs latch open after its retry
+
+[S11] the laptop is behind, its reads fail, the reader only LOOKS AROUND, the signal returns
+
+  STOPPED in [S11]: TypeError: Cannot set properties of undefined (setting 'status')
+
+LEG M2 (staged r4, one mechanism removed): 36 / 47 passed, 11 failed, then STOPPED in [S11]
+RIG-DONE
+RUNNER: LEG M2 (staged r4, one mechanism removed) took 60 s, 2026-11-23 13:39

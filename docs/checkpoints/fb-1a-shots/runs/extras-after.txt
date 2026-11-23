@@ -1,0 +1,44 @@
+== FB-1a coverage extras on EXTRAS on AFTER (staged r4) == (the executor's own scenarios, brief 2.4)
+
+[X0] set-up: one account, a level phone with 6 books, a note, an arc, a lens
+  PASS  X0 set-up reached the cloud
+
+[X1] the JOURNAL composer, through its own Save button, with no signal; the app closed before the signal returns
+  PASS  X1 the Save button made a journal entry, marked pending
+  PASS  X1 reopened online: the journal entry is kept and pushed
+
+[X2] the MARGINALIA composer, typed into and autosaved, while every read is failing; the app closed before recovery
+  PASS  X2 the canvas autosaved a new margin note, marked pending
+  PASS  X2 reopened: the margin note is kept and pushed
+
+[X3] capture's UNDO, through the toast's own Undo control, with no signal; the app closed; a stale cloud copy at the next open
+        reading: the filed id "entry_1795464496702_272728"; on the device {"body":"caught, then undone","register":"marginalia","userId":"readerX"}; notebook latch true; in the cloud {"id":"entry_1795464496702_272728","userId":"readerX","register":"marginalia","isPrivate":false,"body":"caught, then undone","bookIds":[],"arcIds":[],"images":[],"filed":false,"createdAt":1795464496702,"updatedAt":1795464496702}
+  PASS  X3 the capture filed and the note reached the cloud
+  PASS  X3 Undo was clicked and the note left the device
+  PASS  X3 the cloud still lists the undone note
+  PASS  X3 reopened: the undone note does NOT come back, and the delete reaches the cloud
+
+[X4] a lens and an artifact CREATED while every read is failing
+  PASS  X4 neither is written while failing
+  PASS  X4 both pushed after the retry, the older lens kept
+
+[X5] an account switch while a load is failing, then a cached reader whose sign-in event brings another account
+  PASS  X5 after the switch the device is the second account, with none of the first one's records
+  PASS  X5 the first account's cloud documents are untouched
+  PASS  X5 nothing of the first account was written under the second
+  PASS  X5 the event brought the first account over a cached second one
+  PASS  X5 the first account's edit reached its own cloud; the second account's shelf is untouched
+
+[X6] the 15 s and 45 s timer steps, with no event: reads fail for 25 s from the first failure
+        reading: the shelf latch opened 65 s after the first failure (retries due at 5, 20, 65 s; reads restored at 25 s)
+  PASS  X6 the 5 s and 20 s retries failed and the 65 s one opened the latch (60..72 s)
+
+[X7] the REAL shelf sort and the REAL lens render on a device that is behind, reads failing (their network is blocked)
+        reading: 6 books unsorted before the shelf rendered; 6 stamped 'Uncategorized' by the real sort; the lens has a look after #lenses rendered: true
+  PASS  X7 the phone's two status changes survive in the cloud and reach the laptop
+  PASS  X7 the phone's lens rename survives in the cloud and reaches the laptop
+  PASS  page errors across every device
+
+EXTRAS on AFTER (staged r4): 20 / 20 passed, 0 failed
+RIG-DONE
+RUNNER: EXTRAS on AFTER (staged r4) took 111 s, 2026-11-23 14:09

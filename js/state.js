@@ -1084,7 +1084,7 @@ function clearPendingBookSync(uid, ids) {
 // so the guard is a keep-predicate only, identical bar the collection name.
 // books keeps its own dedicated functions (it carries the extra machinery this
 // family deliberately omits). Kinds used: 'arcs' | 'subTheories' | 'themes' |
-// 'artifacts'. Promise-free (cscript-parseable), ls/sv only, never in the
+// 'artifacts' | 'lensOffers' (L4.2) | 'notebook' (FB-1a). Promise-free (cscript-parseable), ls/sv only, never in the
 // state blob (so the REPLACE over state.<X> cannot touch it).
 // =====================================================================
 function pendingSyncKey(kind, uid) {
@@ -1274,6 +1274,7 @@ function flushPendingBooks() {
 // it and fires a fire-and-forget /userArcs/{uid} write. Saves touching
 // no arc leave it unset and incur no arc round-trip.
 var arcsDirty = false;
+var fb1aRepublishOwed = false;   // FB-1a: saveState skipped republishLiveArcs (a load had not succeeded); paid at the first save after both have
 
 function markArcsDirty() {
   arcsDirty = true;
@@ -2518,6 +2519,7 @@ function deleteEntry(entryId) {
     }
   }
   if (evTouched && typeof markSubTheoriesDirty === 'function') { markSubTheoriesDirty(); }
+  noteRecordDeleted('notebook', entry.userId, entryId);   // FB-1a (FX-1c + Finding C for the notebook)
   delete state.notebookEntries[entryId];
   markArcsDirty();
   markNotebookDirty();
@@ -3656,10 +3658,33 @@ function saveState() {
       // flagged published===true && freshness==="live"; unpublished or frozen
       // arcs incur zero reads and zero writes here. Fire-and-forget; it never
       // calls saveState (no recursion) and never re-renders.
+      // FB-1a: NOT while the arcs or the sub-theories load has not succeeded. The
+      // projection is built from BOTH; on a device that has not read them it can
+      // show a live arc with no finished sub-theory, and republishLiveArcs then
+      // unpublishes it and deletes its public copy. With the latches able to stay
+      // shut (FB-1a) this branch is also reached on every save, not only on an arc
+      // edit. A call skipped here is OWED and is paid just below, at the first save
+      // after both loads have succeeded. (typeof: the harnesses that load this file
+      // alone have no latches.)
       if (typeof republishLiveArcs === 'function') {
-        republishLiveArcs(arcUser.uid);
+        if (typeof arcsLoaded === 'undefined' || typeof subTheoriesLoaded === 'undefined' || (arcsLoaded && subTheoriesLoaded)) {
+          fb1aRepublishOwed = false;
+          republishLiveArcs(arcUser.uid);
+        } else {
+          fb1aRepublishOwed = true;
+        }
       }
     }
+  }
+  // FB-1a: pay a republish the gate above skipped. The arcs change itself was saved
+  // (or is still marked dirty) then; only its public copy is behind. The found and
+  // the absent branch of the sub-theories load both call saveState with the latch
+  // already open, so the debt is paid there.
+  if (fb1aRepublishOwed && typeof republishLiveArcs === 'function' &&
+      typeof arcsLoaded !== 'undefined' && typeof subTheoriesLoaded !== 'undefined' && arcsLoaded && subTheoriesLoaded) {
+    var owedUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    fb1aRepublishOwed = false;
+    if (owedUser && owedUser.uid) { republishLiveArcs(owedUser.uid); }
   }
   if (notebookDirty) {
     notebookDirty = false;
@@ -3673,6 +3698,9 @@ function saveState() {
       saveNotebookToFirestore(nbUser.uid, nbPayload, function (result) {
         if (result && result.status === 'ok') {
           console.log('saveNotebookToFirestore: ok');
+          // FB-1a (FX-1b): this snapshot is durable -> clear exactly its ids from the
+          // notebook's pending-sync set (notes written AFTER the snapshot stay protected).
+          clearPendingSync('notebook', nbUser.uid, mapIdList(nbPayload.notebookEntries));
         } else {
           console.warn(
             'saveNotebookToFirestore: failed',
