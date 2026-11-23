@@ -1,0 +1,7 @@
+
+[T0] one device signs in and adds a book
+  PASS  T0 the book reaches the cloud
+
+P4 _template on HEAD (aaaa875): 1 / 1 passed, 0 failed
+RIG-DONE
+RUNNER: P4 _template on HEAD (aaaa875) took 6 s, 2026-11-23 15:55

@@ -1,0 +1,52 @@
+== fb-1a: driver.js scenarios() (lines 152-508) vs tools/rig/scenarios/fb-1a.js
+order, old: S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S24 S22 S23 
+order, new: S0 S1 S2 S3 S4 S5 S6 S7 S8 S9 S10 S11 S12 S13 S14 S15 S16 S17 S18 S19 S20 S21 S24 S22 S23 
+order: SAME
+  S0  equal  (15 lines, md5 464b9a368f9e2ce8e5fc4892039e6af5)
+  S1  equal  (33 lines, md5 275f77c0e641e2c2b69a59fa1f96ff83)
+  S2  equal  (12 lines, md5 9cd1779db54c93d9b78fd33d4fa91393)
+  S3  equal  (16 lines, md5 b0ddaef4e26709b2cc6b7dff5bd50183)
+  S4  equal  (12 lines, md5 8d367be332a80df1f0f18149bc00fbd7)
+  S5  equal  (7 lines, md5 27ba61fcd5df2cf98a67595c62e0fc08)
+  S6  equal  (9 lines, md5 96a233fb062899d02121ee5d1dcac166)
+  S7  equal  (11 lines, md5 eca8c62ea0415956727a1ae8f7d41d60)
+  S8  equal  (10 lines, md5 927c9d8728b0d9ce4e00c9ff8befe0de)
+  S9  equal  (9 lines, md5 cacb3f451620831ab543ae02240fea3d)
+  S10  equal  (8 lines, md5 f6b42d4b1f88811b46a3eb88f8c37e1f)
+  S11  equal  (13 lines, md5 24c305aab3948102c68768480a3a139d)
+  S12  equal  (11 lines, md5 c39f448f0c7566c99b270f0d74f63fe6)
+  S13  equal  (8 lines, md5 aa24a965bbaa074894e3517c334f717c)
+  S14  equal  (11 lines, md5 6242ffb98dec8a419540c6a5847f480d)
+  S15  equal  (20 lines, md5 18c34574244acdac94452838f36ba472)
+  S16  equal  (15 lines, md5 bf58199eeb73a5aa371aa3c70372107e)
+  S17  equal  (17 lines, md5 85edca2fbcc056154c3dfdb8b1a96e9c)
+  S18  equal  (11 lines, md5 8ca5bcf6fc73c15d3d2b9d15e62861c3)
+  S19  equal  (19 lines, md5 44284b08a6e5e1ec2dae33a369e13e8b)
+  S20  equal  (11 lines, md5 c27b836bea6a5f60446243f88b6649f4)
+  S21  equal  (15 lines, md5 ace9a6886482bc0e1a8bddba7af96876)
+  S24  equal  (10 lines, md5 ed7ca46f4ea00de1b28f7b0f768f0b0b)
+  S22  equal  (29 lines, md5 35ab70f7d5366ced327f7676a9e97cfc)
+  S23  equal  (11 lines, md5 5e58cfc2a28ec62ca5f85b8937a9412d)
+== fb-1a-extras: driver.js extras() (lines 515-622) vs tools/rig/scenarios/fb-1a-extras.js
+order, old: X0 X1 X2 X3 X4 X5 X6 X7 
+order, new: X0 X1 X2 X3 X4 X5 X6 X7 
+order: SAME
+  X0  equal  (7 lines, md5 337adb29f6e0edabbfd3c534f5b27804)
+  X1  equal  (9 lines, md5 01c1fb49cae1a372f74319515a83f677)
+  X2  equal  (10 lines, md5 d801fd52a0197c396abe373a088cca58)
+  X3  equal  (15 lines, md5 3ef93c1390fc9d8f29844c10613d4c4e)
+  X4  equal  (7 lines, md5 77f4a0fbde7e66cea5a77232a93d41a4)
+  X5  equal  (18 lines, md5 8494657e9d03976284dc109ac9b22da2)
+  X6  equal  (15 lines, md5 61409e0b5ceb6fe9a3919bba5ff84374)
+  X7  equal  (16 lines, md5 af5cc04c9fd06dc90f310a2ffcd3b28c)
+P6: 33 of 33 scenarios equal once indentation is ignored
+
+== corroboration, 2026-11-23
+whole bodies, byte for byte (indentation NOT ignored):
+  driver.js lines 153-504 == tools/rig/scenarios/fb-1a.js lines 10-361 (352 lines)
+  driver.js lines 516-619 == tools/rig/scenarios/fb-1a-extras.js lines 12-115 (104 lines)
+  (what changed around them: "async function scenarios() {" / "async function extras() {" became
+  "rigSuite(async function () {"; the closing summary lines -- npass/nfail, the summary print, "return nfail" --
+  left the suite files because core.js's runner prints the summary now; "}" became "});")
+the comparison can fail: on a scratch copy with ONE character changed in S12 (the check's wanted value 1 -> 2),
+  the same script reads "S12 DIFFERENT" and "P6: 32 of 33 scenarios equal once indentation is ignored".

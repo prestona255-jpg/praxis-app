@@ -10,6 +10,8 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
+**RIG-1 (2026-11-23, tools and docs only, no app file, no version bump, local until pushed) — the shared test rig in `tools/rig/`; no surface cell changes.** Record: `docs/checkpoints/rig-1.md`.
+
 **FB-1a (2026-11-23, v3.340, pushed 42201f4; Preston's live smoke on a phone and a desktop: steps A and B passed, C–E not run by his choice) — the shelf lock and the notes guard (closes the beta-readiness audit's rows
 BR-01 and BR-02 only; a data-safety build, no surface cell changes).** Every surface that writes to the cloud: after a failed
 sign-in read, each collection's whole-document write stays held until a read succeeds (retried on 'online', on returning to the

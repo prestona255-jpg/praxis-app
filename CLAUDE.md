@@ -307,6 +307,12 @@ state → tradition-forms-arc → arc-constellation → integrations → yumi-br
   - CAVEAT — the diffstat test is NECESSARY BUT NOT SUFFICIENT, and was over-trusted until DW-STP2 (2026-07-14). With `core.autocrlf=true` the clean filter normalizes CRLF→LF **before every comparison git makes** (diff, numstat, staging), so a pure EOL flip of otherwise-unchanged lines is **structurally invisible** to it — a small diffstat reads small either way. It proves the CONTENT change is surgical; it cannot prove EOL held. For the EOL question use `git ls-files --eol` (compare `i/` vs `w/`), or a scratch-clone checkout. And note the practical floor: when every blob is already LF (`git show HEAD:<f> | tr -cd '\r' | wc -c` == 0 — true across this repo), a working-tree flip is **immaterial to what commits**, because the blob is LF regardless and any fresh checkout re-materializes CRLF regardless.
 - Never commit or push until Preston sends the exact words "commit and push." Then prove it: commit hash, the subject (`git log -1 --format=%s`, em-dash intact), and `HEAD == origin/main`.
 - "I did X" is never proof on its own — show the diff/grep/count.
+- THE SHARED RIG LIVES IN `tools/rig/` (RIG-1, 2026-11-23). It loads the real app into several devices over
+  one fake cloud and drives behaviour scenarios; the build chat and Claude Code run the same files. Here (no
+  Python): `powershell -NoProfile -ExecutionPolicy Bypass -File tools/rig/run.ps1 -Suite <name> -Tree . -Label <text> -Out <log>`
+  — exit 0 clean, 1 a check failed or the run stopped, 2 no RIG-DONE. Every build that adds scenarios adds
+  them as one suite file in `tools/rig/scenarios/` and they stay; later builds re-run them. `tools/rig/README.md`
+  is the contract (launcher ↔ page, how to add a suite, what a suite must imitate, what no rig can show).
 
 ## Where the work stands (read first, every session)
 - Current status, every stage's real state, and the open work live in `docs/Checklist and Roadmap/BUILD_STATE.md` — read it first. It is the single canonical tracker, updated per-substage in the same commit that finalizes each checkpoint. (The old `Praxis_Build_Checklist.html` and `Praxis_Roadmap.html` were deleted — they stored state in localStorage, not git, and drifted; recover the old blobs at SHAs `c0ddfe5` and `40de91f` if needed.)

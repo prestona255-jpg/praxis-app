@@ -31,6 +31,12 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-23 (RIG-1 BUILT, the shared test rig; Preston re-ruled the build order)** — Preston's ruling ("Lets do the rig"):
+  one behaviour rig in the repo, run by the build chat and Claude Code alike, kept and added to by every build. FB-1a's page
+  rig moved to `tools/rig/` and split so a suite is one file (`scenarios/fb-1a.js`, `fb-1a-extras.js`, `_template.js`), with
+  a launcher per machine (`run.ps1`, `run.py`); tools and docs only, no app file, no version bump, local until pushed
+  (`docs/checkpoints/rig-1.md`). The order, re-ruled by Preston the same day: RIG-1, then the phone gate, then the book page;
+  build 1b alternates with the room builds instead of coming before them. His ruling, recorded as made, so no `PROPOSED:` flag.
 - **2026-11-23 (FB-1a pushed 42201f4 at v3.340; live smoke A and B passed)** — the first fix build after the beta-readiness audit, cut small
   on Preston's ruling of 22 Nov ("1a" = the audit's rows BR-01 and BR-02; "1b", the rest of data safety, comes next; then
   2, platform guard rails; then his phone walk; then the book page). Applied byte for byte from the build chat's written

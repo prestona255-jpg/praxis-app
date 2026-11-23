@@ -1,0 +1,13 @@
+== FB-1a behaviour rig on exit-2 check: fb-1a with a 5 s timeout == (port of fb1a_rig.py: page + iframes + bridge.js, headless Chrome)
+
+[S0] control: online, nothing failing
+  PASS  S0 three books reach the cloud
+  PASS  S0 the note reaches the cloud
+  PASS  S0 every latch is open after a good load
+  PASS  S0 no pending notebook ids once the save is confirmed
+  PASS  S0 reopen: shelf and note still here
+  PASS  S0 no notice on a clean load
+  PASS  S0 the patch prints a book by the same fields as the repo's mergeBookFingerprint
+
+RUNNER: no RIG-DONE within 5 s
+RUNNER: exit-2 check: fb-1a with a 5 s timeout took 6 s, 2026-11-23 16:05
