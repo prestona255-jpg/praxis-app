@@ -2,6 +2,12 @@
 
 ## Session rules (read first, every session)
 
+- IMPORTANT: Read BETA.md (repo root) first. It leads on the first beta's SCOPE,
+  BUILD ORDER and OPEN BLOCKERS. Where BOARD.md, docs/studio/sequence.md,
+  docs/launch-runway.md, docs/studio/LAUNCH-STATUS.md or BUILD_STATE.md disagree
+  with it on those three things, BETA.md wins and the other file is corrected in
+  the same commit. How a build is RUN is unchanged: PROTOCOL.md and
+  docs/FIX-PROTOCOL.md still govern. (Added 2026-11-23, Preston's ruling.)
 - IMPORTANT: Read PROTOCOL.md before any wave or build work. It governs
   all build discipline. If this file and PROTOCOL.md ever disagree,
   PROTOCOL.md wins for build process.
@@ -315,6 +321,8 @@ state → tradition-forms-arc → arc-constellation → integrations → yumi-br
   is the contract (launcher ↔ page, how to add a suite, what a suite must imitate, what no rig can show).
 
 ## Where the work stands (read first, every session)
+- For the run to the first beta, read `BETA.md` at the repo root before this section:
+  scope, build order and open blockers live there (added 2026-11-23).
 - Current status, every stage's real state, and the open work live in `docs/Checklist and Roadmap/BUILD_STATE.md` — read it first. It is the single canonical tracker, updated per-substage in the same commit that finalizes each checkpoint. (The old `Praxis_Build_Checklist.html` and `Praxis_Roadmap.html` were deleted — they stored state in localStorage, not git, and drifted; recover the old blobs at SHAs `c0ddfe5` and `40de91f` if needed.)
 - The locked 9.6 design and stage scope live in `docs/PRAXIS_9_6_AND_VISUAL_UPLIFT.md` — the source of truth the build briefs are written against.
 - For any sub-theory work, also read `docs/knowledge-arcs/knowledge-arcs-subtheory-pivot.md`.

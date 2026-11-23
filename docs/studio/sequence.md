@@ -31,6 +31,13 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-23 (P0: BETA.md leads; the queue re-ruled)** -- Preston ruled on the launch-readiness review (23 Nov, about
+  4 pm). `BETA.md` at the repo root now leads on the first beta's scope, build order and open blockers; this file stays
+  the record of how each build went. Design happens in several chats at once; builds enter the repo one at a time from
+  BETA.md's table. After the phone gate the rooms lane opens with Home and Search (with the Search matching fix), then
+  Find a book (NEW), and only then the book page, which amends the RIG-1 entry's "then the book page". Three features are
+  ruled IN before the first invite, each designed in its own chat: the demo page, a deeper Yumi, ElevenLabs dictation.
+  File import (L2) stays out. Preston's rulings, recorded as made, so no `PROPOSED:` flag.
 - **2026-11-23 (RIG-1 BUILT, the shared test rig; Preston re-ruled the build order)** — Preston's ruling ("Lets do the rig"):
   one behaviour rig in the repo, run by the build chat and Claude Code alike, kept and added to by every build. FB-1a's page
   rig moved to `tools/rig/` and split so a suite is one file (`scenarios/fb-1a.js`, `fb-1a-extras.js`, `_template.js`), with

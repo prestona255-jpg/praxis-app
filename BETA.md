@@ -1,0 +1,122 @@
+# Praxis: the first beta (read this first)
+
+Written 2026-11-23 at v3.340 (main at fedbc77) from Preston's rulings of that day.
+
+This page leads on three things: the first beta's SCOPE, the BUILD ORDER, and the
+OPEN BLOCKERS. Where BOARD.md, docs/studio/sequence.md, docs/launch-runway.md,
+docs/studio/LAUNCH-STATUS.md or docs/Checklist and Roadmap/BUILD_STATE.md disagree
+with it on those three things, this page wins and the other file is corrected in the
+same commit. How a build is RUN is unchanged: PROTOCOL.md and docs/FIX-PROTOCOL.md
+still govern. Keep this page under 150 lines. Change it only on a Preston ruling,
+with the date.
+
+Several chats design Praxis at once. Design happens in parallel; builds enter the
+repo ONE AT A TIME, from the table below. A feature joins the first launch only by
+getting a row here.
+
+## What the first beta is
+
+- Five to ten readers Preston invites by hand, on the web, at praxisreader.com.
+  The App Store is the second launch, after real readers have used the beta.
+- A reader can: sign in; find and add books (search, barcode, shelf photo); use the
+  Shelf; write, speak and find notes; get lenses and deeper readings from Yumi; write
+  an artifact; export; delete the account.
+- Anyone can open a demo page with no sign-in.
+
+## Out of the first beta (ruled)
+
+- Arcs, sub-theories, values, the commons, reader and walk pages (23 Nov). Their
+  routes land on one #next page.
+- File import, lane L2 (23 Nov). A photo and a spoken note stay.
+- Galaxy lens colours and the "choose the hand" cards (29 Oct).
+
+## Ready means all four
+
+1. No known way to lose a reader's work: FX-1 complete; fix builds 1b and 2 live.
+2. A new reader finishes the audit's seven journeys on an iPhone without help: arrive
+   and sign in; add a first book; write and find a note; get lenses; find things
+   again; come back the next day, offline and on a second device; settings and leaving.
+3. A reader can reach Preston (Tell Preston), and opt-in error counts work.
+4. Nothing private is public: the GitHub repo is private and the live site does not
+   serve docs/.
+
+Then Preston walks the seven journeys on his phone, and one new reader walks them
+cold. Only then is anyone invited.
+
+## Build order
+
+Three lanes: data, rooms, features. Data builds and room builds alternate (ruled
+23 Nov). Every row finishes before the first invite.
+
+| # | Lane | Build | Size | Status |
+|---|---|---|---|---|
+| RIG | process | RIG-1, the shared test rig in tools/rig/ | small | pushed fedbc77 |
+| P0 | process | This page leads | small | this commit |
+| PG | gate | Preston's 25-step phone walk of the app as it stands | - | next |
+| P1 | process | Checks run by a machine on every push: the cscript harnesses and the rig | small | not started |
+| D1 | data | Fix build 1b: BR-03, BR-04, BR-29, the mergeBookDuplicates artifact site; plus a size meter on each per-reader cloud document (warn at 700 KB of the 1 MiB cap) | data | scoping |
+| R1 | rooms | Home and Search (L4b-3d), with the Search matching fix (every word, any order, accents and case ignored; artifacts, lenses and categories included) and an "All books" side | small | patch to be cut fresh |
+| R2 | rooms | Find a book: a search field replaces the Add a book form (NEW, ruled 23 Nov; comes before the book page) | small | to be drawn |
+| D2 | data | Fix build 2: the Yumi daily limit, docs/ off the live site, updates reaching readers | data | not started |
+| F2 | features | Deeper Yumi, her complexity and character (ruled in 23 Nov; built alongside the rooms; D2 still lands before any invite) | sized at its pre-flight | in design, its own chat |
+| F3 | features | ElevenLabs dictation (ruled in 23 Nov; after D2, it adds paid calls per reader) | sized at its pre-flight | in design, its own chat |
+| R3 | rooms | Book page and artifact (L4b-3b) | small | patch to be cut fresh |
+| R4 | rooms | Notebook and a note (L4b-3c) | small | patch to be cut fresh |
+| R5 | rooms | You, Settings, Your data, What Yumi sees, About (L4b-3e, two builds) | small | patch to be cut fresh |
+| R6 | rooms | Tell Preston | small | not started |
+| R7 | rooms | First run, the hide switch for out-of-beta rooms (L5), the sky's motion switch | small | design open |
+| F1 | features | The demo page, no sign-in (ruled in 23 Nov; LAST of the builds, after the rooms and Deeper Yumi, so it shows the finished app) | sized at its pre-flight | in design, its own chat |
+| G | gate | Preston's walk of the seven journeys; one new reader's walk; invites | - | - |
+
+Rules for the queue:
+
+- A patch is written the day it runs, against that day's main. The 19 Nov room patches
+  are reference for look and rulings, not bytes to apply.
+- Each room build moves its room onto the type scale (seven sizes: 34, 28, 22, 17, 15,
+  13, 11, added to assets/theme.css by the first room build) and the named layers.
+- A build that touches how the app reads, writes or signs in adds its scenarios to
+  tools/rig/scenarios/ and they stay.
+- The rows of the 22 Nov beta-readiness audit ride with the room they belong to. The
+  audit report is held locally and is not pushed.
+
+## Build sizes
+
+docs/FIX-PROTOCOL.md section 0 already says: chain the stages to the commit gate and
+stop only at a real fork or a failed proof. Section 5 already has the tiers. From
+23 Nov the prompts written in the chats follow them and add no stops of their own.
+
+- SMALL: look, wording, one room; no change to what is saved or synced, to the rules,
+  to sign-in, deletion or export. Tier A or B. One stop: the commit gate.
+- DATA: anything that touches saving, sync, storage, the rules, sign-in, deletion or
+  export. Tier C. Stops after the pre-flight, at the commit gate, and before the push.
+
+In doubt, it is DATA. A small build that finds it must touch data stops and says so.
+
+## Open blockers
+
+- FX-1 is not complete (build 1a, v3.340, closed BR-01 and BR-02 only).
+- Ready-means item 4 is not yet true (23 Nov).
+- Sign-in is a Google popup only. That is fine on the web and will not work inside
+  the iPhone shell (L7b, after the beta).
+- Old links and the rulebook still name praxis-reading.netlify.app, which school
+  networks block. Invites and documents use praxisreader.com only.
+- The Google Books lookup has a daily quota; read it in the Google Cloud console.
+- The ElevenLabs spending cap is not set yet (Preston's).
+
+## Open calls (Preston's, not yet ruled)
+
+- The first run: how many screens, and whether the click-through guides stay or
+  become tips.
+- Yumi's speaking voice (text to speech): in or out of the first beta.
+- Whether LC2 (the blue sky) lands before or after the first invites.
+
+## After the beta
+
+- Storage round: one cloud document per note and per book.
+- Native sign-in plus Sign in with Apple; the iPhone shell (L7b); TestFlight.
+- Reading text that follows the phone's text-size setting.
+- A shared catalogue so a book is looked up once for all readers.
+
+## Waiting list (design reactions held until the beta)
+
+Nothing yet. A reaction goes here unless it breaks one of the seven journeys.

@@ -15,6 +15,7 @@ file stays the living plan, this is its runway view (and the Builder's LAUNCH
 RUNWAY panel). No clock — the July-15 date is retired; order, not dates.
 
 ## The sequence
+Order now led by BETA.md, 2026-11-23.
 
 | # | Round / gate-item | Status | Notes |
 |---|---|---|---|

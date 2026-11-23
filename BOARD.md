@@ -318,6 +318,7 @@ sync-render with none (W11-S8-L1: #profile social-fetch now graceful).
 | AUDIT | Fable, findings-report-only; charter = correctness + craft + writing-loop deep-dive; after July 7 | GATED ON ABOVE |
 
 ## 5 · Post-audit program queue (order set by audit findings)
+Order now led by BETA.md, 2026-11-23.
 
 Writing-loop rebuild + Generative Yumi ("alive") — co-flagship, intertwined ·
 Sound build (Yumi voice + ambient, from the design doc) · Admin/moderation
