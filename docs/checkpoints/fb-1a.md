@@ -188,6 +188,11 @@ RESIDUALS: L1–L15 (the brief's known limits) · G1–G6 (the gates') · persis
            writes on the real Firebase unverified — the rig is a fake cloud; AFTER THE PUSH A–E
 ```
 
+**After the push (23 Nov 2026):** committed `42201f4`, pushed, deployed (Netlify, ready). Preston's
+live smoke on a throwaway account, a real phone and a desktop: **A and B PASSED** (B: both devices
+ended with everything; the notice appeared once); C, D and E not run, by his choice. See "The
+commit, the push and the live smoke" below.
+
 **What a human should weigh before the words.** G5: for as long as a device's sub-theories read
 keeps failing, a live arc edited there keeps its old public copy (3ce6a7b would have republished
 it at once, with R-B's risk of unpublishing it); the reader is not told. G4: a read that never
@@ -585,6 +590,29 @@ desktop: hard-refresh, DevTools → Application → Service Workers, confirm the
   private window, shows the new name.
 
 Any step that does not read as written goes to the build chat with what was on screen.
+
+## The commit, the push and the live smoke (23 Nov 2026)
+
+- **Commit** `42201f4` on Preston's word "Commit": 40 files by explicit path (the six code files,
+  this record, its 28 shots files, five ledgers); the pre-commit hook gate passed; the six code
+  blobs in the commit are the brief's md5s.
+- **Push** on Preston's word "Push": `3ce6a7b..42201f4`, `main` only. Before it, `git log
+  origin/main..HEAD --name-only` listed that one commit and 0 paths under `docs/audit`. After it,
+  HEAD == origin/main == `42201f4`; the remote holds only `main` (the parked audit stayed local).
+- **Deploy.** The build machine cannot reach praxisreader.com or praxis-reading.netlify.app (curl
+  and the browser pane both refused). Netlify's own record, read through its API: deploy
+  `6b04a2eb…` built from `42201f4` on `main`, state ready, the site's current deploy, published
+  23 Nov 2026 20:33 UTC, 40 files uploaded, its secret scan 0 matches. At that commit sw.js sets
+  `praxis-v3.340`.
+- **Live smoke, run by Preston on 23 Nov 2026 on a throwaway account, on a real phone and a
+  desktop:**
+  - **A (BR-02) — PASSED.**
+  - **B (BR-01 and F1) — PASSED:** both devices ended with everything, and the notice appeared
+    once.
+  - **C, D and E — not run, by Preston's choice.** C (L1) is a known limit expected to fail until
+    build 1b; D (C6) and E (D) stay proved by the rig only (S9, S17; S21, S24).
+- What no rig and no live step here has shown stays as listed in 2.4 (the 120 s retry step; the
+  real cover backfill writing by itself).
 
 ---
 

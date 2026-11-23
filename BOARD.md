@@ -10,7 +10,7 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
-**FB-1a (2026-11-23, v3.340, local until pushed) — the shelf lock and the notes guard (closes the beta-readiness audit's rows
+**FB-1a (2026-11-23, v3.340, pushed 42201f4; Preston's live smoke on a phone and a desktop: steps A and B passed, C–E not run by his choice) — the shelf lock and the notes guard (closes the beta-readiness audit's rows
 BR-01 and BR-02 only; a data-safety build, no surface cell changes).** Every surface that writes to the cloud: after a failed
 sign-in read, each collection's whole-document write stays held until a read succeeds (retried on 'online', on returning to the
 front, and on a 5 / 15 / 45 / 120 s timer; a toast says once "Can’t reach your library right now. New notes and books are kept
