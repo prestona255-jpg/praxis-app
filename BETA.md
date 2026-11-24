@@ -53,7 +53,7 @@ Three lanes: data, rooms, features. Data builds and room builds alternate (ruled
 | RIG | process | RIG-1, the shared test rig in tools/rig/ | small | pushed fedbc77 |
 | P0 | process | This page leads | small | pushed e66c682 |
 | PG | gate | Preston's 25-step phone walk of the app as it stands | - | walked 24 Nov: step 5 no (a tap on a text field zooms the page), step 6 no by its screenshot, the rest yes |
-| P1 | process | Checks run by a machine on every push: the cscript harnesses and the rig | small | this commit |
+| P1 | process | Checks run by a machine on every push: the cscript harnesses and the rig | small | pushed f9c5495 |
 | D1 | data | Fix build 1b: BR-03, BR-04, BR-29, the mergeBookDuplicates artifact site; plus a size meter on each per-reader cloud document (warn at 700 KB of the 1 MiB cap) | data | scoping |
 | R1 | rooms | Home and Search (L4b-3d), with the Search matching fix (every word, any order, accents and case ignored; artifacts, lenses and categories included), an "All books" side, and no text field under 16 px on phones (the walk's step 5) | small | patch to be cut fresh |
 | R2 | rooms | Find a book: a search field replaces the Add a book form (NEW, ruled 23 Nov; comes before the book page) | small | to be drawn |
