@@ -10,6 +10,8 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
+**P1 (2026-11-24, tools and docs only, no app file, no version bump) — checks on every push: `tools/checks.ps1`, run by `.github/workflows/checks.yml`; no surface cell changes.** Record: `docs/checkpoints/p1.md`.
+
 **RIG-1 (2026-11-23, tools and docs only, no app file, no version bump, local until pushed) — the shared test rig in `tools/rig/`; no surface cell changes.** Record: `docs/checkpoints/rig-1.md`.
 
 **FB-1a (2026-11-23, v3.340, pushed 42201f4; Preston's live smoke on a phone and a desktop: steps A and B passed, C–E not run by his choice) — the shelf lock and the notes guard (closes the beta-readiness audit's rows

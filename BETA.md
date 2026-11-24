@@ -51,11 +51,11 @@ Three lanes: data, rooms, features. Data builds and room builds alternate (ruled
 | # | Lane | Build | Size | Status |
 |---|---|---|---|---|
 | RIG | process | RIG-1, the shared test rig in tools/rig/ | small | pushed fedbc77 |
-| P0 | process | This page leads | small | this commit |
-| PG | gate | Preston's 25-step phone walk of the app as it stands | - | next |
-| P1 | process | Checks run by a machine on every push: the cscript harnesses and the rig | small | not started |
+| P0 | process | This page leads | small | pushed e66c682 |
+| PG | gate | Preston's 25-step phone walk of the app as it stands | - | walked 24 Nov: step 5 no (a tap on a text field zooms the page), step 6 no by its screenshot, the rest yes |
+| P1 | process | Checks run by a machine on every push: the cscript harnesses and the rig | small | this commit |
 | D1 | data | Fix build 1b: BR-03, BR-04, BR-29, the mergeBookDuplicates artifact site; plus a size meter on each per-reader cloud document (warn at 700 KB of the 1 MiB cap) | data | scoping |
-| R1 | rooms | Home and Search (L4b-3d), with the Search matching fix (every word, any order, accents and case ignored; artifacts, lenses and categories included) and an "All books" side | small | patch to be cut fresh |
+| R1 | rooms | Home and Search (L4b-3d), with the Search matching fix (every word, any order, accents and case ignored; artifacts, lenses and categories included), an "All books" side, and no text field under 16 px on phones (the walk's step 5) | small | patch to be cut fresh |
 | R2 | rooms | Find a book: a search field replaces the Add a book form (NEW, ruled 23 Nov; comes before the book page) | small | to be drawn |
 | D2 | data | Fix build 2: the Yumi daily limit, docs/ off the live site, updates reaching readers | data | not started |
 | F2 | features | Deeper Yumi, her complexity and character (ruled in 23 Nov; built alongside the rooms; D2 still lands before any invite) | sized at its pre-flight | in design, its own chat |
@@ -76,6 +76,9 @@ Rules for the queue:
   13, 11, added to assets/theme.css by the first room build) and the named layers.
 - A build that touches how the app reads, writes or signs in adds its scenarios to
   tools/rig/scenarios/ and they stay.
+- Every push to main is checked by a machine (P1): the Checks workflow on GitHub runs
+  tools/checks.ps1. A new harness is added to that script's list; a new rig suite is
+  picked up by itself. A red run is fixed before the next build starts.
 - The rows of the 22 Nov beta-readiness audit ride with the room they belong to. The
   audit report is held locally and is not pushed.
 

@@ -1,0 +1,40 @@
+# P1 -- the Praxis checks.
+# Runs tools/checks.ps1 on a GitHub Windows machine on every push to main, and by
+# hand from the Actions tab. That script runs the parse check on every served
+# script, every cscript harness and every rig suite, and exits 1 when any fails.
+# It reports; it does not stop a deploy: Netlify builds main whether this run is
+# green or red. A red run is fixed before the next build starts (BETA.md).
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      prove_red:
+        description: 'Prove that a failing check turns the run red. This run is meant to fail.'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      # The runner's git would otherwise turn every line ending into CRLF. The
+      # checks read the files as they are committed and as Netlify serves them.
+      - name: Keep line endings as committed
+        shell: cmd
+        run: git config --global core.autocrlf false
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Run every check
+        shell: cmd
+        env:
+          PRAXIS_PROVE_RED: ${{ inputs.prove_red }}
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools\checks.ps1

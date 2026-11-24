@@ -31,6 +31,12 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-24 (P1: checks on every push; the phone gate walked)** -- BETA.md's row P1. `tools/checks.ps1` runs every
+  check the repo already has (the parse check on every served script, the six cscript harnesses, every rig suite) and
+  `.github/workflows/checks.yml` runs it on a GitHub Windows machine on each push to `main`. It reports after the push and
+  does not stop Netlify; a red run is fixed before the next build starts. Tools and docs only, no app file, no version
+  bump (`docs/checkpoints/p1.md`). Preston's 25-step phone walk (row PG) is recorded in BETA.md: step 5 no (a tap on a
+  text field zooms the page), step 6 no by its screenshot, the rest yes; the 16 px fix rides with R1. No reordering.
 - **2026-11-23 (P0: BETA.md leads; the queue re-ruled)** -- Preston ruled on the launch-readiness review (23 Nov, about
   4 pm). `BETA.md` at the repo root now leads on the first beta's scope, build order and open blockers; this file stays
   the record of how each build went. Design happens in several chats at once; builds enter the repo one at a time from
