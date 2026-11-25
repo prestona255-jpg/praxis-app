@@ -178,12 +178,12 @@ rigSuite(async function () {
   check('S12 coming back to the front is a retry trigger too (latches open)', (await L.ev('T.latches()')).books, true);
 
   // ---------------------------------------------------------------- S13
-  await stage('S13', 'known limit, unchanged by this build: an EDIT made while failing, app closed before recovery');
+  await stage('S13', 'an EDIT made while failing, app closed before recovery (BR-03: a known limit of FB-1a, closed by D1a)');
   L.close(); fail_user_reads(rig, 'laptop'); await L.open();
   await L.ev('T.editNote(' + J(n1) + ", 'edited on the laptop, then the lid closed')"); const n5 = await L.ev("T.note('a NEW note on the laptop, then the lid closed')"); await L.wait(300);
   L.close(); fail_user_reads(rig, 'laptop', false); await L.open();
   check('S13 the NEW note survives the close and is pushed', [get(await L.ev('T.notes()'), n5), get(rig.cloud.notes(U), n5)], ['a NEW note on the laptop, then the lid closed', 'a NEW note on the laptop, then the lid closed']);
-  check('S13 the EDIT reverted to the cloud copy (BR-03, next build)', get(await L.ev('T.notes()'), n1), 'first note, REWRITTEN on the phone');
+  check('S13 the EDIT is kept and pushed (BR-03, closed by D1a)', [get(await L.ev('T.notes()'), n1), get(rig.cloud.notes(U), n1)], ['edited on the laptop, then the lid closed', 'edited on the laptop, then the lid closed']);
 
   // ---------------------------------------------------------------- S14
   await stage('S14', 'a sub-theory written while its read is failing');
@@ -329,9 +329,12 @@ rigSuite(async function () {
   await L.ev('state.bookArtifacts[' + J(ax) + "].body = 'edited on the laptop while failing'; state.bookArtifacts[" + J(ax) + '].updatedAt = Date.now(); markArtifactsDirty(); saveState();'); await L.wait(300);
   fail_user_reads(rig, 'laptop', false); await L.ev('T.online()'); await L.waitFor(LATCHES_OPEN, 30000); await L.wait(1200);
   check("S22 the phone's deletes hold on the laptop: the arc and the book are gone", [await L.ev('!!state.arcs[' + J(a3) + ']'), await L.ev('!!state.books[' + J(bx) + ']')], [false, false]);
-  check("S22 the reader's two edits are kept, here and in the cloud",
-    [await L.ev('state.subTheories[' + J(st3) + '].header'), get(rig.cloud.sub(U, st3), 'header'), await L.ev('state.bookArtifacts[' + J(ax) + '].body'), get(get(rig.cloud.arts(U), ax) || {}, 'body')], ['edited on the laptop while failing', 'edited on the laptop while failing', 'edited on the laptop while failing', 'edited on the laptop while failing']);
-  print("        reading: the kept sub-theory's arcId is " + J(await L.ev('state.subTheories[' + J(st3) + '].arcId')) + ' (the deleted arc was ' + a3 + "); the kept artifact's bookId is " + J(await L.ev('state.bookArtifacts[' + J(ax) + '].bookId')));
+  // D1a (Preston, 24 Nov 2026): an artifact whose book is gone stays deleted, whatever changed here -- FB-1a's
+  // book rule for what belongs to a book. This check recorded both edits kept until D1a; the sub-theory's half
+  // is unchanged (deleteArc re-homes a sub-theory, it never deletes it, so nothing here brings it back).
+  check("S22 the sub-theory edit is kept, here and in the cloud; the artifact of the deleted book stays deleted (D1a)",
+    [await L.ev('state.subTheories[' + J(st3) + '].header'), get(rig.cloud.sub(U, st3), 'header'), await L.ev('!!state.bookArtifacts[' + J(ax) + ']'), ax in rig.cloud.arts(U)], ['edited on the laptop while failing', 'edited on the laptop while failing', false, false]);
+  print("        reading: the kept sub-theory's arcId is " + J(await L.ev('state.subTheories[' + J(st3) + '].arcId')) + ' (the deleted arc was ' + a3 + ')');
   const before_errs = L.errors.length, seen = {}, shows = [];
   for (const h of ['#subtheory/' + st3, '#subtheory/' + st3 + '/build', '#artifact/' + bx, '#book/' + bx, '#arcs', '#home', '#search', '#profile', '#notebook', '#books']) {
     await L.ev('location.hash = ' + J(h)); await L.wait(500); seen[h] = await L.ev('(document.getElementById(APP_EL_ID) || document.body).textContent.length');

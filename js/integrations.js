@@ -122,8 +122,8 @@ var readerModelWritePending  = false;
 //
 // In memory only: if the app closes before a retry succeeds, creates and
 // deletes are still held by the pending sets (FX-1 / FX-1c, and from this
-// build the notebook's too); an EDIT to a synced record then reverts at the
-// next load, exactly as it did before this build (audit BR-03, the next build).
+// build the notebook's too). An EDIT to a synced record is kept across a close
+// from D1a on (audit BR-03): see the D1a block below.
 // Profile and reader model keep their F-DL3 latches unchanged (BR-29, next build).
 // =====================================================================
 var fb1aBase    = {};     // kind -> { id: print } of the uid's records as they stood when their state was loaded
@@ -216,6 +216,7 @@ function fb1aSnapshot(kind, uid) {
 // edit made between start-up and the sign-in event is not swallowed into it.
 function fb1aBegin(uid) {
   var kinds = ['books', 'arcs', 'subTheories', 'themes', 'artifacts', 'notebook'], i;
+  d1aStart(uid);   // D1a: an unconfirmed switch-ON is turned off first, so the base below sees it off
   if (fb1aBaseUid !== uid) { fb1aBase = {}; fb1aBaseUid = uid; }
   for (i = 0; i < kinds.length; i++) {
     if (!fb1aBase[kinds[i]]) { fb1aBase[kinds[i]] = fb1aSnapshot(kinds[i], uid); }
@@ -385,6 +386,367 @@ if (typeof document !== 'undefined' && document.addEventListener) {
   });
 }
 
+// =====================================================================
+// D1a (audit BR-03; fb-1a.md L1, L4, L6, L10; 24 Nov 2026) -- an edit the cloud
+// never confirmed survives the app being closed.
+//
+// FB-1a knew what the reader changed only in memory, so a change whose write had
+// not landed when the app closed was replaced by the cloud's copy at the next load.
+// D1a keeps, per kind and uid, the CLOUD's side of each record as this device last
+// knew it: localStorage praxis_synced_<kind>_<uid> = { id: entry }, an entry being
+// a hash of the record's print (d1aPrint). It is written from the cloud's copy at
+// every found load, and from the prints taken when a save was SENT once the cloud
+// acknowledges that save (never at send: the payload holds live records, and a send
+// is not a landing). A record whose print differs from its entry is the reader's
+// unconfirmed change. At each found load such a record is settled by the rulings of
+// 24 Nov 2026: a book goes to this device (FB-1a C2; a book deleted elsewhere stays
+// deleted, C3); a note, artifact, lens, arc or sub-theory goes to the newer
+// updatedAt, a tie to this device; one deleted on another device is kept (C3) --
+// unless it is an artifact whose book, or a sub-theory whose arc, is gone too:
+// then it stays deleted (Preston, 24 Nov; d1aParentGone). The
+// artifact switch "Yumi may read this" is settled on its own: the side that changed
+// it wins, and an ON the cloud never confirmed is turned off when the app starts
+// (d1aStart: "off wins"). What is waiting (a change, a pending create, a delete the
+// cloud still lists) is sent at that load. An id with no entry is unknown, never
+// "changed": a device's first load under this build behaves as before it.
+// The meter: each of the six documents is measured as it is sent; past 700 KB, and
+// on a save the service refuses for size, the reader is told, each once a day.
+// =====================================================================
+var D1A_V         = 'v1:';      // the print's version; an entry without it is unknown
+var D1A_ROOM      = 716800;     // 700 KB of the service's 1 MiB per document
+var D1A_ROOM_LINE = 'Praxis is running low on room for your library. Please tell Preston.';
+var D1A_FULL_LINE = 'Praxis can’t save more of your library to the cloud. Your work is kept on this device. Please tell Preston.';
+var D1A_KINDS     = ['books', 'arcs', 'subTheories', 'themes', 'artifacts', 'notebook'];
+var D1A_FIELD     = { books: 'books', arcs: 'arcs', subTheories: 'subTheories', themes: 'userThemes', artifacts: 'bookArtifacts', notebook: 'notebookEntries' };
+var d1aStartedFor = null;       // the uid d1aStart has run for in this page
+var d1aCache      = {};         // kind -> { id: { raw, e, n } }: a record's JSON, entry and size, reused while unchanged
+var d1aDocBytes   = {};         // kind -> the size of the last document sent
+var d1aRevived    = { artifacts: {}, subTheories: {} };   // kind -> { id: true } brought back (C3) in this page, until its parent's load has answered
+
+function d1aOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+
+// JSON with every object's keys sorted, so the same record prints the same
+// whichever device or service wrote it.
+function d1aCanon(v) {
+  var out = [], keys = [], k, i;
+  if (v === null || v === undefined || typeof v === 'function') { return 'null'; }
+  if (typeof v !== 'object') { return JSON.stringify(v); }
+  if (v instanceof Array) {
+    for (i = 0; i < v.length; i++) { out.push(d1aCanon(v[i])); }
+    return '[' + out.join(',') + ']';
+  }
+  for (k in v) {
+    if (d1aOwn(v, k) && v[k] !== undefined && typeof v[k] !== 'function') { keys.push(k); }
+  }
+  keys.sort();
+  for (i = 0; i < keys.length; i++) { out.push(JSON.stringify(keys[i]) + ':' + d1aCanon(v[keys[i]])); }
+  return '{' + out.join(',') + '}';
+}
+
+// What a record holds, as the reader authored it: a copy normalized the way the
+// app normalizes it on load or render (the ensure functions, the notebook merge's
+// defaults), so a default the app fills in is never read as a change. Books: the
+// eleven fields fb1aPrint names. Lenses: without 'look'.
+function d1aPrint(kind, rec) {
+  var c = {}, k;
+  if (!rec || typeof rec !== 'object') { return 'null'; }
+  try {
+    if (kind === 'books') { return d1aCanon(JSON.parse(fb1aPrint('books', rec))); }
+    for (k in rec) { if (d1aOwn(rec, k)) { c[k] = rec[k]; } }
+    if (kind === 'themes' && typeof ensureThemeFields === 'function') { ensureThemeFields(c); }
+    if (kind === 'artifacts' && typeof ensureArtifactFields === 'function') { ensureArtifactFields(c); }
+    if (kind === 'arcs' && typeof ensureArcFields === 'function') { ensureArcFields(c); }
+    if (kind === 'subTheories' && typeof ensureSubTheoryFields === 'function') { ensureSubTheoryFields(c); }
+    if (kind === 'notebook') {
+      if (typeof ensureNotebookEntryFields === 'function') { ensureNotebookEntryFields(c); }
+      if (typeof c.filed !== 'boolean') { c.filed = (c.register === 'journal') ? true : !!(c.bookIds && c.bookIds.length > 0); }
+      if (!(c.images instanceof Array)) { c.images = []; }
+      if (c.register === 'journal') { c.isPrivate = true; }
+    }
+    if (kind === 'themes') { delete c.look; }
+    return d1aCanon(c);
+  } catch (e) { return 'null'; }
+}
+
+// Two 32-bit hashes (djb2, FNV-1a) and the length: a collision would have to beat all three.
+function d1aHash(s) {
+  var h1 = 5381, h2 = 2166136261, i, c;
+  for (i = 0; i < s.length; i++) {
+    c = s.charCodeAt(i);
+    h1 = ((h1 << 5) + h1 + c) | 0;
+    h2 = (h2 ^ c) >>> 0;
+    h2 = (((h2 << 24) >>> 0) + h2 * 403) >>> 0;
+  }
+  return (h1 >>> 0).toString(36) + '.' + h2.toString(36) + '.' + s.length.toString(36);
+}
+
+// A record's entry. An artifact's ends :1 or :0, its switch, so the switch can be settled on its own.
+function d1aEntry(kind, rec) {
+  var e = D1A_V + d1aHash(d1aPrint(kind, rec));
+  if (kind === 'artifacts') { e = e + ((rec && rec.yumiMayRead === true) ? ':1' : ':0'); }
+  return e;
+}
+function d1aKnown(e) { return typeof e === 'string' && e.indexOf(D1A_V) === 0; }
+function d1aFlag(e) {
+  if (!d1aKnown(e)) { return null; }
+  if (e.slice(-2) === ':1') { return true; }
+  if (e.slice(-2) === ':0') { return false; }
+  return null;
+}
+function d1aTime(r) {
+  if (r && typeof r.updatedAt === 'number') { return r.updatedAt; }
+  if (r && typeof r.createdAt === 'number') { return r.createdAt; }
+  return 0;
+}
+
+function d1aSyncedKey(kind, uid) { return 'praxis_synced_' + kind + '_' + (uid || 'anon'); }
+function d1aSynced(kind, uid) {
+  var m = (typeof ls === 'function') ? ls(d1aSyncedKey(kind, uid), null) : null;
+  return (m && typeof m === 'object' && !(m instanceof Array)) ? m : null;
+}
+function d1aDocMap(kind, doc) {
+  var f = D1A_FIELD[kind];
+  return (doc && f && doc[f] && typeof doc[f] === 'object') ? doc[f] : {};
+}
+function d1aUtf8(s) {
+  var n = 0, i, c;
+  for (i = 0; i < s.length; i++) {
+    c = s.charCodeAt(i);
+    if (c < 0x80) { n = n + 1; } else if (c < 0x800) { n = n + 2; }
+    else if (c >= 0xD800 && c <= 0xDBFF) { n = n + 4; i = i + 1; } else { n = n + 3; }
+  }
+  return n;
+}
+
+// Today, on this device's clock, as YYYY-MM-DD.
+function d1aToday() {
+  var d = new Date(), m = d.getMonth() + 1, day = d.getDate();
+  return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+}
+// One of the meter's two lines, at most once a day on this device.
+function d1aSay(which, line) {
+  var key = 'praxis_d1a_said_' + which, today = d1aToday();
+  if (typeof showToast !== 'function' || typeof ls !== 'function') { return; }
+  if (ls(key, '') === today) { return; }
+  sv(key, today);
+  showToast(line);
+}
+
+// Called by saveState as it SENDS one of the six documents: measures it (and says
+// the first line past 700 KB) and returns the entries of what was sent, for
+// d1aConfirmed once the cloud acknowledges this save.
+function d1aSend(kind, uid, payload) {
+  var map = d1aDocMap(kind, payload), field = D1A_FIELD[kind], old = d1aCache[kind] || {}, next = {}, entries = {}, bytes = 2, k, raw, c;
+  for (k in map) {
+    if (!d1aOwn(map, k) || !map[k]) { continue; }
+    raw = JSON.stringify(map[k]);
+    c = old[k];
+    if (!c || c.raw !== raw) { c = { raw: raw, e: d1aEntry(kind, map[k]), n: d1aUtf8(raw) }; }
+    next[k] = c;
+    entries[k] = c.e;
+    bytes = bytes + c.n + d1aUtf8(k) + 4;
+  }
+  d1aCache[kind] = next;
+  for (k in payload) {
+    if (d1aOwn(payload, k) && k !== field && k !== 'updatedAt') {
+      raw = JSON.stringify(payload[k]);
+      bytes = bytes + d1aUtf8(k) + 4 + d1aUtf8(typeof raw === 'string' ? raw : '');
+    }
+  }
+  d1aDocBytes[kind] = bytes;
+  if (bytes > D1A_ROOM) { d1aSay('room', D1A_ROOM_LINE); }
+  return entries;
+}
+// The cloud acknowledged a save: the document is now exactly what was sent.
+function d1aConfirmed(kind, uid, entries) {
+  if (uid && entries && typeof sv === 'function') { sv(d1aSyncedKey(kind, uid), entries); }
+}
+// A save failed: if the service refused it for size, say the second line.
+function d1aRefused(err) {
+  var msg = (err && typeof err.message === 'string') ? err.message : '';
+  if (/exceeds the maximum allowed size/i.test(msg) || (err && err.code === 'invalid-argument' && /size/i.test(msg))) {
+    d1aSay('full', D1A_FULL_LINE);
+  }
+}
+
+// At a found load, BEFORE the cloud's copy is laid in: this device's unconfirmed
+// changes of one kind, { id: record } (with FB-1a's in-memory set, if any).
+function d1aBefore(kind, uid) {
+  var synced = d1aSynced(kind, uid), own = fb1aOwned(kind, uid), kept = fb1aKept[kind], mine = {}, k;
+  if (synced) {
+    for (k in own) {
+      if (d1aOwn(own, k) && own[k] && d1aKnown(synced[k]) && synced[k] !== d1aEntry(kind, own[k])) { mine[k] = own[k]; }
+    }
+  }
+  if (kept) {
+    for (k in kept) { if (d1aOwn(kept, k) && kept[k]) { mine[k] = kept[k]; } }
+  }
+  return mine;
+}
+
+// At a found load, AFTER the cloud's copy is laid in (and after fb1aReapply):
+// settles each change d1aBefore found, then marks the kind dirty when anything
+// is waiting -- a change kept, a pending create, a delete the cloud still lists --
+// so the load's own saveState sends it.
+function d1aAfter(kind, uid, data, mine) {
+  var remote = d1aDocMap(kind, data), map = (kind === 'books') ? state.books : fb1aMap(kind);
+  var synced = d1aSynced(kind, uid), send = false, onShelf = {}, ids, i, k, loc, rem, win, lf, want, pend, dels;
+  if (!map) { return; }
+  ids = (kind === 'books' && state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds) ? state.userBooks[uid].bookIds : [];
+  for (i = 0; i < ids.length; i++) { onShelf[ids[i]] = true; }
+  for (k in mine) {
+    if (!d1aOwn(mine, k) || !mine[k]) { continue; }
+    loc = mine[k];
+    rem = d1aOwn(remote, k) ? remote[k] : null;
+    if (kind === 'books') {
+      if (!onShelf[k]) { continue; }                                            // deleted, here or elsewhere: stays deleted (C3)
+      if (rem && d1aEntry(kind, rem) === d1aEntry(kind, loc)) { continue; }    // the cloud already holds it
+      map[k] = loc;                                                             // the unconfirmed device wins (C2)
+      send = true;
+      continue;
+    }
+    if (typeof isPendingDelete === 'function' && isPendingDelete(kind, uid, k)) { continue; }
+    if (!rem) {                                                                 // deleted on another device
+      if (d1aParentGone(kind, uid, loc)) {                                      // its book or arc is gone too: it stays deleted (Preston, 24 Nov)
+        if (map[k]) { delete map[k]; }
+        if (typeof clearPendingSync === 'function') { clearPendingSync(kind, uid, [k]); }
+        continue;
+      }
+      map[k] = loc;                                                             // else the reader's words are kept (C3)
+      if (typeof markPendingSync === 'function') { markPendingSync(kind, uid, k); }
+      if (d1aRevived[kind]) { d1aRevived[kind][k] = true; }
+      send = true;
+      continue;
+    }
+    win = (d1aTime(rem) > d1aTime(loc)) ? rem : loc;                            // the newer edit; a tie to this device
+    if (kind === 'artifacts') {                                                 // the switch: the side that changed it wins
+      lf = (loc.yumiMayRead === true);
+      want = (d1aFlag(synced ? synced[k] : null) === null || lf !== d1aFlag(synced[k])) ? lf : (rem.yumiMayRead === true);
+      if ((win.yumiMayRead === true) !== want) {
+        win = d1aCopy(win);
+        win.yumiMayRead = want;
+        win.yumiMayReadAt = (want === lf) ? loc.yumiMayReadAt : rem.yumiMayReadAt;
+      }
+    }
+    map[k] = win;
+    if (d1aEntry(kind, win) !== d1aEntry(kind, rem)) { send = true; }   // a change the cloud already holds is not sent again
+  }
+  if (!send) {
+    pend = (kind === 'books') ? getPendingBookSync(uid) : getPendingSync(kind, uid);
+    for (i = 0; i < pend.length && !send; i++) {
+      if (map[pend[i]] && !d1aOwn(remote, pend[i])) { send = true; }
+    }
+    dels = (kind === 'books') ? getPendingBookDeletes(uid) : getPendingDeletes(kind, uid);
+    for (i = 0; i < dels.length && !send; i++) {
+      if (d1aOwn(remote, dels[i])) { send = true; }
+    }
+  }
+  if (send) { fb1aMarkDirty(kind); }
+  if (kind === 'books') { d1aDropOrphans('artifacts', uid); }
+  if (kind === 'arcs') { d1aDropOrphans('subTheories', uid); }
+}
+function d1aCopy(r) { var c = {}, k; for (k in r) { if (d1aOwn(r, k)) { c[k] = r[k]; } } return c; }
+
+// Preston's ruling of 24 Nov 2026 (FB-1a's book rule, for what belongs to a book or
+// an arc): an artifact whose book is gone from the shelf, or a sub-theory whose arc
+// is gone, is not brought back after another device deleted it -- whatever changed
+// here, whatever its switch says. Only a record that names a parent: a sub-theory
+// already unrooted (arcId null) keeps C3. A note is not covered (it can live
+// without a book).
+function d1aParentGone(kind, uid, rec) {
+  var ids, i;
+  if (!rec) { return false; }
+  if (kind === 'artifacts') {
+    if (typeof rec.bookId !== 'string' || rec.bookId === '') { return false; }
+    ids = (state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds) ? state.userBooks[uid].bookIds : [];
+    for (i = 0; i < ids.length; i++) { if (ids[i] === rec.bookId) { return false; } }
+    return true;
+  }
+  if (kind === 'subTheories') {
+    if (typeof rec.arcId !== 'string' || rec.arcId === '') { return false; }
+    return !(state.arcs && state.arcs[rec.arcId] && state.arcs[rec.arcId].userId === uid);
+  }
+  return false;
+}
+// A child brought back (C3) before its parent's load had answered: when the books
+// (or arcs) load then finds the parent gone, the child goes too -- recorded as a
+// delete, since it may already have been sent back.
+function d1aDropOrphans(kind, uid) {
+  var held = d1aRevived[kind], map = fb1aMap(kind), k, n = 0;
+  if (!held || !map) { return; }
+  for (k in held) {
+    if (!d1aOwn(held, k)) { continue; }
+    if (map[k] && d1aParentGone(kind, uid, map[k])) {
+      delete map[k];
+      if (typeof noteRecordDeleted === 'function') { noteRecordDeleted(kind, uid, k); }
+      n = n + 1;
+    }
+    delete held[k];
+  }
+  if (n) { fb1aMarkDirty(kind); }
+}
+
+// An account switch, a sign-out or an account wipe (resetSyncLatches): nothing of
+// the reader who is leaving stays in D1a's memory.
+function d1aReset() {
+  d1aStartedFor = null;
+  d1aCache = {};
+  d1aDocBytes = {};
+  d1aRevived = { artifacts: {}, subTheories: {} };
+}
+
+// At a found load, last, just before its saveState: what the cloud holds now.
+function d1aCloudHas(kind, uid, data) {
+  var remote = d1aDocMap(kind, data), out = {}, k;
+  for (k in remote) { if (d1aOwn(remote, k) && remote[k]) { out[k] = d1aEntry(kind, remote[k]); } }
+  if (typeof sv === 'function') { sv(d1aSyncedKey(kind, uid), out); }
+}
+
+// Once per uid per page, before FB-1a's base is taken (fb1aBegin): an artifact
+// whose switch is ON while the cloud never confirmed it ON -- a create the cloud
+// has not acknowledged, or an entry that says off -- is turned off ("off wins").
+// Saved on this device only: nothing is sent, so where the cloud DID get the ON
+// (its answer lost) the next load takes the cloud's ON back.
+function d1aStart(uid) {
+  var synced, own, pend = {}, p, k, i, e, n = 0;
+  if (!uid || d1aStartedFor === uid) { return; }
+  d1aStartedFor = uid;
+  synced = d1aSynced('artifacts', uid);
+  p = (typeof getPendingSync === 'function') ? getPendingSync('artifacts', uid) : [];
+  for (i = 0; i < p.length; i++) { pend[p[i]] = true; }
+  own = fb1aOwned('artifacts', uid);
+  for (k in own) {
+    if (!d1aOwn(own, k) || !own[k] || own[k].yumiMayRead !== true) { continue; }
+    e = synced ? synced[k] : null;
+    if (pend[k] || d1aFlag(e) === false) { own[k].yumiMayRead = false; n = n + 1; }
+  }
+  if (n && typeof sv === 'function' && typeof stateKey === 'function') { sv(stateKey(), state); }
+}
+
+// What is waiting to sync on this device, per kind: the records changed since the
+// cloud last confirmed them, the creates and the deletes it has not confirmed.
+// Recorded for the Your data room; nothing draws it yet.
+function d1aWaiting(uid) {
+  var out = {}, i, kind, synced, own, k, changed;
+  for (i = 0; i < D1A_KINDS.length; i++) {
+    kind = D1A_KINDS[i];
+    synced = d1aSynced(kind, uid);
+    own = fb1aOwned(kind, uid);
+    changed = [];
+    if (synced) {
+      for (k in own) {
+        if (d1aOwn(own, k) && own[k] && d1aKnown(synced[k]) && synced[k] !== d1aEntry(kind, own[k])) { changed.push(k); }
+      }
+    }
+    out[kind] = {
+      changed: changed,
+      created: ((kind === 'books') ? getPendingBookSync(uid) : getPendingSync(kind, uid)).slice(0),
+      deleted: ((kind === 'books') ? getPendingBookDeletes(uid) : getPendingDeletes(kind, uid)).slice(0)
+    };
+  }
+  return out;
+}
+
 // F-DL4: reset ALL ten cloud-sync latches on a same-tab account switch. On an
 // A->B switch clearUserState() (state.js) wipes state.* but these module-global
 // latches survive, so B would inherit A's "already loaded / write-pending" state
@@ -410,6 +772,7 @@ function resetSyncLatches() {
   profileWritePending     = false;
   readerModelWritePending = false;
   fb1aReset();   // FB-1a: the retry state belongs to the session that is ending
+  d1aReset();    // D1a: and so does what D1a holds in memory (Preston, 24 Nov)
 }
 
 // Auth state is persisted to localStorage via sv()/ls() so
@@ -513,8 +876,11 @@ firebase.auth().onAuthStateChanged(function (u) {
         // nothing is pending it behaves exactly as the prior inline merge.
         // saveState persists the merged shelf; the 3.10i conditional
         // flush-back is unchanged (fires only when a coverUrl was rewritten).
+        var d1aMineBooks = d1aBefore('books', u.uid);   // D1a: this device's unconfirmed changes, before the cloud's copy lands
         var coversNormalized = mergeRemoteBookDoc(u.uid, result.data);
         fb1aReapply('books', u.uid);   // FB-1a: after a RETRIED load, what changed while it was failing goes back
+        d1aAfter('books', u.uid, result.data, d1aMineBooks);   // D1a: settle them by the rulings; send what is waiting
+        d1aCloudHas('books', u.uid, result.data);
         saveState();
         if (coversNormalized) {
           markBooksDirty();
@@ -566,6 +932,7 @@ firebase.auth().onAuthStateChanged(function (u) {
     fb1aLoad('arcs', u.uid, l3MySeq, loadArcsFromFirestore, function (arcResult) {
       if (arcResult.status !== 'error') { arcsLoaded = true; }   // F-DL1 latch. FB-1a: a FAILED load keeps it shut.
       if (arcResult.status === 'found') {
+        var d1aMineArcs = d1aBefore('arcs', u.uid);   // D1a (see the books branch)
         // FX-1: the remote id set, computed BEFORE the clear-loop so the guard
         // can distinguish "absent from remote because created locally and not
         // yet synced" (KEEP) from "absent because deleted server-side" (DROP).
@@ -608,6 +975,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         if (arcConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('arcs', u.uid, arcConfirmed); }   // FX-1c: confirmed
         // FX-1c splat-end:arcs
         fb1aReapply('arcs', u.uid);   // FB-1a (see the books branch)
+        d1aAfter('arcs', u.uid, arcResult.data, d1aMineArcs);   // D1a (see the books branch)
         // 2.0 hardening (batch 2a): the REPLACE-splat above bypasses migrate()
         // and (unlike books / subTheories) had no field backfill, so a remote
         // arc from an older schema landed missing bookIds / entryIds -- the
@@ -617,6 +985,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         if (typeof ensureArcFieldsAll === 'function') {
           ensureArcFieldsAll(state.arcs);
         }
+        d1aCloudHas('arcs', u.uid, arcResult.data);
         saveState();
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -644,6 +1013,7 @@ firebase.auth().onAuthStateChanged(function (u) {
       fb1aLoad('subTheories', u.uid, l3MySeq, loadSubTheoriesFromFirestore, function (stResult) {
         if (stResult.status !== 'error') { subTheoriesLoaded = true; }   // F-DL1 latch. FB-1a: a FAILED load keeps it shut.
         if (stResult.status === 'found') {
+          var d1aMineSubs = d1aBefore('subTheories', u.uid);   // D1a (see the books branch)
           // FX-1: remote id set before the clear-loop (see the arcs guard).
           // subTheories are the required pair to arcs — both guards ship in this
           // same commit, so a sub-theory preserved here never points at an arc
@@ -686,6 +1056,7 @@ firebase.auth().onAuthStateChanged(function (u) {
           if (stConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('subTheories', u.uid, stConfirmed); }   // FX-1c
           // FX-1c splat-end:subTheories
           fb1aReapply('subTheories', u.uid);   // FB-1a (see the books branch)
+          d1aAfter('subTheories', u.uid, stResult.data, d1aMineSubs);   // D1a (see the books branch)
           if (typeof backfillSubTheoryUserId === 'function') {
             backfillSubTheoryUserId(state.subTheories, state.arcs);
           }
@@ -698,6 +1069,7 @@ firebase.auth().onAuthStateChanged(function (u) {
           if (typeof ensureSubTheoryFieldsAll === 'function') {
             ensureSubTheoryFieldsAll(state.subTheories);
           }
+          d1aCloudHas('subTheories', u.uid, stResult.data);
           saveState();
           if (window.views && window.views.renderRoute) {
             window.views.renderRoute();
@@ -737,6 +1109,7 @@ firebase.auth().onAuthStateChanged(function (u) {
       themesLoadOk = (themeResult.status === 'found' || themeResult.status === 'absent');   // L4 hotfix R4
       if (themeResult.status === 'found') {
         if (!state.userThemes) { state.userThemes = {}; }
+        var d1aMineThemes = d1aBefore('themes', u.uid);   // D1a (see the books branch)
         // FX-1: remote id set before the clear-loop (see the arcs guard).
         // FX-1c splat-begin:themes
         var remoteThemes = (themeResult.data && themeResult.data.userThemes)
@@ -774,6 +1147,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         if (thConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('themes', u.uid, thConfirmed); }   // FX-1c
         // FX-1c splat-end:themes
         fb1aReapply('themes', u.uid);   // FB-1a (see the books branch)
+        d1aAfter('themes', u.uid, themeResult.data, d1aMineThemes);   // D1a (see the books branch)
         // 2.0 hardening (batch 2a): the REPLACE-splat above bypasses migrate()
         // and had no field backfill, so a remote theme from an older schema
         // landed missing name / bookIds. Backfill on the merge path, mirroring
@@ -781,6 +1155,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         if (typeof ensureThemeFieldsAll === 'function') {
           ensureThemeFieldsAll(state.userThemes);
         }
+        d1aCloudHas('themes', u.uid, themeResult.data);
         saveState();
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -814,6 +1189,7 @@ firebase.auth().onAuthStateChanged(function (u) {
       if (artResult.status !== 'error') { artifactsLoaded = true; }   // F-DL1 latch. FB-1a: a FAILED load keeps it shut.
       if (artResult.status === 'found') {
         if (!state.bookArtifacts) { state.bookArtifacts = {}; }
+        var d1aMineArts = d1aBefore('artifacts', u.uid);   // D1a (see the books branch)
         // FX-1: remote key set before the clear-loop. artifacts key by the
         // composite artifactKey(uid,bookId); the pending set stores the same
         // composite string, so the keep-predicate transplants unchanged.
@@ -853,9 +1229,11 @@ firebase.auth().onAuthStateChanged(function (u) {
         if (artConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('artifacts', u.uid, artConfirmed); }   // FX-1c
         // FX-1c splat-end:artifacts
         fb1aReapply('artifacts', u.uid);   // FB-1a (see the books branch)
+        d1aAfter('artifacts', u.uid, artResult.data, d1aMineArts);   // D1a (see the books branch)
         if (typeof ensureArtifactFieldsAll === 'function') {
           ensureArtifactFieldsAll(state.bookArtifacts);
         }
+        d1aCloudHas('artifacts', u.uid, artResult.data);
         saveState();
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();
@@ -900,6 +1278,7 @@ firebase.auth().onAuthStateChanged(function (u) {
     fb1aLoad('notebook', u.uid, l3MySeq, loadNotebookFromFirestore, function (nbResult) {
       if (nbResult.status !== 'error') { notebookLoaded = true; }   // F-DL1 latch. FB-1a: a FAILED load keeps it shut.
       if (nbResult.status === 'found') {
+        var d1aMineNotes = d1aBefore('notebook', u.uid);   // D1a (see the books branch)
         // FB-1a (FX-1b + FX-1c for the notebook, audit BR-02). The clear-loop used to
         // delete EVERY local note of this uid before laying in the cloud copy, so a note
         // the cloud had never seen (written offline, or whose save never landed) was
@@ -981,6 +1360,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         if (nbConfirmed.length > 0 && typeof clearPendingDelete === 'function') { clearPendingDelete('notebook', u.uid, nbConfirmed); }   // FX-1c: confirmed
         // FX-1c splat-end:notebook
         fb1aReapply('notebook', u.uid);   // FB-1a (see the books branch)
+        d1aAfter('notebook', u.uid, nbResult.data, d1aMineNotes);   // D1a (see the books branch)
         // FB-1a: a note kept because the cloud has not got it yet, and a delete the cloud
         // still lists, are pushed NOW (the latch is open on this branch) -- not left
         // waiting for the next unrelated change to the notebook.
@@ -996,6 +1376,7 @@ firebase.auth().onAuthStateChanged(function (u) {
         if (typeof ensureNotebookEntryFieldsAll === 'function') {
           ensureNotebookEntryFieldsAll(state.notebookEntries);
         }
+        d1aCloudHas('notebook', u.uid, nbResult.data);
         saveState();
         if (window.views && window.views.renderRoute) {
           window.views.renderRoute();

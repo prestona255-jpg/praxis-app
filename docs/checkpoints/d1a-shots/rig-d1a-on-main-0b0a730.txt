@@ -1,0 +1,200 @@
+== D1a behaviour rig on main-0b0a730 ==
+
+[setup] the phone signs in and writes the records the scenarios change; the laptop loads them
+  PASS  setup the switch on Book A turns on
+  PASS  setup the cloud holds every record, Book A's switch on, Book D's off
+  PASS  setup the arc and its sub-theory are in the cloud
+  PASS  setup the laptop has the 7 books and 5 notes
+
+[a] no signal after a good load: a note, a book, a lens and the switch (off) are changed; closed; signal back; reopened
+  PASS  a the switch on Book A turns off
+  FAIL  a the arc and the sub-theory changes are kept, on the phone and in the cloud
+        got  ["Arc A","Sub-theory A","Arc A","Sub-theory A"]
+        want ["Arc A, renamed with no signal","Sub-theory A, renamed with no signal","Arc A, renamed with no signal","Sub-theory A, renamed with no signal"]
+  FAIL  a on the phone: the four changes are there
+        got  ["note A, as first written","reading","Lens A",true]
+        want ["note A, edited with no signal","read","Lens A, renamed with no signal",false]
+  FAIL  a in the cloud: the four changes are there
+        got  ["note A, as first written","reading","Lens A",true]
+        want ["note A, edited with no signal","read","Lens A, renamed with no signal",false]
+
+[b] the same note changed on two devices before they sync: the newer edit wins, in both orders
+  FAIL  b the phone syncs first: B1 holds its own older edit for now, B2 its newer one
+        got  ["note B1, as first written","note B2, as first written"]
+        want ["B1: the phone, older","B2: the phone, newer"]
+  FAIL  b B1 (the newer edit synced last): the laptop's newer edit, on both devices and in the cloud
+        got  ["note B1, as first written","note B1, as first written","note B1, as first written"]
+        want ["B1: the laptop, newer","B1: the laptop, newer","B1: the laptop, newer"]
+  FAIL  b B2 (the newer edit synced first): the phone's newer edit, on both devices and in the cloud
+        got  ["note B2, as first written","note B2, as first written","note B2, as first written"]
+        want ["B2: the phone, newer","B2: the phone, newer","B2: the phone, newer"]
+
+[c] the same book changed on two devices: the device with the unconfirmed change wins
+  PASS  c the laptop's changes land first (cloud: read, the laptop's lens name)
+  FAIL  c the phone's unconfirmed change wins: will-read on the phone, the laptop and in the cloud
+        got  ["read","read","read"]
+        want ["will-read","will-read","will-read"]
+  PASS  c a lens is not a book (F1, 24 Nov): the laptop's LATER rename wins over the phone's unconfirmed one, everywhere
+
+[d] the switch turned ON with no signal, the app closed, the cloud still says off
+  PASS  d1 the switch on Book D turns on with no signal
+  PASS  d2 a new artifact, written with no signal, has its switch turned on
+  PASS  d1 Book D's switch is off on the phone and in the cloud
+  FAIL  d2 the new artifact is kept, on the phone and in the cloud
+        got  ["artifact D two, written with no signal",null]
+        want ["artifact D two, written with no signal","artifact D two, written with no signal"]
+  FAIL  d2 and its switch is off on the phone and in the cloud
+        got  [true,null]
+        want [false,false]
+  PASS  d3 the switch on Book D turns on, online
+  PASS  d3 the cloud did get the ON
+  PASS  d3 an ON the cloud has is not turned off: on, on the phone and in the cloud
+
+[e] a write that landed and was confirmed leaves nothing waiting; a later change elsewhere is taken
+  FAIL  e control: an edit with no signal is recorded as waiting (that note only)
+        got  "no record of what is waiting"
+        want {"notebook":{"changed":["entry_1795570710915_318601"],"created":[],"deleted":[]}}
+  FAIL  e after the reopen it has been sent, and nothing is waiting
+        got  ["note E, as first written","no record of what is waiting"]
+        want ["note E, edited with no signal",{}]
+  PASS  e both edits reached the cloud
+  FAIL  e the phone records nothing waiting to sync
+        got  "no record of what is waiting"
+        want {}
+  PASS  e the phone takes the laptop's later changes
+  PASS  e and the cloud keeps them
+
+[f] the app writing by itself (a category stamp, a cover landing, a lens filled in at render, a note from an older device) is not the reader's change
+  PASS  f a new lens is filled in by the app when it is drawn (no save)
+  FAIL  f the fill-in is not the reader's change: nothing is waiting
+        got  "no record of what is waiting"
+        want {}
+        reading: the stamp touched 7 books on the phone
+  PASS  f the lens filled in at render takes the laptop's rename, on the phone and in the cloud
+  PASS  f the note from the older device takes the laptop's change, on the phone and in the cloud
+  PASS  f Book F one: the laptop's change is taken, on the phone and in the cloud (the stamp and the cover were not the reader's)
+  FAIL  f Book F two: the reader's own change with no signal is kept, on the phone and in the cloud
+        got  ["reading","reading"]
+        want ["read","read"]
+
+[g] Tidy library's duplicate merge with no signal, the app closed, the signal back
+  PASS  g set-up: the four artifacts are in the cloud
+  FAIL  g1 the moved artifact is on the kept book and not on the dropped one, on the phone
+        got  [null,{"body":"written on the copy of Dup One","on":false}]
+        want ["written on the copy of Dup One",null]
+  FAIL  g1 and in the cloud
+        got  [null,{"body":"written on the copy of Dup One","on":false}]
+        want ["written on the copy of Dup One",null]
+  FAIL  g2 both had one: the kept artifact carries the dropped one's writing, the dropped key is gone, on the phone
+        got  ["written on Dup Two",{"body":"written on the copy of Dup Two","on":false}]
+        want ["written on Dup Two\n\n— merged from a duplicate copy —\nAn artifact\nwritten on the copy of Dup Two",null]
+  FAIL  g2 and in the cloud
+        got  ["written on Dup Two",{"body":"written on the copy of Dup Two","on":false}]
+        want ["written on Dup Two\n\n— merged from a duplicate copy —\nAn artifact\nwritten on the copy of Dup Two",null]
+  FAIL  g the dropped books are gone, on the phone and in the cloud
+        got  [[false,false],true]
+        want [[false,false],false]
+  PASS  g3 merged online: the cloud has the artifact on the kept book only
+  PASS  g3 Undo is accepted
+  PASS  g3 after Undo and a reopen: the artifact is back on its own book only, on the phone and in the cloud
+  PASS  g3 and it stays there at the next load too
+
+[i] an edit made before the sign-in event arrives, on a load whose first answer succeeds
+  PASS  i the app is up as the cached reader, before the sign-in event
+  PASS  i the first answer succeeded: no read failed on this open
+  FAIL  i both edits are kept, on the phone and in the cloud
+        got  ["note I, as first written","reading","note I, as first written","reading"]
+        want ["note I, edited before the sign-in event","read","note I, edited before the sign-in event","read"]
+
+[j] the notes read alone fails; the reader edits a note; the app is closed before the read recovers
+  PASS  j only the notes latch is shut
+  PASS  j the book edit (its read had succeeded) reached the cloud at once; the note did not
+  FAIL  j the note edit is kept and pushed
+        got  ["note I, as first written","note I, as first written"]
+        want ["note I, edited while the notes read failed","note I, edited while the notes read failed"]
+
+[k] a save SENT but never acknowledged before the app closed
+  FAIL  k1 before the close: sent, not acknowledged, so still waiting
+        got  "no record of what is waiting"
+        want {"notebook":{"changed":["entry_1795570796175_796579"],"created":[],"deleted":[]}}
+  FAIL  k1 after the reopen: kept, and written to the cloud once
+        got  ["note I, as first written","note I, as first written",0]
+        want ["note I, k1: sent with no signal","note I, k1: sent with no signal",1]
+  FAIL  k1 and nothing is waiting once that write is acknowledged
+        got  "no record of what is waiting"
+        want {}
+  PASS  k2 the cloud holds the change
+  FAIL  k2 before the close: not acknowledged, so still waiting
+        got  "no record of what is waiting"
+        want {"notebook":{"changed":["entry_1795570796175_796579"],"created":[],"deleted":[]}}
+  PASS  k2 after the reopen: the change the cloud already holds is not written a second time
+  FAIL  k2 and the phone shows it, with nothing waiting
+        got  ["note I, k2: landed, never acknowledged","no record of what is waiting"]
+        want ["note I, k2: landed, never acknowledged",{}]
+
+[l] a book and its artifact deleted on another device; this device has an unsent change to that artifact, its switch confirmed on
+  PASS  l set-up: the switch on Book L turns on, and the cloud confirms it
+  PASS  l the laptop's delete reached the cloud: the book and its artifact are gone
+  PASS  l the artifact stays deleted, on the phone and in the cloud
+  FAIL  l and nothing is left waiting
+        got  "no record of what is waiting"
+        want {}
+        reading (l2, the books read still failing): the phone holds the artifact: false, the cloud: false
+  PASS  l2 once the books load answers, the artifact is gone, on the phone and in the cloud
+  FAIL  l2 and at the next load nothing is left waiting
+        got  "no record of what is waiting"
+        want {}
+
+[m] a sub-theory deleted on another device along with its arc; this device has an unsent change to it
+  PASS  m the laptop's deletes reached the cloud: the arc and the sub-theory are gone
+  PASS  m the sub-theory stays deleted, on the phone and in the cloud
+  FAIL  m and nothing is left waiting
+        got  "no record of what is waiting"
+        want {}
+        reading (m2, the arc alone deleted elsewhere): the phone keeps the sub-theory with arcId null, the cloud with arcId null (the deleted arc was arc_1795570862270_902181)
+
+[n] a note changed here whose book was deleted elsewhere is still kept (a note can live without a book)
+  PASS  n the book, and the second note, are gone from the cloud
+  FAIL  n the note and its change are kept, on the phone and in the cloud
+        got  ["note N, on Book N","note N, on Book N"]
+        want ["note N, changed with no signal","note N, changed with no signal"]
+  FAIL  n2 a note deleted elsewhere with its book, changed here, is kept too (C3: the ruling does not cover notes)
+        got  [null,null]
+        want ["note N two, changed with no signal","note N two, changed with no signal"]
+
+[o] an account switch, A to B: nothing of A is held in D1a's memory; then B's account wiped
+  FAIL  o control: while A is signed in, D1a's memory holds A's records (A's note id is in it)
+        got  false
+        want true
+  PASS  o after the switch to B: none of A's ids, and not A's uid, in D1a's memory
+  FAIL  o B's account wiped: the deletion ran, and D1a's memory is empty
+        got  ["deleted","no D1a memory to read"]
+        want ["deleted","[{},null,{}]"]
+
+[h] the size meter: a small document says nothing; past 700 KB the first line, once; at the cap the second, once
+  PASS  h a small document: neither line
+  FAIL  h past 700 KB: the first line, once
+        got  [0,0]
+        want [1,0]
+  FAIL  h the next save the same day: not said again
+        got  [0,0]
+        want [1,0]
+  PASS  h the 740 KB document was accepted by the cloud
+  FAIL  h at the cap the save is refused: the second line, once
+        got  [0,0]
+        want [1,1]
+  FAIL  h refused again the same day: neither line again
+        got  [0,0]
+        want [1,1]
+  PASS  h the refused notes are kept on the device (5), the cloud keeps its last accepted copy (3)
+  FAIL  h a day later the lines are said again, once each
+        got  [0,0]
+        want [2,2]
+  FAIL  h the artifacts document past 700 KB: the first line, once
+        got  [0,0]
+        want [1,0]
+  PASS  page errors across every device
+
+main-0b0a730: 43 / 82 passed, 39 failed
+RIG-DONE
+RUNNER: main-0b0a730 took 199 s, 2026-11-24 19:41

@@ -1,0 +1,132 @@
+== D1a behaviour rig on staged-build ==
+
+[setup] the phone signs in and writes the records the scenarios change; the laptop loads them
+  PASS  setup the switch on Book A turns on
+  PASS  setup the cloud holds every record, Book A's switch on, Book D's off
+  PASS  setup the arc and its sub-theory are in the cloud
+  PASS  setup the laptop has the 7 books and 5 notes
+
+[a] no signal after a good load: a note, a book, a lens and the switch (off) are changed; closed; signal back; reopened
+  PASS  a the switch on Book A turns off
+  PASS  a the arc and the sub-theory changes are kept, on the phone and in the cloud
+  PASS  a on the phone: the four changes are there
+  PASS  a in the cloud: the four changes are there
+
+[b] the same note changed on two devices before they sync: the newer edit wins, in both orders
+  PASS  b the phone syncs first: B1 holds its own older edit for now, B2 its newer one
+  PASS  b B1 (the newer edit synced last): the laptop's newer edit, on both devices and in the cloud
+  PASS  b B2 (the newer edit synced first): the phone's newer edit, on both devices and in the cloud
+
+[c] the same book changed on two devices: the device with the unconfirmed change wins
+  PASS  c the laptop's changes land first (cloud: read, the laptop's lens name)
+  PASS  c the phone's unconfirmed change wins: will-read on the phone, the laptop and in the cloud
+  PASS  c a lens is not a book (F1, 24 Nov): the laptop's LATER rename wins over the phone's unconfirmed one, everywhere
+
+[d] the switch turned ON with no signal, the app closed, the cloud still says off
+  PASS  d1 the switch on Book D turns on with no signal
+  PASS  d2 a new artifact, written with no signal, has its switch turned on
+  PASS  d1 Book D's switch is off on the phone and in the cloud
+  PASS  d2 the new artifact is kept, on the phone and in the cloud
+  PASS  d2 and its switch is off on the phone and in the cloud
+  PASS  d3 the switch on Book D turns on, online
+  PASS  d3 the cloud did get the ON
+  PASS  d3 an ON the cloud has is not turned off: on, on the phone and in the cloud
+
+[e] a write that landed and was confirmed leaves nothing waiting; a later change elsewhere is taken
+  PASS  e control: an edit with no signal is recorded as waiting (that note only)
+  PASS  e after the reopen it has been sent, and nothing is waiting
+  PASS  e both edits reached the cloud
+  PASS  e the phone records nothing waiting to sync
+  PASS  e the phone takes the laptop's later changes
+  PASS  e and the cloud keeps them
+
+[f] the app writing by itself (a category stamp, a cover landing, a lens filled in at render, a note from an older device) is not the reader's change
+  PASS  f a new lens is filled in by the app when it is drawn (no save)
+  PASS  f the fill-in is not the reader's change: nothing is waiting
+        reading: the stamp touched 7 books on the phone
+  PASS  f the lens filled in at render takes the laptop's rename, on the phone and in the cloud
+  PASS  f the note from the older device takes the laptop's change, on the phone and in the cloud
+  PASS  f Book F one: the laptop's change is taken, on the phone and in the cloud (the stamp and the cover were not the reader's)
+  PASS  f Book F two: the reader's own change with no signal is kept, on the phone and in the cloud
+
+[g] Tidy library's duplicate merge with no signal, the app closed, the signal back
+  PASS  g set-up: the four artifacts are in the cloud
+  PASS  g1 the moved artifact is on the kept book and not on the dropped one, on the phone
+  PASS  g1 and in the cloud
+  PASS  g2 both had one: the kept artifact carries the dropped one's writing, the dropped key is gone, on the phone
+  PASS  g2 and in the cloud
+  PASS  g the dropped books are gone, on the phone and in the cloud
+  PASS  g3 merged online: the cloud has the artifact on the kept book only
+  PASS  g3 Undo is accepted
+  PASS  g3 after Undo and a reopen: the artifact is back on its own book only, on the phone and in the cloud
+  PASS  g3 and it stays there at the next load too
+
+[i] an edit made before the sign-in event arrives, on a load whose first answer succeeds
+  PASS  i the app is up as the cached reader, before the sign-in event
+  PASS  i the first answer succeeded: no read failed on this open
+  PASS  i both edits are kept, on the phone and in the cloud
+
+[j] the notes read alone fails; the reader edits a note; the app is closed before the read recovers
+  PASS  j only the notes latch is shut
+  PASS  j the book edit (its read had succeeded) reached the cloud at once; the note did not
+  PASS  j the note edit is kept and pushed
+
+[k] a save SENT but never acknowledged before the app closed
+  PASS  k1 before the close: sent, not acknowledged, so still waiting
+  PASS  k1 after the reopen: kept, and written to the cloud once
+  PASS  k1 and nothing is waiting once that write is acknowledged
+  PASS  k2 the cloud holds the change
+  PASS  k2 before the close: not acknowledged, so still waiting
+  PASS  k2 after the reopen: the change the cloud already holds is not written a second time
+  PASS  k2 and the phone shows it, with nothing waiting
+
+[l] a book and its artifact deleted on another device; this device has an unsent change to that artifact, its switch confirmed on
+  PASS  l set-up: the switch on Book L turns on, and the cloud confirms it
+  PASS  l the laptop's delete reached the cloud: the book and its artifact are gone
+  FAIL  l the artifact stays deleted, on the phone and in the cloud
+        got  [{"body":"artifact L, changed with no signal","on":true},{"body":"artifact L, changed with no signal","on":true}]
+        want [null,null]
+  PASS  l and nothing is left waiting
+        reading (l2, the books read still failing): the phone holds the artifact: true, the cloud: true
+  FAIL  l2 once the books load answers, the artifact is gone, on the phone and in the cloud
+        got  [{"body":"artifact L two, changed with no signal","on":false},{"body":"artifact L two, changed with no signal","on":false}]
+        want [null,null]
+  PASS  l2 and at the next load nothing is left waiting
+
+[m] a sub-theory deleted on another device along with its arc; this device has an unsent change to it
+  PASS  m the laptop's deletes reached the cloud: the arc and the sub-theory are gone
+  FAIL  m the sub-theory stays deleted, on the phone and in the cloud
+        got  [true,22]
+        want [false,0]
+  PASS  m and nothing is left waiting
+        reading (m2, the arc alone deleted elsewhere): the phone keeps the sub-theory with arcId "arc_1795569002985_282156", the cloud with arcId "arc_1795569002985_282156" (the deleted arc was arc_1795569002985_282156)
+
+[n] a note changed here whose book was deleted elsewhere is still kept (a note can live without a book)
+  PASS  n the book, and the second note, are gone from the cloud
+  PASS  n the note and its change are kept, on the phone and in the cloud
+  PASS  n2 a note deleted elsewhere with its book, changed here, is kept too (C3: the ruling does not cover notes)
+
+[o] an account switch, A to B: nothing of A is held in D1a's memory; then B's account wiped
+  PASS  o control: while A is signed in, D1a's memory holds A's records (A's note id is in it)
+  FAIL  o after the switch to B: none of A's ids, and not A's uid, in D1a's memory
+        got  [["bk_A_s_book","entry_1795569023045_595055","theme_1795569023046_93431"],true]
+        want [[],false]
+  FAIL  o B's account wiped: the deletion ran, and D1a's memory is empty
+        got  ["deleted","[{\"books\":{\"bk_A_s_book\":{\"raw\":\"{\\\"id\\\":\\\"bk_A_s_book\\\",\\\"title\\\":\\\"A's book\\\",\\\"author\\\":\\\"A. Author\\\",\\\"isbn\\\":\\\"\\\",\\\"addedAt\\\":1795569023044,\\\"status\\\":\\\"reading\\\",\\\"genre\\\":\\\"\\\",\\\"coverUrl\\\":null,\\\"tradition\\\":\\\"unassigned\\\",\\\"traditionOverride\\\":null,\\\"pageCount\\\":null,\\\"publisher\\\":\\\"\\\",\\\"year\\\":null,\\\"description\\\":\\\"\\\",\\\"rating\\\":null,\\\"dateRead\\\":null,\\\"category\\\":\\\"\\\",\\\"rawCategories\\\":[],\\\"categoryOverride\\\":\\\"\\\",\\\"movedMe\\\":false,\\\"valueMarks\\\":[]}\",\"e\":\"v1:18l7pp6.11g8pgo.1x\",\"n\":368}},\"notebook\":{\"entry_1795569024161_509912\":{\"raw\":\"{\\\"id\\\":\\\"entry_1795569024161_509912\\\",\\\"userId\\\":\\\"d1a-mem-b\\\",\\\"register\\\":\\\"marginalia\\\",\\\"isPrivate\\\":false,\\\"body\\\":\\\"B's note\\\",\\\"bookIds\\\":[],\\\"arcIds\\\":[],\\\"images\\\":[],\\\"filed\\\":false,\\\"createdAt\\\":1795569024161,\\\"updatedAt\\\":1795569024161}\",\"e\":\"v1:zkdmtq.jb6ce0.63\",\"n\":219}},\"themes\":{\"theme_1795569023046_93431\":{\"raw\":\"{\\\"id\\\":\\\"theme_1795569023046_93431\\\",\\\"userId\\\":\\\"d1a-mem-a\\\",\\\"name\\\":\\\"A's lens\\\",\\\"bookIds\\\":[],\\\"createdAt\\\":1795569023046,\\\"updatedAt\\\":1795569023046}\",\"e\":\"v1:1ex3n5t.5ep7bd.8e\",\"n\":138}}},\"d1a-mem-b\",{\"books\":436,\"notebook\":276,\"themes\":194}]"]
+        want ["deleted","[{},null,{}]"]
+
+[h] the size meter: a small document says nothing; past 700 KB the first line, once; at the cap the second, once
+  PASS  h a small document: neither line
+  PASS  h past 700 KB: the first line, once
+  PASS  h the next save the same day: not said again
+  PASS  h the 740 KB document was accepted by the cloud
+  PASS  h at the cap the save is refused: the second line, once
+  PASS  h refused again the same day: neither line again
+  PASS  h the refused notes are kept on the device (5), the cloud keeps its last accepted copy (3)
+  PASS  h a day later the lines are said again, once each
+  PASS  h the artifacts document past 700 KB: the first line, once
+  PASS  page errors across every device
+
+staged-build: 77 / 82 passed, 5 failed
+RIG-DONE
+RUNNER: staged-build took 173 s, 2026-11-24 19:10

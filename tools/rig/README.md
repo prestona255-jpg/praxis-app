@@ -137,4 +137,13 @@ after a push and with Preston's phone.
 |---|---|---|
 | `fb-1a` | FB-1a: S0 to S24, the build chat's scenarios (S24 runs after S21) | 99 / 99; on `3ce6a7b` (before FB-1a) 22 / 46 then STOPPED in [S11] |
 | `fb-1a-extras` | FB-1a: X0 to X7, Claude Code's own (the composers, Undo, the timer steps, the real sort and lens render) | 20 / 20 |
+| `d1a` | D1a (v3.341): a to h, the brief's (offline edits kept across a close, the rulings on which edit wins, the switch, the merge's artifact site, the size meter); i, j, k, Preston's additions (an edit before the sign-in event, one collection's read failing, a save sent but never acknowledged); l to o, Preston's ruling at the commit gate (an artifact whose book is gone, and a sub-theory whose arc is gone, stay deleted; a note is kept; D1a's memory cleared on an account switch and a wipe). Imitates behaviours 2, 3, 4, 5 and 6 | 82 / 82; on `0b0a730` (before D1a) 43 / 82 |
 | `_template` | nothing: the smallest suite that works | 1 / 1 |
+
+D1a changed one fb-1a check, as the record: S13 used to record the known limit "the EDIT reverted to the
+cloud copy (BR-03, next build)"; from D1a it records the edit kept, on the device and in the cloud. And S22: it recorded the artifact of a
+book deleted on another device as kept; from D1a (Preston's ruling of 24 Nov) that artifact stays deleted.
+
+The d1a suite bends the cloud from inside its own file, for its own scenarios only: a write can be
+applied while its answer is lost (d3, k2), and a set over 1,048,576 bytes is refused with the service's
+message (h). `core.js` is unchanged.

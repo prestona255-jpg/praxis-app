@@ -1,0 +1,15 @@
+staged exit=1 :: staged-build: 77 / 82 passed, 5 failed :: FAIL  l the artifact stays deleted, on the phone and in the cloud | FAIL  l2 once the books load answers, the artifact is gone, on the phone and in the cloud | FAIL  m the sub-theory stays deleted, on the phone and in the cloud | FAIL  o after the switch to B: none of A's ids, and not A's uid, in D1a's memory | FAIL  o B's account wiped: the deletion ran, and D1a's memory is empty
+L18-parent-rule exit=1 :: L18-parent-rule: 79 / 82 passed, 3 failed :: FAIL  l the artifact stays deleted, on the phone and in the cloud | FAIL  l2 once the books load answers, the artifact is gone, on the phone and in the cloud | FAIL  m the sub-theory stays deleted, on the phone and in the cloud
+L19-drop-orphans exit=1 :: L19-drop-orphans: 81 / 82 passed, 1 failed :: FAIL  l2 once the books load answers, the artifact is gone, on the phone and in the cloud
+L20-memory-reset exit=1 :: L20-memory-reset: 80 / 82 passed, 2 failed :: FAIL  o after the switch to B: none of A's ids, and not A's uid, in D1a's memory | FAIL  o B's account wiped: the deletion ran, and D1a's memory is empty
+L21-rule-on-notes exit=1 :: L21-rule-on-notes: 81 / 82 passed, 1 failed :: FAIL  n2 a note deleted elsewhere with its book, changed here, is kept too (C3: the ruling does not cover notes)
+PASS  harness lens-data-test  exit 0  0.8 s  | PASS 101/101
+PASS  harness lens-eval-test  exit 0  0.4 s  | PASS 68/68
+PASS  rig _template  exit 0  16.6 s  | _template: 1 / 1 passed, 0 failed
+PASS  rig d1a  exit 0  209.7 s  | d1a: 82 / 82 passed, 0 failed
+PASS  rig fb-1a  exit 0  195.7 s  | fb-1a: 99 / 99 passed, 0 failed
+PASS  rig fb-1a-extras  exit 0  131.6 s  | fb-1a-extras: 20 / 20 passed, 0 failed
+CHECKS: 33 of 33 passed, 0 failed
+CHECKS-DONE
+
+[exited with code 0]

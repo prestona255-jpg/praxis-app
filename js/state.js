@@ -3604,9 +3604,11 @@ function saveState() {
         typeof saveBooksToFirestore === 'function' &&
         typeof buildUserBookDoc === 'function') {
       var payload = buildUserBookDoc(user.uid);
+      var d1aBooksSent = (typeof d1aSend === 'function') ? d1aSend('books', user.uid, payload) : null;   // D1a: measured, and its prints taken, as it is SENT
       saveBooksToFirestore(user.uid, payload, function (result) {
         if (result && result.status === 'ok') {
           console.log('saveBooksToFirestore: ok');
+          if (d1aBooksSent && typeof d1aConfirmed === 'function') { d1aConfirmed('books', user.uid, d1aBooksSent); }   // D1a: confirmed only on the cloud's answer
           // P0: this snapshot is now durable on the server -- clear exactly
           // its ids from the pending-sync set (ids added AFTER the snapshot
           // stay pending so a later add is still protected).
@@ -3623,6 +3625,7 @@ function saveState() {
           // is intentionally NOT cleared (clear only on success), so the books
           // stay protected from the REPLACE merge until they confirm.
           booksDirty = true;
+          if (typeof d1aRefused === 'function') { d1aRefused(result ? result.error : null); }   // D1a: refused for size -> the second line
         }
       });
     }
@@ -3636,9 +3639,11 @@ function saveState() {
         typeof saveArcsToFirestore === 'function' &&
         typeof buildUserArcsDoc === 'function') {
       var arcPayload = buildUserArcsDoc(arcUser.uid);
+      var d1aArcsSent = (typeof d1aSend === 'function') ? d1aSend('arcs', arcUser.uid, arcPayload) : null;   // D1a (see books)
       saveArcsToFirestore(arcUser.uid, arcPayload, function (result) {
         if (result && result.status === 'ok') {
           console.log('saveArcsToFirestore: ok');
+          if (d1aArcsSent && typeof d1aConfirmed === 'function') { d1aConfirmed('arcs', arcUser.uid, d1aArcsSent); }
           // FX-1: this snapshot is durable -> clear exactly its ids from the
           // pending-sync set (ids created AFTER the snapshot stay protected).
           clearPendingSync('arcs', arcUser.uid, mapIdList(arcPayload.arcs));
@@ -3650,6 +3655,7 @@ function saveState() {
           // 2.0 hardening (batch 1): mirror the books failure handler -- re-dirty
           // so the next saveState retries instead of silently dropping the write.
           arcsDirty = true;
+          if (typeof d1aRefused === 'function') { d1aRefused(result ? result.error : null); }
         }
       });
       // W6.5 write-through: a freshness:"live" published arc rewrites its public
@@ -3695,9 +3701,11 @@ function saveState() {
         typeof saveNotebookToFirestore === 'function' &&
         typeof buildUserNotebookDoc === 'function') {
       var nbPayload = buildUserNotebookDoc(nbUser.uid);
+      var d1aNotesSent = (typeof d1aSend === 'function') ? d1aSend('notebook', nbUser.uid, nbPayload) : null;   // D1a (see books)
       saveNotebookToFirestore(nbUser.uid, nbPayload, function (result) {
         if (result && result.status === 'ok') {
           console.log('saveNotebookToFirestore: ok');
+          if (d1aNotesSent && typeof d1aConfirmed === 'function') { d1aConfirmed('notebook', nbUser.uid, d1aNotesSent); }
           // FB-1a (FX-1b): this snapshot is durable -> clear exactly its ids from the
           // notebook's pending-sync set (notes written AFTER the snapshot stay protected).
           clearPendingSync('notebook', nbUser.uid, mapIdList(nbPayload.notebookEntries));
@@ -3709,6 +3717,7 @@ function saveState() {
           // 2.0 hardening (batch 1): mirror the books failure handler -- re-dirty
           // so the next saveState retries instead of silently dropping the write.
           notebookDirty = true;
+          if (typeof d1aRefused === 'function') { d1aRefused(result ? result.error : null); }
         }
       });
     }
@@ -3722,9 +3731,11 @@ function saveState() {
         typeof saveSubTheoriesToFirestore === 'function' &&
         typeof buildUserSubTheoriesDoc === 'function') {
       var stPayload = buildUserSubTheoriesDoc(stUser.uid);
+      var d1aSubsSent = (typeof d1aSend === 'function') ? d1aSend('subTheories', stUser.uid, stPayload) : null;   // D1a (see books)
       saveSubTheoriesToFirestore(stUser.uid, stPayload, function (result) {
         if (result && result.status === 'ok') {
           console.log('saveSubTheoriesToFirestore: ok');
+          if (d1aSubsSent && typeof d1aConfirmed === 'function') { d1aConfirmed('subTheories', stUser.uid, d1aSubsSent); }
           clearPendingSync('subTheories', stUser.uid, mapIdList(stPayload.subTheories));   // FX-1
         } else {
           console.warn(
@@ -3734,6 +3745,7 @@ function saveState() {
           // 2.0 hardening (batch 1): mirror the books failure handler -- re-dirty
           // so the next saveState retries instead of silently dropping the write.
           subTheoriesDirty = true;
+          if (typeof d1aRefused === 'function') { d1aRefused(result ? result.error : null); }
         }
       });
     }
@@ -3747,9 +3759,11 @@ function saveState() {
         typeof saveThemesToFirestore === 'function' &&
         typeof buildUserThemesDoc === 'function') {
       var thPayload = buildUserThemesDoc(thUser.uid);
+      var d1aThemesSent = (typeof d1aSend === 'function') ? d1aSend('themes', thUser.uid, thPayload) : null;   // D1a (see books)
       saveThemesToFirestore(thUser.uid, thPayload, function (result) {
         if (result && result.status === 'ok') {
           console.log('saveThemesToFirestore: ok');
+          if (d1aThemesSent && typeof d1aConfirmed === 'function') { d1aConfirmed('themes', thUser.uid, d1aThemesSent); }
           clearPendingSync('themes', thUser.uid, mapIdList(thPayload.userThemes));   // FX-1
         } else {
           console.warn(
@@ -3759,6 +3773,7 @@ function saveState() {
           // 2.0 hardening (batch 1): mirror the books failure handler -- re-dirty
           // so the next saveState retries instead of silently dropping the write.
           themesDirty = true;
+          if (typeof d1aRefused === 'function') { d1aRefused(result ? result.error : null); }
         }
       });
     }
@@ -3793,9 +3808,11 @@ function saveState() {
         typeof saveArtifactsToFirestore === 'function' &&
         typeof buildUserArtifactsDoc === 'function') {
       var artPayload = buildUserArtifactsDoc(artUser.uid);
+      var d1aArtsSent = (typeof d1aSend === 'function') ? d1aSend('artifacts', artUser.uid, artPayload) : null;   // D1a (see books)
       saveArtifactsToFirestore(artUser.uid, artPayload, function (result) {
         if (result && result.status === 'ok') {
           console.log('saveArtifactsToFirestore: ok');
+          if (d1aArtsSent && typeof d1aConfirmed === 'function') { d1aConfirmed('artifacts', artUser.uid, d1aArtsSent); }
           clearPendingSync('artifacts', artUser.uid, mapIdList(artPayload.bookArtifacts));   // FX-1
         } else {
           console.warn(
@@ -3805,6 +3822,7 @@ function saveState() {
           // 2.0 hardening (batch 1 pattern): re-dirty so the next saveState
           // retries instead of silently dropping the write.
           artifactsDirty = true;
+          if (typeof d1aRefused === 'function') { d1aRefused(result ? result.error : null); }
         }
       });
     }

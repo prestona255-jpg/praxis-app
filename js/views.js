@@ -9337,8 +9337,19 @@ function undoBookMerge(uid, tombstoneId) {
   if (state.bookArtifacts) {
     for (k in ts.artifactsBefore) {
       if (!ts.artifactsBefore.hasOwnProperty(k)) { continue; }
-      if (ts.artifactsBefore[k]) { state.bookArtifacts[k] = mergeCloneValue(ts.artifactsBefore[k]); }
-      else if (state.bookArtifacts[k]) { delete state.bookArtifacts[k]; }
+      // D1a: the artifact half of the sync half below. The merge marked a dropped key
+      // deleted and a moved key pending; Undo reverses both, or the next load deletes
+      // the restored artifact (its key still marked deleted). A restored artifact is
+      // stamped as an edit, so a newer-wins load keeps it over the merged copy.
+      if (ts.artifactsBefore[k]) {
+        state.bookArtifacts[k] = mergeCloneValue(ts.artifactsBefore[k]);
+        state.bookArtifacts[k].updatedAt = Date.now();
+        if (typeof clearPendingDelete === 'function') { clearPendingDelete('artifacts', uid, [k]); }
+        if (typeof markPendingSync === 'function') { markPendingSync('artifacts', uid, k); }
+      } else if (state.bookArtifacts[k]) {
+        delete state.bookArtifacts[k];
+        if (typeof noteRecordDeleted === 'function') { noteRecordDeleted('artifacts', uid, k); }
+      }
     }
   }
   // THE SYNC HALF. Stop guarding the DELETE, start guarding the ADD.
@@ -9535,6 +9546,11 @@ function mergeBookDuplicates(uid, keepId, dropIds, newTitle) {
       if (!keepArt) {
         dropArt.bookId = keepId;
         state.bookArtifacts[keepAK] = dropArt;
+        // D1a (fb-1a.md L4): the moved artifact is a record the cloud has not got
+        // under this key -- guard it as a pending create until a save is confirmed,
+        // and never let an old delete of this key remove it.
+        if (typeof clearPendingDelete === 'function') { clearPendingDelete('artifacts', uid, [keepAK]); }
+        if (typeof markPendingSync === 'function') { markPendingSync('artifacts', uid, keepAK); }
       } else {
         var dTitle = (typeof dropArt.title === 'string') ? dropArt.title : '';
         var dBody = (typeof dropArt.body === 'string') ? dropArt.body : '';
@@ -9544,10 +9560,12 @@ function mergeBookDuplicates(uid, keepId, dropIds, newTitle) {
         if (addition !== '') {
           if (typeof keepArt.body !== 'string') { keepArt.body = ''; }
           keepArt.body = keepArt.body + '\n\n— merged from a duplicate copy —\n' + addition;
+          keepArt.updatedAt = Date.now();   // D1a: an edit, so a newer-wins load does not take an older copy over it
         }
         if (typeof ensureArtifactFields === 'function') { ensureArtifactFields(keepArt); }
       }
       delete state.bookArtifacts[dropAK];
+      if (typeof noteRecordDeleted === 'function') { noteRecordDeleted('artifacts', uid, dropAK); }   // D1a (L4): a stale cloud copy cannot bring it back
       artifactTouched = true;
     }
   }

@@ -1,0 +1,12 @@
+main exit=1
+main-0b0a730: 35 / 67 passed, 32 failed
+PASS  harness lens-data-test  exit 0  0.4 s  | PASS 101/101
+PASS  harness lens-eval-test  exit 0  0.2 s  | PASS 68/68
+PASS  rig _template  exit 0  10.2 s  | _template: 1 / 1 passed, 0 failed
+PASS  rig d1a  exit 0  118.5 s  | d1a: 67 / 67 passed, 0 failed
+PASS  rig fb-1a  exit 0  163.8 s  | fb-1a: 99 / 99 passed, 0 failed
+PASS  rig fb-1a-extras  exit 0  117.4 s  | fb-1a-extras: 20 / 20 passed, 0 failed
+CHECKS: 33 of 33 passed, 0 failed
+CHECKS-DONE
+
+[exited with code 0]

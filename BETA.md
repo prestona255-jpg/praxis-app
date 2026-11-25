@@ -54,15 +54,17 @@ Three lanes: data, rooms, features. Data builds and room builds alternate (ruled
 | P0 | process | This page leads | small | pushed e66c682 |
 | PG | gate | Preston's 25-step phone walk of the app as it stands | - | walked 24 Nov: step 5 no (a tap on a text field zooms the page), step 6 no by its screenshot, the rest yes |
 | P1 | process | Checks run by a machine on every push: the cscript harnesses and the rig | small | pushed f9c5495 |
-| D1 | data | Fix build 1b: BR-03, BR-04, BR-29, the mergeBookDuplicates artifact site; plus a size meter on each per-reader cloud document (warn at 700 KB of the 1 MiB cap) | data | scoping |
+| D1a | data | Fix build 1b, part one: offline edits kept across a close (BR-03), the mergeBookDuplicates artifact site and its Undo, what is waiting sent at the load, a size meter on each of the six reader documents (warn past 700 KB of the 1 MiB cap) | data | built 24 Nov, v3.341, at the commit gate |
+| D1b | data | Fix build 1b, part two: the profile and reader-model guards (BR-29) | data | not started |
+| D1c | data | Fix build 1b, part three: two devices overwriting each other (BR-04), by a re-read on return to the front and a check of the cloud's copy before each save | data | not started |
 | R1 | rooms | Home and Search (L4b-3d), with the Search matching fix (every word, any order, accents and case ignored; artifacts, lenses and categories included), an "All books" side, and no text field under 16 px on phones (the walk's step 5) | small | patch to be cut fresh |
 | R2 | rooms | Find a book: a search field replaces the Add a book form (NEW, ruled 23 Nov; comes before the book page) | small | to be drawn |
 | D2 | data | Fix build 2: the Yumi daily limit, docs/ off the live site, updates reaching readers | data | not started |
 | F2 | features | Deeper Yumi, her complexity and character (ruled in 23 Nov; built alongside the rooms; D2 still lands before any invite) | sized at its pre-flight | in design, its own chat |
 | F3 | features | ElevenLabs dictation (ruled in 23 Nov; after D2, it adds paid calls per reader) | sized at its pre-flight | in design, its own chat |
 | R3 | rooms | Book page and artifact (L4b-3b) | small | patch to be cut fresh |
-| R4 | rooms | Notebook and a note (L4b-3c) | small | patch to be cut fresh |
-| R5 | rooms | You, Settings, Your data, What Yumi sees, About (L4b-3e, two builds) | small | patch to be cut fresh |
+| R4 | rooms | Notebook and a note (L4b-3c); Undo for a deleted note (BR-13) | small | patch to be cut fresh |
+| R5 | rooms | You, Settings, Your data, What Yumi sees, About (L4b-3e, two builds); the lasting not-synced line and the Export words (BR-30) | small | patch to be cut fresh |
 | R6 | rooms | Tell Preston | small | not started |
 | R7 | rooms | First run, the hide switch for out-of-beta rooms (L5), the sky's motion switch | small | design open |
 | F1 | features | The demo page, no sign-in (ruled in 23 Nov; LAST of the builds, after the rooms and Deeper Yumi, so it shows the finished app) | sized at its pre-flight | in design, its own chat |
@@ -95,9 +97,11 @@ stop only at a real fork or a failed proof. Section 5 already has the tiers. Fro
 
 In doubt, it is DATA. A small build that finds it must touch data stops and says so.
 
+Ruled 2026-11-24: a data build is handed to Claude Code as a short brief (the hole, the proof, the non-goals, the stops). Claude Code finds the code, writes the fix and proves it; the chat reads the diff and the rig output before the commit.
+
 ## Open blockers
 
-- FX-1 is not complete (build 1a, v3.340, closed BR-01 and BR-02 only).
+- FX-1 is not complete (build 1a, v3.340, closed BR-01 and BR-02; D1a, v3.341, closes BR-03 and the merge's artifact site; BR-04 and BR-29 remain, D1c and D1b).
 - Ready-means item 4 is not yet true (23 Nov).
 - Sign-in is a Google popup only. That is fine on the web and will not work inside
   the iPhone shell (L7b, after the beta).

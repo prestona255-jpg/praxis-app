@@ -31,6 +31,11 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-24 (D1a: fix build 1b, part one, v3.341)** -- BETA.md's row D1 became three (D1a this build; D1b the
+  profile and reader-model guards, BR-29; D1c two devices, BR-04), by Preston's ruling of 24 Nov. D1a keeps an edit the
+  cloud never confirmed across a close (BR-03), fixes the merge's artifact site and its Undo, sends what is waiting at
+  the load, and meters the six reader documents (`docs/checkpoints/d1a.md`). R4 gains Undo for a deleted note (BR-13);
+  R5 gains the lasting not-synced line and the Export words (BR-30). No other reordering.
 - **2026-11-24 (P1: checks on every push; the phone gate walked)** -- BETA.md's row P1. `tools/checks.ps1` runs every
   check the repo already has (the parse check on every served script, the six cscript harnesses, every rig suite) and
   `.github/workflows/checks.yml` runs it on a GitHub Windows machine on each push to `main`. It reports after the push and
