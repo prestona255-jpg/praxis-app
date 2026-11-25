@@ -1,0 +1,19 @@
+[after] boot :: stubbed night | {"at":"/#home","counts":{"shelf":143,"reading":117,"notes":13,"lenses":5,"arcs":2,"arts":2},"user":"d0tester"}
+[after] t0 open: focused (keyboard raised?) :: {"focused":false,"recents":null}
+[after] t1 click field :: clicked input.
+[after] t1 wrong order :: {"q":"oppressed pedagogy","groups":["Books","Notes","Artifacts"],"books":["Pedagogy of the Oppressed, Paulo Freire"]}
+[after] t2 no accents :: {"q":"les miserables","groups":["Books"],"books":["Les Misérables, Victor Hugo"]}
+[after] shot :: no shots
+[after] t3 open result :: clicked button.r1-cv
+[after] t3 after open :: {"hash":"#book/bk_r1_036","recents":["les miserables"],"key":"praxis_recent_searches_d0tester"}
+[after] t4 back :: {"hash":"#search","r1":true,"q":"les miserables","groups":["Books"]}
+[after] t5 idle :: {"groups":["Recent","Or open a lens"],"recents":["les miserables"]}
+[after] shot :: no shots
+[after] t5 clear :: clicked button.ol-lnk
+[after] t5 after clear :: {"recents":[],"groups":["Open a lens"],"toast":"Recent searches cleared.Undo"}
+[after] t5 undo :: clicked button.lx-toast-b
+[after] t5 after undo :: {"recents":["les miserables"],"groups":["Recent","Or open a lens"]}
+[after] t6 click field :: clicked input.
+[after] t6 journal word :: {"q":"quillwort","groups":[],"msg":"Nothing on your shelf, in your notes or among your lenses matches “quillwort”.","journalHas":2}
+[after] shot :: no shots
+[after] errors :: []

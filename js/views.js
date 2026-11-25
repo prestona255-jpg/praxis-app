@@ -497,7 +497,7 @@ if (typeof window !== 'undefined' && window.addEventListener) {
 
 function tabbarRoute(parts) {
   tabbarRouteTab = tabbarTabFor(parts);
-  if (parts[0] !== 'search') { tabbarSearchFrom = tabbarRouteTab; }
+  if (parts[0] !== 'search') { tabbarSearchFrom = tabbarRouteTab || 'none'; }   // R1: opened from a room with no tab (Arcs, Scan), Search lights no tab; a cold #search still lights Home
   var pill = document.querySelector('.app-nav-searchpill');   // D5: no pill on #search itself
   if (pill) {
     if (parts[0] === 'search') { pill.classList.add('is-here'); } else { pill.classList.remove('is-here'); }
@@ -580,6 +580,8 @@ function renderRoute() {
 
   var rest = location.hash.replace(/^#/, '');
   var parts = rest.split('/');
+  // R1: Search's Back returns to where it was opened from; coming straight back from a result keeps what was typed.
+  if (parts[0] === 'search' && olPrev.split('/')[0] !== 'search') { r1Arrive(olPrev); }
   // L4.3: the Lenses page's Back returns to wherever the reader came from.
   if (parts[0] !== 'lenses' && parts[0] !== 'lens') { lxLastRoute = rest || 'home'; }   // L4b-2a: Lenses -> Open Lens -> Back must not loop
   // L4b-2a: Open Lens's Back returns to the room it was opened from. A page opened
@@ -1373,6 +1375,7 @@ function renderSearch() {
     host.appendChild(soWrap);
     return;
   }
+  if (r1SearchOn(searchGateUser.uid)) { r1SearchRender(host, searchGateUser.uid); return; }   // R1: the redrawn Search (?search=old brings the earlier one back)
   var pal = (ls('praxis_constellation_palette', 'colorful') === 'muted') ? 'muted' : 'colorful';
   var index = _searchBuildIndex();
   var activeKind = 'all';
@@ -1536,6 +1539,693 @@ function renderSearch() {
   doRender();
   input.focus();
 }
+
+// =====================================================================
+// R1 -- HOME AND SEARCH (BETA.md row R1; docs/checkpoints/r1.md). Cut fresh on
+// main db457de (v3.341), 25 Nov 2026. The look is the Style Study ("Blue sky,
+// warm ground"); the calls are rulings r45, r84, r86, r96, Preston's five of
+// 19 Nov, and his 25 Nov call on "All books":
+//   1. ONE build, two safety switches. ?home=old|new and ?search=old|new are read
+//      once per load and kept on this device under the reader's own uid. With a
+//      switch at "old" that room is exactly the earlier one.
+//   2. Until arcs are hidden: Home keeps ONE quiet "Your arcs" line (only when the
+//      reader has an arc); Search still finds arcs and sub-theories as the last
+//      groups under All, with no chips of their own.
+//   3. "Where you left off" is the book of the reader's latest note; with no
+//      notes, the Reading book added most recently; with neither, no card.
+//   4. "Still reading": more than 12 books marked Reading shows only the ones
+//      with a note, latest note first; 12 or fewer shows all, noted first.
+//   5. Search opens on recent searches and the reader's lenses, never empty.
+//      Recent searches: the last 5, saved when a result is opened, on this device
+//      only, with Clear.
+//   6. Matching: every word, in any order, accents and case ignored. Books,
+//      notes, artifacts, lenses and categories are searched; a title match
+//      comes first. The Journal is never searched (r45).
+//   7. Two sides, "Your library" (the default) and "All books". "All books" is
+//      built and switched OFF until Find a book (R2) gives it a catalogue
+//      (?allbooks=on|off, kept the same way as the two room switches).
+// Nothing here writes to the cloud or changes what is saved or synced. The only
+// stored things are the three switches and the recents list, all on this device
+// under keys that end in the reader's uid, so the account sweep
+// (accountLocalKeysFor) finds them by inspection. The sky is not touched (LC2).
+// =====================================================================
+var r1Seen = {};                  // an address switch is read once per load
+var r1From = 'home';              // the route Search was opened from (its Back)
+var r1Out = '';                   // the result last opened FROM Search (coming back keeps what was typed)
+var r1St = { q: '', scope: 'all', side: 'mine', more: 0, fresh: true };
+var R1_RECENT_MAX = 5;            // ruled 19 Nov
+var R1_NOTES_IN_ALL = 5;          // notes shown under All before "See all"
+var R1_NOTES_STEP = 30;           // notes shown under Notes before "Show more"
+var R1_READING_MAX = 12;          // ruled 19 Nov: the "Still reading" threshold and row length
+
+// One per-device switch. name: the address word; onWord / offWord: its two
+// values; dflt: what holds when the reader has never used it.
+function r1Switch(uid, name, onWord, offWord, dflt) {
+  var key = 'praxis_r1_' + name + '_' + uid;
+  if (!r1Seen[name]) {
+    r1Seen[name] = true;
+    var s = location.search || '';
+    var re = new RegExp('[?&]' + name + '=(' + onWord + '|' + offWord + ')(?=&|$)');
+    var m = re.exec(s);
+    if (m) {
+      sv(key, m[1] === onWord);
+      try {
+        var rest = s.replace(re, '').replace(/^&/, '?');
+        if (window.history && history.replaceState) { history.replaceState(history.state, '', location.pathname + rest + location.hash); }
+      } catch (e) {}
+    }
+  }
+  var v = ls(key, dflt);
+  return (v === true || v === false) ? v : dflt;
+}
+function r1HomeOn(uid) { return r1Switch(uid, 'home', 'new', 'old', true); }
+function r1SearchOn(uid) { return r1Switch(uid, 'search', 'new', 'old', true); }
+function r1AllBooksOn(uid) { return r1Switch(uid, 'allbooks', 'on', 'off', false); }
+
+// ---------------------------------------------------------------- MATCHING
+// Every word, any order, accents and case ignored. r1Fold makes the one plain
+// form both sides are compared in: lower case, accents taken off (the table
+// covers Latin-1 and Latin Extended-A; a decomposed accent is dropped by its
+// combining mark), apostrophes dropped, every other mark turned to a space.
+var R1_FOLD = {'\u00df': 'ss', '\u00e0': 'a', '\u00e1': 'a', '\u00e2': 'a', '\u00e3': 'a', '\u00e4': 'a', '\u00e5': 'a', '\u00e6': 'ae', '\u00e7': 'c', '\u00e8': 'e', '\u00e9': 'e', '\u00ea': 'e', '\u00eb': 'e', '\u00ec': 'i', '\u00ed': 'i', '\u00ee': 'i', '\u00ef': 'i', '\u00f0': 'd', '\u00f1': 'n', '\u00f2': 'o', '\u00f3': 'o', '\u00f4': 'o', '\u00f5': 'o', '\u00f6': 'o', '\u00f8': 'o', '\u00f9': 'u', '\u00fa': 'u', '\u00fb': 'u', '\u00fc': 'u', '\u00fd': 'y', '\u00fe': 'th', '\u00ff': 'y', '\u0101': 'a', '\u0103': 'a', '\u0105': 'a', '\u0107': 'c', '\u0109': 'c', '\u010b': 'c', '\u010d': 'c', '\u010f': 'd', '\u0111': 'd', '\u0113': 'e', '\u0115': 'e', '\u0117': 'e', '\u0119': 'e', '\u011b': 'e', '\u011d': 'g', '\u011f': 'g', '\u0121': 'g', '\u0123': 'g', '\u0125': 'h', '\u0127': 'h', '\u0129': 'i', '\u012b': 'i', '\u012d': 'i', '\u012f': 'i', '\u0131': 'i', '\u0133': 'ij', '\u0135': 'j', '\u0137': 'k', '\u0138': 'k', '\u013a': 'l', '\u013c': 'l', '\u013e': 'l', '\u0140': 'l', '\u0142': 'l', '\u0144': 'n', '\u0146': 'n', '\u0148': 'n', '\u0149': 'n', '\u014b': 'n', '\u014d': 'o', '\u014f': 'o', '\u0151': 'o', '\u0153': 'oe', '\u0155': 'r', '\u0157': 'r', '\u0159': 'r', '\u015b': 's', '\u015d': 's', '\u015f': 's', '\u0161': 's', '\u0163': 't', '\u0165': 't', '\u0167': 't', '\u0169': 'u', '\u016b': 'u', '\u016d': 'u', '\u016f': 'u', '\u0171': 'u', '\u0173': 'u', '\u0175': 'w', '\u0177': 'y', '\u017a': 'z', '\u017c': 'z', '\u017e': 'z', '\u017f': 's'};
+function r1Fold(s) {
+  if (typeof s !== 'string' || !s) { return ''; }
+  var a = s.toLowerCase().replace(/[\u0300-\u036f]/g, ''), out = '', i, c, f;
+  for (i = 0; i < a.length; i++) {
+    c = a.charAt(i);
+    if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) { out += c; continue; }
+    if (c === '\'' || c === '\u2019' || c === '\u2018' || c === '\u02bc') { continue; }
+    f = Object.prototype.hasOwnProperty.call(R1_FOLD, c) ? R1_FOLD[c] : null;
+    if (f) { out += f; continue; }
+    out += (c.charCodeAt(0) > 127 && !/[\s\u2010-\u2015\u201c\u201d\u00ab\u00bb\u00a0-\u00bf\u2026]/.test(c)) ? c : ' ';
+  }
+  return out.replace(/\s+/g, ' ').replace(/^ | $/g, '');
+}
+// The words of a search, each once.
+function r1Words(q) {
+  var parts = r1Fold(q).split(' '), out = [], seen = {}, i;
+  for (i = 0; i < parts.length; i++) {
+    if (parts[i] && seen['w:' + parts[i]] !== true) { seen['w:' + parts[i]] = true; out.push(parts[i]); }
+  }
+  return out;
+}
+// True when every word is somewhere in the folded text.
+function r1Has(folded, words) {
+  var i;
+  for (i = 0; i < words.length; i++) { if (folded.indexOf(words[i]) === -1) { return false; } }
+  return true;
+}
+// 0: every word is in the title; 1: the words are found only with the rest
+// (an author, a note's words, a book's name). -1: no match.
+function r1Rank(item, words) {
+  if (!r1Has(item.hay, words)) { return -1; }
+  return r1Has(item.th, words) ? 0 : 1;
+}
+// The matches of one list, title matches first, the list's own order kept within each.
+function r1Pick(list, words) {
+  var first = [], rest = [], i, r;
+  for (i = 0; i < list.length; i++) {
+    r = words.length ? r1Rank(list[i], words) : 0;
+    if (r === 0) { first.push(list[i]); } else if (r === 1) { rest.push(list[i]); }
+  }
+  return first.concat(rest);
+}
+
+// ---------------------------------------------------------------- SHARED
+// The reader's shelf, in shelf order: ids of books that exist, each once.
+function r1ShelfIds(uid) {
+  var raw = (uid && state.userBooks && state.userBooks[uid] && state.userBooks[uid].bookIds) ? state.userBooks[uid].bookIds : [];
+  var out = [], seen = {}, i, id;
+  for (i = 0; i < raw.length; i++) {
+    id = (typeof raw[i] === 'string') ? raw[i] : (raw[i] && raw[i].id);
+    if (typeof id === 'string' && id && state.books && state.books[id] && seen[id] !== true) { seen[id] = true; out.push(id); }
+  }
+  return out;
+}
+function r1Plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+function r1Trim(s) { return (typeof s === 'string') ? s.replace(/\s+/g, ' ').replace(/^ | $/g, '') : ''; }
+
+// One cover at size. A real cover fills the card (the self-healing candidate
+// walk); a book with no cover, or whose every cover fails, shows its title and
+// author on the card, so a card is never blank. A tap opens the book.
+function r1Cover(book, big, onGo) {
+  var b = lxBtn('r1-cv' + (big ? ' big' : ''), '', function () {
+    if (onGo) { onGo('#book/' + book.id); } else { location.hash = '#book/' + book.id; }
+  });
+  b.setAttribute('aria-label', (book.title || 'Untitled') + (book.author ? ', ' + book.author : ''));
+  var face = buildSelfHealingCover(book, 'r1-img', function () {
+    var t = lxEl('span', 'r1-tt');
+    t.appendChild(lxEl('b', '', book.title || 'Untitled'));
+    if (book.author) { t.appendChild(lxEl('small', '', book.author)); }
+    return t;
+  });
+  if (face && face.tagName === 'IMG') { face.setAttribute('loading', 'lazy'); face.setAttribute('decoding', 'async'); }
+  b.appendChild(face);
+  return b;
+}
+
+// ---------------------------------------------------------------- HOME
+// The books the Shelf's Reading chip shows (normalizeStatus), newest first.
+function r1Reading(uid) {
+  var ids = r1ShelfIds(uid), tmp = [], out = [], i, b;
+  for (i = 0; i < ids.length; i++) {
+    b = state.books[ids[i]];
+    if (normalizeStatus(b.status) === 'reading') { tmp.push({ b: b, i: i }); }
+  }
+  tmp.sort(function (x, y) { return ((y.b.addedAt || 0) - (x.b.addedAt || 0)) || (y.i - x.i); });
+  for (i = 0; i < tmp.length; i++) { out.push(tmp[i].b); }
+  return out;
+}
+// The time of the reader's latest note on each shelved book. The Journal has no
+// book and never counts.
+function r1LastNoteByBook(uid) {
+  var last = {}, k, e, j, t;
+  if (!state.notebookEntries) { return last; }
+  for (k in state.notebookEntries) {
+    if (!Object.prototype.hasOwnProperty.call(state.notebookEntries, k)) { continue; }
+    e = state.notebookEntries[k];
+    if (!e || e.userId !== uid || e.register === 'journal' || !(e.bookIds instanceof Array)) { continue; }
+    t = e.createdAt || 0;
+    for (j = 0; j < e.bookIds.length; j++) {
+      if (typeof last[e.bookIds[j]] !== 'number' || t > last[e.bookIds[j]]) { last[e.bookIds[j]] = t; }
+    }
+  }
+  return last;
+}
+// The "Still reading" row (ruled 19 Nov on Preston's own shelf: 117 of 143 books
+// saved as Reading). The Reading books the reader has written a note on come
+// first, latest note first; then the rest, newest added first. With more than
+// R1_READING_MAX books marked Reading, only the ones with a note are shown. The
+// left-off book (skipId) is never repeated.
+function r1Still(uid, skipId) {
+  var reading = r1Reading(uid), last = r1LastNoteByBook(uid), noted = [], plain = [], i, b;
+  for (i = 0; i < reading.length; i++) {
+    b = reading[i];
+    if (b.id === skipId) { continue; }
+    if (typeof last[b.id] === 'number') { noted.push({ b: b, t: last[b.id], i: i }); } else { plain.push(b); }
+  }
+  noted.sort(function (x, y) { return (y.t - x.t) || (x.i - y.i); });
+  var out = [];
+  for (i = 0; i < noted.length && out.length < R1_READING_MAX; i++) { out.push(noted[i].b); }
+  if (reading.length <= R1_READING_MAX) {
+    for (i = 0; i < plain.length && out.length < R1_READING_MAX; i++) { out.push(plain[i]); }
+  }
+  return out;
+}
+// Ruled 19 Nov: the book of the latest note (never a Journal entry); with no
+// notes on a shelved book, the Reading book added most recently; with neither,
+// null (no card).
+function r1LeftOff(uid) {
+  var ids = r1ShelfIds(uid), set = {}, i, k, e, j, best = null, bestId = null, ec, bc;
+  for (i = 0; i < ids.length; i++) { set[ids[i]] = true; }
+  if (state.notebookEntries) {
+    for (k in state.notebookEntries) {
+      if (!Object.prototype.hasOwnProperty.call(state.notebookEntries, k)) { continue; }
+      e = state.notebookEntries[k];
+      if (!e || e.userId !== uid || e.register === 'journal' || !(e.bookIds instanceof Array)) { continue; }
+      for (j = 0; j < e.bookIds.length; j++) {
+        if (set[e.bookIds[j]] === true) {
+          ec = e.createdAt || 0; bc = best ? (best.createdAt || 0) : -1;
+          if (!best || ec > bc || (ec === bc && String(e.id) > String(best.id))) { best = e; bestId = e.bookIds[j]; }
+          break;
+        }
+      }
+    }
+  }
+  if (best) { return { book: state.books[bestId], note: best }; }
+  var r = r1Reading(uid);
+  return r.length ? { book: r[0], note: null } : null;
+}
+function r1Feat(lo) {
+  var b = lo.book, f = lxEl('div', 'ol-sec r1-feat');
+  var sh = lxEl('div', 'ol-sh');
+  sh.appendChild(lxEl('h3', '', 'Where you left off'));
+  f.appendChild(sh);
+  var left = lxEl('div', 'r1-left');
+  left.appendChild(r1Cover(b, true, null));
+  var tx = lxEl('div', 'r1-tx');
+  tx.appendChild(lxEl('span', 'r1-t', b.title || 'Untitled'));
+  if (b.author) { tx.appendChild(lxEl('span', 'r1-s', b.author)); }
+  if (b.status) { tx.appendChild(lxEl('span', 'r1-s', statusText(b.status))); }   // a book never given a status says nothing
+  tx.appendChild(lxBtn('r1-open', 'Open the book', function () { location.hash = '#book/' + b.id; }));
+  left.appendChild(tx);
+  f.appendChild(left);
+  if (lo.note) {
+    var words = r1Trim(lo.note.body);
+    if (words) { f.appendChild(lxEl('p', 'r1-last', '\u201c' + words + '\u201d')); }
+    f.appendChild(lxEl('p', 'ol-foot', 'Your last note, ' + lxAgo(lo.note.createdAt) + '.'));
+  }
+  return f;
+}
+// Home under the sky: Where you left off, Still reading, and (until arcs are hidden) the arcs line.
+function r1HomeBody(uid) {
+  var body = lxEl('div', 'lx ol r1 r1-home');
+  var lo = r1LeftOff(uid), rest = r1Still(uid, lo ? lo.book.id : null), i;
+  if (lo) { body.appendChild(r1Feat(lo)); }
+  var see = null, side;
+  if (rest.length) {
+    see = lxBtn('ol-lnk', 'See all', function () { shelfFilter.status = 'reading'; location.hash = '#books'; });
+    see.setAttribute('aria-label', 'See all the books you are reading, on the Shelf');
+  }
+  if (rest.length || !lo) {
+    side = olSect('Still reading', see);
+    side.className = 'ol-sec r1-side';
+    if (rest.length) {
+      var row = lxEl('div', 'r1-covers');
+      row.setAttribute('role', 'group');
+      row.setAttribute('aria-label', 'Books you are reading');
+      for (i = 0; i < rest.length && i < R1_READING_MAX; i++) { row.appendChild(r1Cover(rest[i], false, null)); }
+      side.appendChild(row);
+    } else {
+      side.appendChild(lxEl('p', 'ol-foot', 'Nothing open right now.'));
+    }
+  } else {
+    side = lxEl('div', 'ol-sec r1-side r1-bare');
+  }
+  var arcs = homeOwnArcs();
+  if (arcs.length) {
+    var ar = lxBtn('r1-arcs', '', function () { location.hash = '#arcs'; });
+    var atx = lxEl('span', 'r1-arcs-tx');
+    atx.appendChild(lxEl('b', '', 'Your arcs'));
+    atx.appendChild(lxEl('small', '', r1Plural(arcs.length, 'arc', 'arcs') + ' \u00b7 ' + homeGrowingCount(arcs) + ' still growing'));
+    ar.appendChild(atx);
+    var ach = lxEl('span', 'ol-chev', '\u203a');
+    ach.setAttribute('aria-hidden', 'true');
+    ar.appendChild(ach);
+    side.appendChild(ar);
+  }
+  if (side.firstChild) { body.appendChild(side); }
+  return body;
+}
+
+// ---------------------------------------------------------------- SEARCH
+function r1FromLabel() {
+  var p0 = (r1From || 'home').split('/')[0];
+  if (p0 === 'home') { return 'Home'; }
+  if (p0 === 'books') { return 'Shelf'; }
+  if (p0 === 'notebook') { return 'Notebook'; }
+  if (p0 === 'profile') { return 'You'; }
+  if (p0 === 'lenses') { return 'Lenses'; }
+  if (p0 === 'arcs') { return 'Arcs'; }
+  return 'Back';
+}
+// Called by the router on arriving at #search from another route. Coming straight
+// back from a result that was opened FROM Search keeps the origin and what was
+// typed; any other arrival is a new visit.
+function r1Arrive(prev) {
+  if (prev && prev === r1Out) { return; }
+  r1From = prev || 'home';
+  r1St.fresh = true;
+}
+function r1RecentKey(uid) { return 'praxis_recent_searches_' + uid; }
+function r1Recents(uid) {
+  var a = uid ? ls(r1RecentKey(uid), []) : [], out = [], i;
+  if (!(a instanceof Array)) { return out; }
+  for (i = 0; i < a.length && out.length < R1_RECENT_MAX; i++) { if (typeof a[i] === 'string' && r1Trim(a[i])) { out.push(r1Trim(a[i])); } }
+  return out;
+}
+// The newest first; a search already in the list moves to the top (accents and case ignored).
+function r1Remember(uid, q) {
+  q = r1Trim(q);
+  if (!uid || !q) { return; }
+  if (q.length > 60) { q = q.slice(0, 60); }
+  var a = r1Recents(uid), out = [q], f = r1Fold(q), i;
+  for (i = 0; i < a.length && out.length < R1_RECENT_MAX; i++) { if (r1Fold(a[i]) !== f) { out.push(a[i]); } }
+  sv(r1RecentKey(uid), out);
+}
+// Everything Search looks through, built once per visit. Each item carries
+// th (its title, folded) and hay (everything it is found by, folded).
+//   books: the reader's shelf, by title and author.
+//   notes: the reader's own, never the Journal; by its words and its book's title.
+//   arts: the reader's artifacts; by title, words and the book's title.
+//   lenses: the kept ones, by name.
+//   cats: the categories that hold a book of the reader's, by name.
+//   arcs, subs: from the earlier index, unchanged (they leave when arcs are hidden).
+function r1Index(uid) {
+  var ix = { books: [], notes: [], arts: [], lenses: [], cats: [], arcs: [], subs: [] };
+  var ids = r1ShelfIds(uid), set = {}, i, k, e, b, j, bid, bt, body, cat, catN = {}, catOrder = [];
+  for (i = 0; i < ids.length; i++) {
+    b = state.books[ids[i]]; set[ids[i]] = true;
+    ix.books.push({ book: b, th: r1Fold(b.title || ''), hay: r1Fold((b.title || '') + ' ' + (b.author || '')) });
+    cat = (typeof classifyBookLocal === 'function') ? classifyBookLocal(b) : null;
+    if (typeof cat === 'string' && cat && cat !== CATEGORY_UNCATEGORIZED) {
+      if (typeof catN['c:' + cat] !== 'number') { catN['c:' + cat] = 0; catOrder.push(cat); }
+      catN['c:' + cat] = catN['c:' + cat] + 1;
+    }
+  }
+  catOrder.sort();
+  for (i = 0; i < catOrder.length; i++) {
+    ix.cats.push({ label: catOrder[i], n: catN['c:' + catOrder[i]], th: r1Fold(catOrder[i]), hay: r1Fold(catOrder[i]) });
+  }
+  if (state.notebookEntries) {
+    for (k in state.notebookEntries) {
+      if (!Object.prototype.hasOwnProperty.call(state.notebookEntries, k)) { continue; }
+      e = state.notebookEntries[k];
+      if (!e || e.userId !== uid || e.register === 'journal') { continue; }
+      bid = null; bt = '';
+      if (e.bookIds instanceof Array) {
+        for (j = 0; j < e.bookIds.length; j++) { if (set[e.bookIds[j]] === true) { bid = e.bookIds[j]; bt = state.books[bid].title || ''; break; } }
+      }
+      body = (typeof e.body === 'string') ? e.body : '';
+      ix.notes.push({ e: e, bookId: bid, bookTitle: bt, th: r1Fold(body), hay: r1Fold(body + ' ' + bt) });
+    }
+  }
+  ix.notes.sort(function (x, y) { return ((y.e.createdAt || 0) - (x.e.createdAt || 0)) || ((String(x.e.id) < String(y.e.id)) ? -1 : 1); });
+  if (state.bookArtifacts) {
+    for (k in state.bookArtifacts) {
+      if (!Object.prototype.hasOwnProperty.call(state.bookArtifacts, k)) { continue; }
+      e = state.bookArtifacts[k];
+      if (!e || e.userId !== uid || set[e.bookId] !== true) { continue; }
+      bt = state.books[e.bookId].title || '';
+      body = (typeof e.body === 'string') ? e.body : '';
+      ix.arts.push({ a: e, bookTitle: bt, title: r1Trim(e.title) || bt || 'Untitled',
+        th: r1Fold((typeof e.title === 'string' ? e.title : '') + ' ' + bt), hay: r1Fold((typeof e.title === 'string' ? e.title : '') + ' ' + bt + ' ' + body) });
+    }
+  }
+  ix.arts.sort(function (x, y) { return ((y.a.updatedAt || y.a.createdAt || 0) - (x.a.updatedAt || x.a.createdAt || 0)) || ((String(x.a.bookId) < String(y.a.bookId)) ? -1 : 1); });
+  var kept = lensKeptThemes(uid);
+  for (i = 0; i < kept.length; i++) { ix.lenses.push({ t: kept[i], th: r1Fold(kept[i].name || ''), hay: r1Fold(kept[i].name || '') }); }
+  var old = _searchBuildIndex();
+  for (i = 0; i < old.length; i++) {
+    if (old[i].kind === 'arc' || old[i].kind === 'sub') {
+      old[i].th = r1Fold(old[i].title || '');
+      old[i].hay = r1Fold((old[i].title || '') + ' ' + (old[i].sub || '') + ' ' + (old[i].snip || ''));
+      if (old[i].kind === 'arc') { ix.arcs.push(old[i]); } else { ix.subs.push(old[i]); }
+    }
+  }
+  return ix;
+}
+var R1_KINDS = ['books', 'notes', 'arts', 'lenses', 'cats', 'arcs', 'subs'];
+function r1Match(ix, q) {
+  var words = r1Words(q), m = {}, k;
+  for (k = 0; k < R1_KINDS.length; k++) { m[R1_KINDS[k]] = r1Pick(ix[R1_KINDS[k]], words); }
+  return m;
+}
+function r1Total(m) {
+  var n = 0, k;
+  for (k = 0; k < R1_KINDS.length; k++) { n = n + m[R1_KINDS[k]].length; }
+  return n;
+}
+// "3 notes, 1 lens" joined by a middle dot: what a search finds, the empty kinds left out; '' for nothing.
+function r1Found(m) {
+  var p = [];
+  if (m.books.length) { p.push(r1Plural(m.books.length, 'book', 'books')); }
+  if (m.notes.length) { p.push(r1Plural(m.notes.length, 'note', 'notes')); }
+  if (m.arts.length) { p.push(r1Plural(m.arts.length, 'artifact', 'artifacts')); }
+  if (m.lenses.length) { p.push(r1Plural(m.lenses.length, 'lens', 'lenses')); }
+  if (m.cats.length) { p.push(r1Plural(m.cats.length, 'category', 'categories')); }
+  if (m.arcs.length) { p.push(r1Plural(m.arcs.length, 'arc', 'arcs')); }
+  if (m.subs.length) { p.push(r1Plural(m.subs.length, 'sub-theory', 'sub-theories')); }
+  return p.join(' \u00b7 ');
+}
+// The kept lens a book sits in (the first, in kept order), for a note row's mark.
+function r1LensOfBook(uid, bookId) {
+  var kept = lensKeptThemes(uid), i;
+  if (!bookId) { return null; }
+  for (i = 0; i < kept.length; i++) { if (kept[i].bookIds instanceof Array && kept[i].bookIds.indexOf(bookId) !== -1) { return kept[i]; } }
+  return null;
+}
+function r1Row(markEl, title, titleCls, sub, label, fn) {
+  var row = lxBtn('ol-rw', '', fn);
+  if (markEl) { row.appendChild(markEl); }
+  var tx = lxEl('span', 'ol-tx');
+  tx.appendChild(lxEl('span', titleCls, title));
+  if (sub) { tx.appendChild(lxEl('span', 'ol-s', sub)); }
+  row.appendChild(tx);
+  var ch = lxEl('span', 'ol-chev', '\u203a');
+  ch.setAttribute('aria-hidden', 'true');
+  row.appendChild(ch);
+  if (label) { row.setAttribute('aria-label', label); }
+  return row;
+}
+// A note in a result list: a dot and its kind, its book (or Inbox), its words,
+// when, and the mark of a lens its book sits in.
+function r1NoteRow(uid, item, fn) {
+  var e = item.e, row = lxBtn('r1-nrow', '', fn);
+  var k = lxEl('span', 'r1-k');
+  var dot = lxEl('i', e.register === 'question' ? 'q' : '');
+  dot.setAttribute('aria-hidden', 'true');
+  k.appendChild(dot);
+  k.appendChild(document.createTextNode(notebookRegisterLabel(e.register) + ' \u00b7 ' + (item.bookId ? (item.bookTitle || 'Untitled') : 'Inbox')));
+  row.appendChild(k);
+  row.appendChild(lxEl('span', 'r1-p', r1Trim(e.body) || 'Note'));
+  row.appendChild(lxEl('small', '', lxAgo(e.createdAt)));
+  var L = r1LensOfBook(uid, item.bookId);
+  if (L && L.look) { row.appendChild(lxMark(L.look, L.name)); }
+  return row;
+}
+function r1SearchRender(host, uid) {
+  if (r1St.fresh) { r1St = { q: '', scope: ((r1From || '').split('/')[0] === 'notebook') ? 'notes' : 'all', side: 'mine', more: 0, fresh: false }; }
+  if (typeof ensureLensLooks === 'function') { ensureLensLooks(uid); }   // a lens mark is never blank on a cold load
+  var ix = r1Index(uid), deb = null, twoSides = r1AllBooksOn(uid);
+  if (!twoSides) { r1St.side = 'mine'; }
+  var pal = (ls('praxis_constellation_palette', 'colorful') === 'muted') ? 'muted' : 'colorful';
+  var page = lxEl('section', 'lx lx-page ol r1 r1-search');
+  var head = lxEl('div', 'r1-head');
+  var bar = lxEl('div', 'ol-bar');
+  var lab0 = r1FromLabel();
+  var back = lxBtn('ol-back', '', function () { location.hash = '#' + (r1From || 'home'); });
+  back.setAttribute('aria-label', lab0 === 'Back' ? 'Back' : ('Back to ' + lab0));
+  back.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  back.appendChild(lxEl('span', '', lab0));
+  bar.appendChild(back);
+  head.appendChild(bar);
+  head.appendChild(lxEl('h2', 'r1-name', 'Search'));
+  page.appendChild(head);
+  var col = lxEl('div', 'r1-col');
+  var top = lxEl('div', 'ol-sec');
+  var box = lxEl('label', 'r1-in');
+  box.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+  var input = lxEl('input');
+  input.setAttribute('type', 'search');
+  input.id = 'r1-q';
+  input.setAttribute('autocomplete', 'off');
+  input.setAttribute('autocapitalize', 'none');
+  input.setAttribute('spellcheck', 'false');
+  input.setAttribute('enterkeyhint', 'search');
+  input.setAttribute('aria-label', 'Search your shelf, notes and lenses');
+  input.setAttribute('placeholder', 'A title, an author, a note, a lens');
+  input.value = r1St.q;
+  box.appendChild(input);
+  top.appendChild(box);
+  var sides = null;
+  if (twoSides) {
+    sides = lxEl('div', 'r1-sides');
+    sides.setAttribute('role', 'group');
+    sides.setAttribute('aria-label', 'Where to search');
+    top.appendChild(sides);
+  }
+  var chips = lxEl('div', 'r1-chips');
+  chips.setAttribute('role', 'group');
+  chips.setAttribute('aria-label', 'What to search');
+  var under = lxEl('div', 'r1-under');
+  under.appendChild(chips);
+  var footLine = lxEl('p', 'ol-foot', 'Searched on this phone. The Journal is never searched.');
+  under.appendChild(footLine);
+  top.appendChild(under);
+  col.appendChild(top);
+  var res = lxEl('div', 'r1-res');
+  res.id = 'r1-res';
+  col.appendChild(res);
+  page.appendChild(col);
+  host.appendChild(page);
+
+  var SC = [['all', 'All'], ['books', 'Books'], ['notes', 'Notes'], ['lenses', 'Lenses']];
+  var SD = [['mine', 'Your library'], ['all', 'All books']];
+  function curQ() { return r1Trim(input.value); }
+  // Open a result: the search that found it is remembered (ruled 19 Nov), and
+  // coming straight back keeps what was typed.
+  function go(route) {
+    var q = curQ();
+    if (q) { r1Remember(uid, q); }
+    r1Out = route.replace(/^#/, '');
+    location.hash = route;
+  }
+  function goFn(route) { return function () { go(route); }; }
+  function paintSides() {
+    if (!sides) { return; }
+    sides.innerHTML = '';
+    var i;
+    for (i = 0; i < SD.length; i++) {
+      (function (key, name) {
+        var c = lxBtn('r1-side-b', name, function () { r1St.side = key; r1St.more = 0; paint(); });
+        c.setAttribute('aria-pressed', r1St.side === key ? 'true' : 'false');
+        sides.appendChild(c);
+      })(SD[i][0], SD[i][1]);
+    }
+  }
+  function paintChips(m) {
+    chips.innerHTML = '';
+    var i;
+    for (i = 0; i < SC.length; i++) {
+      (function (key, name) {
+        var c = lxBtn('r1-chip', name + (key === 'all' ? '' : ' ' + m[key].length), function () { r1St.scope = key; r1St.more = 0; paint(); });
+        c.setAttribute('aria-pressed', r1St.scope === key ? 'true' : 'false');
+        chips.appendChild(c);
+      })(SC[i][0], SC[i][1]);
+    }
+  }
+  function lensRows(list) {
+    var g = lxEl('div', 'ol-grp'), i;
+    for (i = 0; i < list.length; i++) {
+      (function (t) {
+        g.appendChild(r1Row(lxMark(t.look, t.name), t.name || '', 'ol-c', lxPlural(t.bookIds.length, 'book'),
+          (t.name || 'Lens') + ', ' + lxPlural(t.bookIds.length, 'book') + '. Opens the lens.', goFn('#lens/' + t.id)));
+      })(list[i].t);
+    }
+    return g;
+  }
+  function artRows(list) {
+    var g = lxEl('div', 'ol-grp'), i;
+    for (i = 0; i < list.length; i++) {
+      (function (it) {
+        g.appendChild(r1Row(null, it.title, 'r1-t', (it.bookTitle && it.bookTitle !== it.title) ? ('On ' + it.bookTitle) : 'Your artifact',
+          it.title + '. Opens your artifact.', goFn('#artifact/' + it.a.bookId)));
+      })(list[i]);
+    }
+    return g;
+  }
+  function catRows(list) {
+    var g = lxEl('div', 'ol-grp'), i;
+    for (i = 0; i < list.length; i++) {
+      (function (it) {
+        g.appendChild(r1Row(null, it.label, 'r1-t', lxPlural(it.n, 'book'),
+          it.label + ', ' + lxPlural(it.n, 'book') + '. Opens the category.', goFn(cpHash(it.label))));
+      })(list[i]);
+    }
+    return g;
+  }
+  function oldRows(list) {
+    var g = lxEl('div', 'ol-grp'), i;
+    for (i = 0; i < list.length; i++) {
+      (function (it) { g.appendChild(r1Row(_searchGlyphEl(it, pal), it.title, 'r1-t', it.sub || it.crumb || '', null, goFn(it.route))); })(list[i]);
+    }
+    return g;
+  }
+  function paintIdle() {
+    var rec = r1Recents(uid), i;
+    if (rec.length) {
+      var clear = lxBtn('ol-lnk', 'Clear', function () {
+        var prev = r1Recents(uid);
+        sv(r1RecentKey(uid), []);
+        paint();
+        lxToast('Recent searches cleared.', function () { sv(r1RecentKey(uid), prev); if (page.parentNode) { paint(); } });
+      });
+      clear.setAttribute('aria-label', 'Clear recent searches');
+      var rs = olSect('Recent', clear);
+      var rg = lxEl('div', 'ol-grp');
+      for (i = 0; i < rec.length; i++) {
+        (function (r) {
+          var found = r1Found(r1Match(ix, r));
+          rg.appendChild(r1Row(null, r, 'r1-t', found || 'Nothing now', 'Search again for ' + r,
+            function () { input.value = r; r1St.q = r; r1St.more = 0; paint(); }));
+        })(rec[i]);
+      }
+      rs.appendChild(rg);
+      main.appendChild(rs);
+    }
+    if (ix.lenses.length) {
+      var ls0 = olSect(rec.length ? 'Or open a lens' : 'Open a lens', null);
+      ls0.appendChild(lensRows(ix.lenses));
+      (rec.length ? aside : main).appendChild(ls0);
+    }
+    if (!rec.length && !ix.lenses.length) { main.appendChild(lxEl('p', 'ol-foot', 'Everything you\u2019ve gathered is searchable here.')); }
+  }
+  // The "All books" side. Off until Find a book (R2) gives it a catalogue; with
+  // the switch on it says so and offers the Shelf's own door.
+  function paintAllBooks() {
+    var s = olSect('All books', null);
+    s.appendChild(lxEl('p', 'ol-foot', 'Finding a book you don\u2019t have yet is coming here next. Until then, add one from the Shelf.'));
+    s.appendChild(lxBtn('r1-more', 'Go to the Shelf', function () { location.hash = '#books'; }));
+    main.appendChild(s);
+  }
+  // Three holders: on a phone they read as one column, in this order; on a wide screen the books run the full
+  // width and the other two sit side by side under them.
+  var wide = null, main = null, aside = null;
+  function paint() {
+    paintBody();
+    if (!wide.firstChild) { res.removeChild(wide); }
+    if (!main.firstChild && aside.firstChild) { while (aside.firstChild) { main.appendChild(aside.firstChild); } }
+    if (!aside.firstChild) { res.removeChild(aside); res.className = 'r1-res r1-one'; } else { res.className = 'r1-res'; }
+  }
+  function paintBody() {
+    var q = curQ(), m = r1Match(ix, q), sc = r1St.scope, i, shown = 0;
+    paintSides();
+    res.innerHTML = '';
+    wide = lxEl('div', 'r1-wide'); main = lxEl('div', 'r1-main'); aside = lxEl('div', 'r1-aside');
+    res.appendChild(wide); res.appendChild(main); res.appendChild(aside);
+    if (r1St.side === 'all') {
+      chips.style.display = 'none'; footLine.style.display = 'none';
+      paintAllBooks();
+      return;
+    }
+    chips.style.display = ''; footLine.style.display = '';
+    paintChips(m);
+    if (!q) { paintIdle(); return; }
+    if (!r1Total(m)) {
+      main.appendChild(lxEl('p', 'ol-foot', 'Nothing on your shelf, in your notes or among your lenses matches \u201c' + q + '\u201d.'));
+      return;
+    }
+    if (m.books.length && (sc === 'all' || sc === 'books')) {
+      var bs = olSect('Books', null);
+      var brow = lxEl('div', 'r1-covers');
+      brow.setAttribute('role', 'group');
+      brow.setAttribute('aria-label', 'Books found');
+      for (i = 0; i < m.books.length; i++) { brow.appendChild(r1Cover(m.books[i].book, false, go)); }
+      bs.appendChild(brow);
+      wide.appendChild(bs);
+      shown++;
+    }
+    if (m.notes.length && (sc === 'all' || sc === 'notes')) {
+      var n = m.notes.length, cut = (sc === 'all') ? R1_NOTES_IN_ALL : (R1_NOTES_STEP + r1St.more), all = null;
+      if (cut > n) { cut = n; }
+      if (sc === 'all' && n > cut) { all = lxBtn('ol-lnk', 'See all ' + n, function () { r1St.scope = 'notes'; r1St.more = 0; paint(); }); }
+      var ns = olSect('Notes', all);
+      var ng = lxEl('div', 'ol-grp');
+      for (i = 0; i < cut; i++) {
+        (function (item) { ng.appendChild(r1NoteRow(uid, item, goFn('#note/' + item.e.id))); })(m.notes[i]);
+      }
+      ns.appendChild(ng);
+      if (sc === 'notes' && n > cut) {
+        ns.appendChild(lxBtn('r1-more', 'Show ' + Math.min(R1_NOTES_STEP, n - cut) + ' more', function () { r1St.more = r1St.more + R1_NOTES_STEP; paint(); }));
+      }
+      main.appendChild(ns);
+      shown++;
+    }
+    if (sc === 'all' && m.arts.length) { var tsec = olSect('Artifacts', null); tsec.appendChild(artRows(m.arts)); aside.appendChild(tsec); shown++; }
+    if (m.lenses.length && (sc === 'all' || sc === 'lenses')) {
+      var lsec = olSect('Lenses', null);
+      lsec.appendChild(lensRows(m.lenses));
+      aside.appendChild(lsec);
+      shown++;
+    }
+    if (sc === 'all' && m.cats.length) { var csec = olSect('Categories', null); csec.appendChild(catRows(m.cats)); aside.appendChild(csec); shown++; }
+    if (sc === 'all' && m.arcs.length) { var asec = olSect('Arcs', null); asec.appendChild(oldRows(m.arcs)); aside.appendChild(asec); shown++; }
+    if (sc === 'all' && m.subs.length) { var ssec = olSect('Sub-theories', null); ssec.appendChild(oldRows(m.subs)); aside.appendChild(ssec); shown++; }
+    if (!shown) {
+      var nm = (sc === 'books') ? 'Books' : ((sc === 'notes') ? 'Notes' : 'Lenses');
+      main.appendChild(lxEl('p', 'ol-foot', 'Nothing in ' + nm + ' matches \u201c' + q + '\u201d.'));
+    }
+  }
+  // ~100 ms debounce; the field itself is never redrawn, so it keeps its focus and caret.
+  input.addEventListener('input', function () {
+    r1St.q = input.value; r1St.more = 0; r1St.typedAt = Date.now();
+    if (deb) { clearTimeout(deb); }
+    deb = setTimeout(function () { deb = null; if (page.parentNode) { paint(); } }, 100);
+  });
+  input.addEventListener('keydown', function (ev) {
+    if (ev.keyCode === 13) { if (deb) { clearTimeout(deb); deb = null; } paint(); input.blur(); }   // the keyboard's Search key shows the results and lowers the keyboard
+  });
+  paint();
+  // A phone opens on Recent and the lenses, not on a raised keyboard; a wide screen takes the caret. A page
+  // redrawn under the reader's hands (a sync landing mid-word) gives the caret back, at the end of the word.
+  var typing = !!(r1St.typedAt && (Date.now() - r1St.typedAt) < 1500);
+  if (typing || (window.matchMedia && window.matchMedia('(min-width: 760px)').matches)) {
+    input.focus();
+    try { input.setSelectionRange(input.value.length, input.value.length); } catch (e2) {}
+  }
+}
+// === R1 -- end ===
 
 // HOME (renderHome on .lum-amber-deep) -- Amber threshold per design/"Wave 2 The
 // Shell.html" MINUS the nav rail. Variants A/B draw ONLY through the locked
@@ -2169,6 +2859,16 @@ function renderHome() {
   // the corner Bloom says it there (and carries the raised hand). BEFORE the yes it
   // stays: it is the door to the yes that consent-copy.md:24 names.
   if (!isYumiYesGranted(homeUser.uid)) { wrap.appendChild(buildHomeYumiDock()); }   // L3.1: the quiet dock
+  // R1: the redrawn body (Where you left off, Still reading, the arcs line). The view switch and the
+  // arc field belong to the earlier body, which ?home=old brings back whole.
+  if (r1HomeOn(homeUser.uid)) {
+    if (alt.parentNode) { alt.parentNode.removeChild(alt); }
+    wrap.className = wrap.className + ' r1-on';
+    wrap.appendChild(r1HomeBody(homeUser.uid));
+    host.appendChild(wrap);
+    if (lxHome) { lxSkyMounted(lxHome); }
+    return;
+  }
 
   // Variant A: the whole field (Option A, lights = arcs)
   var vField = document.createElement('div');

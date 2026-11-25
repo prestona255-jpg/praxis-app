@@ -31,6 +31,13 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-25 (R1: Home and Search, v3.342)** -- BETA.md's row R1, the first room build of the 25 Nov order. Applied
+  byte for byte from the build chat's patch (cut on db457de; on f078c77 its BETA.md part did not apply and was left out,
+  BETA.md taking two ruled edits instead). Home's body under the sky and a new Search, each behind a per-device switch
+  (`?home=old|new`, `?search=old|new`); "All books" built and off until R2; no phone text field under 16 px (the walk's
+  step 5); the seven-size type scale (`--ts-*`). Proved: r1-test 87 / 87, CHECKS 34 of 34, the look at 390 and 1360 Night
+  and Day, the taps (`docs/checkpoints/r1.md`). Next, by the 25 Nov order: LC2, still blocked on a design sitting for the
+  new js/hand.js. No reordering.
 - **2026-11-25 (the build order re-ruled)** -- Preston's ruling of 25 Nov, recorded in BETA.md, which leads: D1a
   first; then the rooms back to back (R1, then LC2 as its own build right after R1, so every later room is checked
   against the sky; then R2 to R5); then Deeper Yumi (F2, now after the rooms); then the data builds D1b, D1c and D2;

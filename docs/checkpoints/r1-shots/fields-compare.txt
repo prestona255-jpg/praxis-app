@@ -1,0 +1,17 @@
+1360 ONLY-ONE 1360 #search input#r1-q.[search] main=- after=17
+1360 ONLY-ONE 1360 #search input.search-input[text] main=24 after=-
+390 change 390 #books input#yumi-input.yumi-input[text] main=15 after=16
+390 change 390 #books input.app-nav-search-input[search] main=13 after=16
+390 change 390 #books+add input#yumi-input.yumi-input[text] main=15 after=16
+390 change 390 #books+add input.app-nav-search-input[search] main=13 after=16
+390 change 390 #books+add input.shelf-editor-author-input[text] main=14 after=16
+390 change 390 #books+add input.shelf-editor-isbn-input[text] main=14 after=16
+390 change 390 #books+add input.shelf-editor-title-input[text] main=14 after=16
+390 change 390 #books+add select.shelf-editor-genre-input main=14 after=16
+390 change 390 #home input#yumi-input.yumi-input[text] main=15 after=16
+390 change 390 #home input.app-nav-search-input[search] main=13 after=16
+390 change 390 #notebook input#yumi-input.yumi-input[text] main=15 after=16
+390 change 390 #notebook input.app-nav-search-input[search] main=13 after=16
+390 change 390 #search input#yumi-input.yumi-input[text] main=15 after=16
+390 change 390 #search input.app-nav-search-input[search] main=13 after=16
+1360 same=26 diff=0 ; 390 under16=0

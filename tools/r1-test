@@ -1,0 +1,315 @@
+// tools/r1-test -- R1 (Home and Search) unit proofs.
+// cscript JScript (Node is blocked on the build machine). The R1 block is EXTRACTED BY TEXT from the real
+// bytes of js/views.js and run in one scope against a stubbed state, store, address and history;
+// accountLocalKeysFor is lifted from js/integrations.js the same way. Against a tree without R1 it
+// refuses to load: exit 2 (that is the "fails on main" reading).
+//   U1  r1Fold: case, accents (precomposed and decomposed), apostrophes, punctuation, sharp s and ligatures
+//   U2  matching: every word, any order; a missing word is no match; the earlier matcher (one exact
+//       phrase) misses the same searches
+//   U3  ranking: a title match comes before a match found elsewhere; the list's own order holds within each
+//   U4  what Search looks through: books, notes, artifacts, lenses, categories; the Journal never;
+//       another reader's notes and artifacts never; Uncategorized is not a category row
+//   U5  the three switches: Home and Search on by default, All books off by default; an address word sets
+//       one, is stored under the reader's own uid, and leaves the address (other parts stay); read once
+//   U6  recent searches: newest first, the last 5, a repeat moves to the top whatever its case or accents,
+//       trimmed, cut at 60; a damaged store reads as none
+//   U7  storage: every key R1 writes ends in the reader's uid, so accountLocalKeysFor finds all of them
+//       and none of another reader's
+//   U8  Still reading (ruled 19 Nov): 12 or fewer Reading shows all, noted first; more than 12 shows only
+//       the noted, latest note first; never the left-off book; Preston's scale (143 books, 117 Reading)
+//   U9  Where you left off (ruled 19 Nov): the book of the latest note; never a Journal entry; with no
+//       notes the Reading book added most recently; with neither, no card
+//   U10 the wiring, by text: each hook exactly once; the earlier Home body and the earlier Search are still
+//       there whole; js/integrations.js does not name an R1 key
+//   U11 the styles, by text: the seven sizes are in assets/theme.css with their values; inside the R1 block
+//       of assets/components.css every font size is a --ts-* token except the one 16 px field rule; the
+//       block sets no z-index and no hex colour
+// EXTENSIONLESS on purpose (see tools/parse-check). ASCII-only: cscript reads this file as ANSI.
+//
+// Usage:  cscript //nologo //E:jscript tools/r1-test [root]
+// Exit:   0 = every case passed . 1 = a case failed . 2 = could not load
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName));
+if (WScript.Arguments.length > 0) { root = String(WScript.Arguments(0)); }
+function readUtf8(p) { var s = new ActiveXObject('ADODB.Stream'); s.Type = 2; s.Charset = 'utf-8'; s.Open(); s.LoadFromFile(p); var t = s.ReadText(); s.Close(); return t; }
+if (typeof Array.prototype.indexOf !== 'function') { Array.prototype.indexOf = function (v) { var i; for (i = 0; i < this.length; i++) { if (this[i] === v) { return i; } } return -1; }; }
+
+var pass = 0, fail = 0;
+function show(v) {
+  var t = typeof v, i, out, k;
+  if (v === null) { return 'null'; }
+  if (t === 'undefined') { return 'undefined'; }
+  if (t === 'string') { return '"' + v + '"'; }
+  if (t === 'number' || t === 'boolean') { return String(v); }
+  if (Object.prototype.toString.call(v) === '[object Array]') { out = []; for (i = 0; i < v.length; i++) { out.push(show(v[i])); } return '[' + out.join(',') + ']'; }
+  out = []; for (k in v) { if (Object.prototype.hasOwnProperty.call(v, k)) { out.push(k + ':' + show(v[k])); } } out.sort(); return '{' + out.join(',') + '}';
+}
+function check(name, got, want) {
+  if (show(got) === show(want)) { pass++; WScript.Echo('PASS ' + name); }
+  else { fail++; WScript.Echo('FAIL ' + name + ' -- got ' + show(got) + ' want ' + show(want)); }
+}
+function count(hay, needle) { var n = 0, i = hay.indexOf(needle); while (i !== -1) { n++; i = hay.indexOf(needle, i + needle.length); } return n; }
+function liftFn(src, name) {
+  var i = src.indexOf('\nfunction ' + name + '('), d = 0, j;
+  if (i === -1) { return null; }
+  j = src.indexOf('{', i);
+  for (; j < src.length; j++) { if (src.charAt(j) === '{') { d++; } else if (src.charAt(j) === '}') { d--; if (d === 0) { return src.slice(i + 1, j + 1); } } }
+  return null;
+}
+
+var views, integ, theme, comp;
+try {
+  views = readUtf8(fso.BuildPath(root, 'js\\views.js'));
+  integ = readUtf8(fso.BuildPath(root, 'js\\integrations.js'));
+  theme = readUtf8(fso.BuildPath(root, 'assets\\theme.css'));
+  comp = readUtf8(fso.BuildPath(root, 'assets\\components.css'));
+} catch (e0) { WScript.Echo('LOAD: could not read the tree: ' + e0.message); WScript.Quit(2); }
+var b0 = views.indexOf('\nvar r1Seen = {};'), b1 = views.indexOf('\n// === R1 -- end ===');
+if (b0 === -1 || b1 === -1 || b1 < b0) { WScript.Echo('LOAD: this tree has no R1 block in js/views.js'); WScript.Quit(2); }
+var block = views.slice(b0, b1);
+var keysFn = liftFn(integ, 'accountLocalKeysFor');
+if (!keysFn) { WScript.Echo('LOAD: accountLocalKeysFor not found in js/integrations.js'); WScript.Quit(2); }
+
+var stubs = [
+  'var store = {}, storeOrder = [];',
+  'function ls(k, d) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : d; }',
+  'function sv(k, v) { if (!Object.prototype.hasOwnProperty.call(store, k)) { storeOrder.push(k); } store[k] = v; return true; }',
+  'var localStorage = { key: function (i) { return storeOrder[i]; }, getItem: function (k) { return ls(k, null); } };',
+  'var location = { search: "", pathname: "/", hash: "#home" };',
+  'var replaced = [];',
+  'var history = { state: null, replaceState: function (s, t, u) { replaced.push(u); } };',
+  'var window = { history: history };',
+  'var state = { books: {}, userBooks: {}, notebookEntries: {}, bookArtifacts: {}, userThemes: {} };',
+  'var CATEGORY_UNCATEGORIZED = "Uncategorized";',
+  'function classifyBookLocal(b) { return (b && typeof b.category === "string" && b.category) ? b.category : null; }',
+  'function normalizeStatus(s) { return (s === "reading" || s === "currently-reading") ? "reading" : (s || ""); }',
+  'function statusText(s) { return String(s); }',
+  'function lensKeptThemes(uid) { var out = [], k; for (k in state.userThemes) { if (Object.prototype.hasOwnProperty.call(state.userThemes, k) && state.userThemes[k].userId === uid) { out.push(state.userThemes[k]); } } return out; }',
+  'var oldIndex = [];',
+  'function _searchBuildIndex() { return oldIndex; }',
+  'function homeOwnArcs() { return []; }'
+].join('\n');
+var tail = '\nreturn { r1Fold: r1Fold, r1Words: r1Words, r1Has: r1Has, r1Pick: r1Pick, r1Index: r1Index, r1Match: r1Match, r1Found: r1Found, r1Total: r1Total,'
+  + ' r1HomeOn: r1HomeOn, r1SearchOn: r1SearchOn, r1AllBooksOn: r1AllBooksOn, r1Recents: r1Recents, r1Remember: r1Remember, r1RecentKey: r1RecentKey,'
+  + ' r1Reading: r1Reading, r1Still: r1Still, r1LeftOff: r1LeftOff, r1ShelfIds: r1ShelfIds, accountLocalKeysFor: accountLocalKeysFor,'
+  + ' state: state, location: location, replaced: replaced, sv: sv, ls: ls,'
+  + ' wipe: function () { var k; for (k in store) { if (Object.prototype.hasOwnProperty.call(store, k)) { delete store[k]; } } storeOrder.length = 0; },'
+  + ' reload: function () { r1Seen = {}; }, setOld: function (a) { oldIndex = a; }, keys: function () { return storeOrder.slice(0); } };';
+var api;
+try { api = (new Function(stubs + '\n' + keysFn + '\n' + block + tail))(); }
+catch (e1) { WScript.Echo('LOAD: the R1 block did not run: ' + e1.message); WScript.Quit(2); }
+// localStorage.length is read by accountLocalKeysFor; the stub answers through a getter-free count.
+var st = api.state;
+
+// ---- U1
+check('U1 case', api.r1Fold('PEDAGOGY Of The Oppressed'), 'pedagogy of the oppressed');
+check('U1 precomposed accents', api.r1Fold('P\u00e9dagogie des opprim\u00e9s'), 'pedagogie des opprimes');
+check('U1 decomposed accent', api.r1Fold('Pe\u0301dagogie'), 'pedagogie');
+check('U1 capital with accent', api.r1Fold('\u00c9DUCATION'), 'education');
+check('U1 apostrophes dropped', api.r1Fold('Ain\u2019t I a Woman'), api.r1Fold('Aint I a Woman'));
+check('U1 punctuation is a space', api.r1Fold('Power, Crisis, and Education: for-Liberation'), 'power crisis and education for liberation');
+check('U1 sharp s and ligatures', api.r1Fold('Stra\u00dfe \u00e6on \u0153uvre'), 'strasse aeon oeuvre');
+check('U1 stroke letters', api.r1Fold('\u0141\u00f3d\u017a S\u00f8ren'), 'lodz soren');
+check('U1 spaces', api.r1Fold('   a   b  '), 'a b');
+check('U1 empty and not a string', [api.r1Fold(''), api.r1Fold(null), api.r1Fold(7)], ['', '', '']);
+
+// ---- U2
+var hayA = api.r1Fold('Pedagogy of the Oppressed Paulo Freire');
+check('U2 any order', api.r1Has(hayA, api.r1Words('freire oppressed')), true);
+check('U2 the earlier matcher misses it', hayA.indexOf('freire oppressed'), -1);
+check('U2 part of a word', api.r1Has(hayA, api.r1Words('pedag opp')), true);
+check('U2 a missing word', api.r1Has(hayA, api.r1Words('freire zebra')), false);
+check('U2 accents either way', api.r1Has(api.r1Fold('P\u00e9dagogie des opprim\u00e9s'), api.r1Words('OPPRIMES pedagogie')), true);
+check('U2 words each once', api.r1Words('the  The THE cat'), ['the', 'cat']);
+check('U2 an empty search has no words', api.r1Words('   '), []);
+
+// ---- U3
+var L = [ { id: 1, th: api.r1Fold('All About Love'), hay: api.r1Fold('All About Love bell hooks') },
+          { id: 2, th: api.r1Fold('Teaching to Transgress'), hay: api.r1Fold('Teaching to Transgress bell hooks') },
+          { id: 3, th: api.r1Fold('hooks on film'), hay: api.r1Fold('hooks on film someone else') },
+          { id: 4, th: api.r1Fold('Beloved'), hay: api.r1Fold('Beloved Toni Morrison') } ];
+function ids(a) { var o = [], i; for (i = 0; i < a.length; i++) { o.push(a[i].id); } return o; }
+check('U3 a title match comes first', ids(api.r1Pick(L, api.r1Words('hooks'))), [3, 1, 2]);
+check('U3 an empty search keeps the list', ids(api.r1Pick(L, [])), [1, 2, 3, 4]);
+check('U3 no match', ids(api.r1Pick(L, api.r1Words('zebra'))), []);
+
+// ---- U4
+var now = 1764000000000, day = 86400000;
+function book(id, title, author, status, cat, added) { st.books[id] = { id: id, title: title, author: author, status: status, category: cat, addedAt: added }; }
+function note(id, uid, reg, bid, body, at) { st.notebookEntries[id] = { id: id, userId: uid, register: reg, bookIds: bid ? [bid] : [], body: body, createdAt: at }; }
+function reset() {
+  var k;
+  for (k in st.books) { delete st.books[k]; }
+  for (k in st.notebookEntries) { delete st.notebookEntries[k]; }
+  for (k in st.bookArtifacts) { delete st.bookArtifacts[k]; }
+  for (k in st.userThemes) { delete st.userThemes[k]; }
+  for (k in st.userBooks) { delete st.userBooks[k]; }
+  api.wipe(); api.reload(); api.setOld([]);
+}
+reset();
+book('b1', 'Pedagogy of the Oppressed', 'Paulo Freire', 'reading', 'Education', now - 9 * day);
+book('b2', 'Teaching to Transgress', 'bell hooks', 'read', 'Education', now - 8 * day);
+book('b3', 'Beloved', 'Toni Morrison', 'reading', 'Literary Fiction', now - 7 * day);
+book('b4', 'Loose Leaf', 'Nobody', '', 'Uncategorized', now - 6 * day);
+st.userBooks.u1 = { bookIds: ['b1', 'b2', { id: 'b3' }, 'b4', 'gone', 'b1'] };
+note('n1', 'u1', 'marginalia', 'b1', 'Banking education deposits.', now - 2 * day);
+note('n2', 'u1', 'journal', null, 'A private banking worry.', now - 1 * day);
+note('n3', 'u2', 'marginalia', 'b1', 'Another reader on banking.', now - 1 * day);
+note('n4', 'u1', 'question', null, 'An unfiled thought.', now - 3 * day);
+st.bookArtifacts['u1:b2'] = { userId: 'u1', bookId: 'b2', title: 'What hooks asks', body: 'Engaged pedagogy puts the teacher at risk.', createdAt: now - 5 * day, updatedAt: now - 4 * day };
+st.bookArtifacts['u2:b2'] = { userId: 'u2', bookId: 'b2', title: 'Someone else', body: 'risk', createdAt: now, updatedAt: now };
+st.userThemes.t1 = { id: 't1', userId: 'u1', name: 'Freedom as practice', bookIds: ['b1', 'b2'] };
+st.userThemes.t2 = { id: 't2', userId: 'u2', name: 'Not mine', bookIds: ['b1'] };
+api.setOld([ { kind: 'arc', title: 'What banking leaves out', sub: '', route: '#arc/a1' }, { kind: 'book', title: 'ignored', route: '#book/x' } ]);
+var ix = api.r1Index('u1');
+check('U4 the shelf, each book once, a missing one dropped', ix.books.length, 4);
+check('U4 notes: mine, never the Journal', ix.notes.length, 2);
+check('U4 artifacts: mine only', ix.arts.length, 1);
+check('U4 lenses: mine only', ix.lenses.length, 1);
+check('U4 categories: by name, Uncategorized left out', [ix.cats.length, ix.cats[0].label, ix.cats[0].n, ix.cats[1].label], [2, 'Education', 2, 'Literary Fiction']);
+check('U4 arcs come from the earlier index and nothing else does', [ix.arcs.length, ix.subs.length], [1, 0]);
+var m = api.r1Match(ix, 'banking');
+check('U4 "banking" finds the note and the arc, never the Journal', [m.books.length, m.notes.length, m.arts.length, m.arcs.length], [0, 1, 0, 1]);
+m = api.r1Match(ix, 'risk teacher');
+check('U4 an artifact is found by its words, in any order', [m.arts.length, m.arts[0].a.bookId], [1, 'b2']);
+m = api.r1Match(ix, 'oppressed');
+check('U4 a note is found by its book\'s title', [m.books.length, m.notes.length], [1, 1]);
+m = api.r1Match(ix, 'EDUCATION');
+check('U4 a category is found by name', [m.cats.length, m.cats[0].label], [1, 'Education']);
+m = api.r1Match(ix, 'practice freedom');
+check('U4 a lens is found by name, any order', [m.lenses.length, m.lenses[0].t.id], [1, 't1']);
+check('U4 what it found', api.r1Found(api.r1Match(ix, 'banking')).replace(/[^\x20-\x7e]+/g, '|'), '1 note | 1 arc');
+check('U4 nothing', [api.r1Total(api.r1Match(ix, 'zebra')), api.r1Found(api.r1Match(ix, 'zebra'))], [0, '']);
+
+// ---- U5
+reset();
+check('U5 defaults', [api.r1HomeOn('u1'), api.r1SearchOn('u1'), api.r1AllBooksOn('u1')], [true, true, false]);
+check('U5 a default writes nothing', api.keys(), []);
+api.reload(); api.location.search = '?home=old&x=1'; api.replaced.length = 0;
+check('U5 ?home=old turns Home back', api.r1HomeOn('u1'), false);
+check('U5 stored under the reader\'s uid', api.ls('praxis_r1_home_u1', 'none'), false);
+check('U5 the word leaves the address, the rest stays', api.replaced, ['/?x=1#home']);
+check('U5 Search is not touched by Home\'s word', api.r1SearchOn('u1'), true);
+api.location.search = '?home=new';
+check('U5 read once per load', api.r1HomeOn('u1'), false);
+api.reload();
+check('U5 ?home=new turns it on again', api.r1HomeOn('u1'), true);
+api.reload(); api.location.search = '';
+check('U5 a stored choice needs no address word', api.r1HomeOn('u1'), true);
+api.reload(); api.location.search = '?search=old';
+check('U5 ?search=old', [api.r1SearchOn('u1'), api.ls('praxis_r1_search_u1', 'none')], [false, false]);
+api.reload(); api.location.search = '?allbooks=on';
+check('U5 ?allbooks=on', [api.r1AllBooksOn('u1'), api.ls('praxis_r1_allbooks_u1', 'none')], [true, true]);
+api.reload(); api.location.search = '?homework=old&searching=old';
+api.sv('praxis_r1_home_u1', true); api.sv('praxis_r1_search_u1', true);
+check('U5 a longer word is not the switch', [api.r1HomeOn('u1'), api.r1SearchOn('u1')], [true, true]);
+check('U5 another reader starts at the defaults', [api.r1HomeOn('u2'), api.r1AllBooksOn('u2')], [true, false]);
+api.sv('praxis_r1_home_u1', 'damaged');
+check('U5 a damaged value reads as the default', api.r1HomeOn('u1'), true);
+
+// ---- U6
+reset();
+check('U6 none yet', api.r1Recents('u1'), []);
+api.r1Remember('u1', '  banking  '); api.r1Remember('u1', 'hooks'); api.r1Remember('u1', 'Kelley'); api.r1Remember('u1', 'freire'); api.r1Remember('u1', 'love'); api.r1Remember('u1', 'land');
+check('U6 the last 5, newest first, trimmed', api.r1Recents('u1'), ['land', 'love', 'freire', 'Kelley', 'hooks']);
+api.r1Remember('u1', 'KELLEY');
+check('U6 a repeat moves to the top whatever its case', api.r1Recents('u1'), ['KELLEY', 'land', 'love', 'freire', 'hooks']);
+api.r1Remember('u1', 'Fr\u00e9ire');
+check('U6 or its accents', api.r1Recents('u1').length, 5);
+check('U6 and is not listed twice', count(api.r1Recents('u1').join('|').toLowerCase(), 'ire'), 1);
+var long = ''; while (long.length < 80) { long += 'abcdefghij'; }
+api.r1Remember('u1', long);
+check('U6 cut at 60', api.r1Recents('u1')[0].length, 60);
+api.r1Remember('u1', '   ');
+check('U6 an empty search is not remembered', api.r1Recents('u1')[0].length, 60);
+api.sv(api.r1RecentKey('u1'), 'damaged');
+check('U6 a damaged store reads as none', api.r1Recents('u1'), []);
+check('U6 another reader has none', api.r1Recents('u2'), []);
+
+// ---- U7
+reset();
+api.location.search = '?home=old&search=old&allbooks=on';
+api.r1HomeOn('u1'); api.r1SearchOn('u1'); api.r1AllBooksOn('u1'); api.r1Remember('u1', 'banking');
+api.r1Remember('u2x', 'other');
+var mine = api.keys(), swept, i7, allEnd = true;
+for (i7 = 0; i7 < mine.length; i7++) { if (mine[i7].indexOf('u2x') === -1 && mine[i7].slice(-3) !== '_u1') { allEnd = false; } }
+check('U7 R1 writes four keys for this reader', mine.length - 1, 4);
+check('U7 every one ends in the reader\'s uid', allEnd, true);
+var fakeLs = { length: mine.length, key: function (i) { return mine[i]; } };
+swept = (new Function('localStorage', keysFn + '\nreturn accountLocalKeysFor("u1");'))(fakeLs);
+swept.sort();
+check('U7 the account sweep finds all four and no other reader\'s', swept, ['praxis_r1_allbooks_u1', 'praxis_r1_home_u1', 'praxis_r1_search_u1', 'praxis_recent_searches_u1']);
+
+// ---- U8
+function shelf(nReading, nOther) {
+  reset();
+  var a = [], i;
+  for (i = 0; i < nReading; i++) { book('r' + i, 'Reading ' + i, 'A', 'reading', 'Education', now - (200 - i) * day); a.push('r' + i); }
+  for (i = 0; i < nOther; i++) { book('o' + i, 'Other ' + i, 'A', 'read', 'Education', now - (400 - i) * day); a.push('o' + i); }
+  st.userBooks.u1 = { bookIds: a };
+}
+shelf(12, 3);
+note('a', 'u1', 'marginalia', 'r2', 'x', now - 5 * day); note('b', 'u1', 'marginalia', 'r7', 'y', now - 1 * day);
+var s8 = ids(api.r1Still('u1', null));
+check('U8 12 Reading: all twelve', s8.length, 12);
+check('U8 12 Reading: noted first, latest note first, then newest added', s8.slice(0, 4), ['r7', 'r2', 'r11', 'r10']);
+check('U8 the left-off book is never repeated', ids(api.r1Still('u1', 'r7')).indexOf('r7'), -1);
+shelf(13, 0);
+note('a', 'u1', 'marginalia', 'r2', 'x', now - 5 * day); note('b', 'u1', 'marginalia', 'r7', 'y', now - 1 * day); note('j', 'u1', 'journal', 'r9', 'z', now);
+check('U8 13 Reading: only the noted, latest note first; a Journal entry never counts', ids(api.r1Still('u1', null)), ['r7', 'r2']);
+shelf(13, 0);
+check('U8 13 Reading and no notes: none', ids(api.r1Still('u1', null)), []);
+shelf(117, 26);
+var k8; for (k8 = 0; k8 < 20; k8++) { note('n' + k8, 'u1', 'marginalia', 'r' + (k8 * 5), 'note ' + k8, now - k8 * day); }
+s8 = ids(api.r1Still('u1', 'r0'));
+check('U8 Preston\'s scale, 143 books and 117 Reading: twelve at most, all noted, latest first, not the left-off book', [s8.length, s8[0], s8[11], s8.indexOf('r0')], [12, 'r5', 'r60', -1]);
+check('U8 the Reading list is the Shelf chip\'s', api.r1Reading('u1').length, 117);
+
+// ---- U9
+shelf(3, 2);
+check('U9 no notes: the Reading book added most recently', api.r1LeftOff('u1').book.id, 'r2');
+note('j', 'u1', 'journal', 'r0', 'private', now);
+check('U9 a Journal entry never decides it', [api.r1LeftOff('u1').book.id, api.r1LeftOff('u1').note], ['r2', null]);
+note('a', 'u1', 'marginalia', 'o1', 'older', now - 3 * day); note('b', 'u1', 'question', 'r1', 'newer', now - 1 * day); note('c', 'u2', 'marginalia', 'r0', 'not mine', now);
+check('U9 the book of the latest note', [api.r1LeftOff('u1').book.id, api.r1LeftOff('u1').note.id], ['r1', 'b']);
+note('d', 'u1', 'marginalia', 'gone', 'off the shelf', now);
+check('U9 a note on a book that left the shelf is passed over', api.r1LeftOff('u1').book.id, 'r1');
+reset(); book('o0', 'Read', 'A', 'read', 'Education', now); st.userBooks.u1 = { bookIds: ['o0'] };
+check('U9 no notes and nothing Reading: no card', api.r1LeftOff('u1'), null);
+
+// ---- U10
+check('U10 the Home hook, once', count(views, 'if (r1HomeOn(homeUser.uid)) {'), 1);
+check('U10 the Search hook, once', count(views, 'if (r1SearchOn(searchGateUser.uid)) { r1SearchRender(host, searchGateUser.uid); return; }'), 1);
+check('U10 the router hook, once', count(views, "if (parts[0] === 'search' && olPrev.split('/')[0] !== 'search') { r1Arrive(olPrev); }"), 1);
+check('U10 the tab bar line, once', count(views, "tabbarSearchFrom = tabbarRouteTab || 'none';"), 1);
+check('U10 the earlier Home body is still there', [count(views, "segField.textContent = 'The whole field';"), count(views, "homeShowVariant(wrap, homeVariant);")], [1, 1]);
+check('U10 the earlier Search is still there', [count(views, "var GROUP_ORDER = ['arc', 'sub', 'book', 'note'];"), count(views, "if (q && it.hay.indexOf(ql) < 0) { continue; }")], [1, 2]);
+check('U10 js/integrations.js names no R1 key', [count(integ, 'praxis_r1_'), count(integ, 'praxis_recent_searches')], [0, 0]);
+check('U10 the R1 block stores only through ls and sv', count(block, 'localStorage'), 0);
+
+// ---- U11
+var want11 = [['--ts-display', '34px'], ['--ts-title', '28px'], ['--ts-heading', '22px'], ['--ts-reading', '17px'], ['--ts-body', '15px'], ['--ts-note', '13px'], ['--ts-label', '11px']], i11, re11, got11 = [];
+for (i11 = 0; i11 < want11.length; i11++) {
+  re11 = new RegExp(want11[i11][0] + ':\\s*' + want11[i11][1] + ';', 'g');
+  got11.push((theme.match(re11) || []).length);
+}
+check('U11 the seven sizes, each set once, in assets/theme.css', got11, [1, 1, 1, 1, 1, 1, 1]);
+var c0 = comp.indexOf('/* === R1 HOME AND SEARCH -- begin'), c1 = comp.indexOf('/* === R1 HOME AND SEARCH -- end === */');
+check('U11 the R1 style block, once, at the end', [c0 !== -1 && c1 > c0, count(comp, 'R1 HOME AND SEARCH'), comp.slice(c1).replace(/\s+$/, '')], [true, 2, '/* === R1 HOME AND SEARCH -- end === */']);
+var cssBlock = comp.slice(c0, c1).replace(/\/\*[\s\S]*?\*\//g, '');
+var decl = cssBlock.match(/font(-size)?:[^;}]*/g) || [], bad11 = [], sixteen = 0;
+for (i11 = 0; i11 < decl.length; i11++) {
+  if (decl[i11].indexOf('var(--ts-') !== -1) { continue; }
+  if (decl[i11] === 'font-size:16px !important') { sixteen++; continue; }
+  bad11.push(decl[i11]);
+}
+check('U11 every font size in the block is a --ts-* token', bad11, []);
+check('U11 except the one 16 px field rule', sixteen, 1);
+check('U11 the block has text sizes at all', decl.length > 20, true);
+check('U11 no z-index in the block', count(cssBlock, 'z-index'), 0);
+check('U11 no hex colour in the block', (cssBlock.match(/:[^;{}]*#[0-9a-fA-F]{3,8}/g) || []).length, 0);
+check('U11 the field rule is for phones', count(cssBlock.replace(/\s+/g, ' '), '@media (max-width:759px){ :is(input:not([type="checkbox"])'), 1);
+
+WScript.Echo('r1-test: ' + pass + ' passed, ' + fail + ' failed');
+WScript.Quit(fail ? 1 : 0);

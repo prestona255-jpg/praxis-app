@@ -1,0 +1,18 @@
+[after] boot :: stubbed night | {"at":"/#home","counts":{"shelf":143,"reading":117,"notes":13,"lenses":5,"arcs":2,"arts":2},"user":"d0tester"}
+[after] home default :: {"r1":true,"old":0,"key":null}
+[after] go ?home=old :: {"at":"/#home","counts":{"shelf":143,"reading":117,"notes":13,"lenses":5,"arcs":2,"arts":2},"user":"d0tester"}
+[after] home after ?home=old :: {"url":"/#home","r1":false,"old":4,"sky":true,"key":"false"}
+[after] shot :: no shots
+[after] reload :: {"at":"/#home","counts":{"shelf":143,"reading":117,"notes":13,"lenses":5,"arcs":2,"arts":2},"user":"d0tester"}
+[after] home after reload :: {"url":"/#home","r1":false,"old":4}
+[after] go ?search=old :: {"at":"/#search","counts":{"shelf":143,"reading":117,"notes":13,"lenses":5,"arcs":2,"arts":2},"user":"d0tester"}
+[after] search after ?search=old :: {"url":"/#search","r1":false,"old":1,"key":"false"}
+[after] shot :: no shots
+[after] reload :: {"at":"/#search","counts":{"shelf":143,"reading":117,"notes":13,"lenses":5,"arcs":2,"arts":2},"user":"d0tester"}
+[after] search after reload :: {"url":"/#search","r1":false,"old":1}
+[after] go ?home=new&search=new :: {"at":"/?search=new#home","counts":{"shelf":143,"reading":117,"notes":13,"lenses":5,"arcs":2,"arts":2},"user":"d0tester"}
+[after] home after new :: {"url":"/?search=new#home","r1":true,"old":0,"homeKey":"true","searchKey":"false"}
+[after] search after new :: {"url":"/#search","r1":true,"old":0}
+[after] go ?allbooks absent: sides :: {"sides":0,"allbooksKey":null}
+[after] search from notebook :: {"pressed":"Notes 11","back":"Notebook"}
+[after] errors :: []

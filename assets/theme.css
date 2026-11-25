@@ -89,6 +89,15 @@
   --fs-caption:  13px; --lh-caption:  1.4;
   --fs-tab:      11px; --lh-tab:      1.2;
   --fs-kicker:   11px; --lh-kicker:   1.3;
+  /* R1 (25 Nov 2026): THE TYPE SCALE. Seven sizes, the same on every screen. Each room build moves its room onto
+     these (BETA.md); the --fs-* names above stay until the last room has moved. */
+  --ts-display: 34px;
+  --ts-title:   28px;
+  --ts-heading: 22px;
+  --ts-reading: 17px;
+  --ts-body:    15px;
+  --ts-note:    13px;
+  --ts-label:   11px;
   /* §4 shape and motion */
   --r-card:  20px;
   --r-sky:   28px;

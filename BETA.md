@@ -58,7 +58,7 @@ the demo page last. Every row finishes before the first invite.
 | PG | gate | Preston's 25-step phone walk of the app as it stands | - | walked 24 Nov: step 5 no (a tap on a text field zooms the page), step 6 no by its screenshot, the rest yes |
 | P1 | process | Checks run by a machine on every push: the cscript harnesses and the rig | small | pushed f9c5495 |
 | D1a | data | Fix build 1b, part one: offline edits kept across a close (BR-03), the mergeBookDuplicates artifact site and its Undo, what is waiting sent at the load, a size meter on each of the six reader documents (warn past 700 KB of the 1 MiB cap) | data | pushed db457de, live as praxis-v3.341, Checks 33 of 33 |
-| R1 | rooms | Home and Search (L4b-3d), with the Search matching fix (every word, any order, accents and case ignored; artifacts, lenses and categories included), an "All books" side, and no text field under 16 px on phones (the walk's step 5) | small | patch to be cut fresh |
+| R1 | rooms | Home and Search (L4b-3d), with the Search matching fix (every word, any order, accents and case ignored; artifacts, lenses and categories included), an "All books" side (built, switched off until R2 gives it a catalogue; ruled 25 Nov), and no text field under 16 px on phones (the walk's step 5) | small | built 25 Nov, v3.342 |
 | LC2 | rooms | The blue sky and sunset burst, its own build right after R1 (ruled 25 Nov), so every later room is checked against it | sized at its pre-flight | blocked until a design sitting produces the new js/hand.js |
 | R2 | rooms | Find a book: a search field replaces the Add a book form (NEW, ruled 23 Nov; comes before the book page) | small | to be drawn |
 | R3 | rooms | Book page and artifact (L4b-3b) | small | patch to be cut fresh |
@@ -80,6 +80,8 @@ Rules for the queue:
   are reference for look and rulings, not bytes to apply.
 - Each room build moves its room onto the type scale (seven sizes: 34, 28, 22, 17, 15,
   13, 11, added to assets/theme.css by the first room build) and the named layers.
+  R1 added the scale as --ts-display, --ts-title, --ts-heading, --ts-reading, --ts-body,
+  --ts-note and --ts-label.
 - A build that touches how the app reads, writes or signs in adds its scenarios to
   tools/rig/scenarios/ and they stay.
 - Every push to main is checked by a machine (P1): the Checks workflow on GitHub runs

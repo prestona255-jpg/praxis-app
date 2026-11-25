@@ -1,0 +1,40 @@
+[main] boot 390 :: stubbed night | {"at":"/#home","counts":{"shelf":143,"reading":117,"notes":13,"lenses":5,"arcs":2,"arts":2},"user":"d0tester"}
+[main] fields 390 #home :: {"input.app-nav-search-input[search]":13,"input#yumi-input.yumi-input[text]":15,"input#spotlight-input.spotlight-input[text]":18,"textarea#capField.capdoor-field":16}
+[main] named 390 #home :: {"navSearch":13,"yumiInput":15,"spotlight":18}
+[main] overflow 390 #home :: {"innerWidth":390,"docScrollW":390,"docClientW":390,"appScrollW":390,"overflow":false,"bodyScrollW":390}
+[main] fields 390 #search :: {"input.app-nav-search-input[search]":13,"input.search-input[text]":20,"input#yumi-input.yumi-input[text]":15,"input#spotlight-input.spotlight-input[text]":18,"textarea#capField.capdoor-field":16}
+[main] named 390 #search :: {"navSearch":13,"yumiInput":15,"spotlight":18}
+[main] overflow 390 #search :: {"innerWidth":390,"docScrollW":390,"docClientW":390,"appScrollW":390,"overflow":false,"bodyScrollW":390}
+[main] fields 390 #books :: {"input.app-nav-search-input[search]":13,"input#shelf-search-input.[search]":16,"input#yumi-input.yumi-input[text]":15,"input#spotlight-input.spotlight-input[text]":18,"textarea#capField.capdoor-field":16}
+[main] named 390 #books :: {"navSearch":13,"yumiInput":15,"spotlight":18}
+[main] overflow 390 #books :: {"innerWidth":390,"docScrollW":390,"docClientW":390,"appScrollW":390,"overflow":false,"bodyScrollW":390}
+[main] fields 390 #notebook :: {"input.app-nav-search-input[search]":13,"input#yumi-input.yumi-input[text]":15,"input#spotlight-input.spotlight-input[text]":18,"textarea#capField.capdoor-field":16}
+[main] named 390 #notebook :: {"navSearch":13,"yumiInput":15,"spotlight":18}
+[main] overflow 390 #notebook :: {"innerWidth":390,"docScrollW":390,"docClientW":390,"appScrollW":390,"overflow":false,"bodyScrollW":390}
+[main] open add-a-book :: clicked sh3-add
+[main] fields add-a-book 390 :: {"input.app-nav-search-input[search]":13,"input#shelf-search-input.[search]":16,"input.shelf-editor-title-input[text]":14,"input.shelf-editor-author-input[text]":14,"select.shelf-editor-genre-input":14,"input.shelf-editor-isbn-input[text]":14,"input#yumi-input.yumi-input[text]":15,"input#spotlight-input.spotlight-input[text]":18,"textarea#capField.capdoor-field":16}
+[main] open spotlight :: opened
+[main] named+spotlight 390 :: {"navSearch":13,"yumiInput":15,"spotlight":18}
+[main] open yumi :: clicked yumi-bloom
+[main] named+yumi 390 :: {"navSearch":13,"yumiInput":15,"spotlight":18}
+[main] errors :: []
+[main] boot 1360 :: stubbed night | {"at":"/#home","counts":{"shelf":143,"reading":117,"notes":13,"lenses":5,"arcs":2,"arts":2},"user":"d0tester"}
+[main] fields 1360 #home :: {"input.app-nav-search-input[search]":13,"input#yumi-input.yumi-input[text]":16,"input#spotlight-input.spotlight-input[text]":18,"textarea#capField.capdoor-field":16}
+[main] named 1360 #home :: {"navSearch":13,"yumiInput":16,"spotlight":18}
+[main] overflow 1360 #home :: {"innerWidth":1360,"docScrollW":1360,"docClientW":1360,"appScrollW":1360,"overflow":false,"bodyScrollW":1360}
+[main] fields 1360 #search :: {"input.app-nav-search-input[search]":13,"input.search-input[text]":24,"input#yumi-input.yumi-input[text]":16,"input#spotlight-input.spotlight-input[text]":18,"textarea#capField.capdoor-field":16}
+[main] named 1360 #search :: {"navSearch":13,"yumiInput":16,"spotlight":18}
+[main] overflow 1360 #search :: {"innerWidth":1360,"docScrollW":1360,"docClientW":1360,"appScrollW":1360,"overflow":false,"bodyScrollW":1360}
+[main] fields 1360 #books :: {"input.app-nav-search-input[search]":13,"input#shelf-search-input.[search]":16,"input#yumi-input.yumi-input[text]":16,"input#spotlight-input.spotlight-input[text]":18,"textarea#capField.capdoor-field":16}
+[main] named 1360 #books :: {"navSearch":13,"yumiInput":16,"spotlight":18}
+[main] overflow 1360 #books :: {"innerWidth":1360,"docScrollW":1360,"docClientW":1360,"appScrollW":1360,"overflow":false,"bodyScrollW":1360}
+[main] fields 1360 #notebook :: {"input.app-nav-search-input[search]":13,"input#yumi-input.yumi-input[text]":16,"input#spotlight-input.spotlight-input[text]":18,"textarea#capField.capdoor-field":16}
+[main] named 1360 #notebook :: {"navSearch":13,"yumiInput":16,"spotlight":18}
+[main] overflow 1360 #notebook :: {"innerWidth":1360,"docScrollW":1360,"docClientW":1360,"appScrollW":1360,"overflow":false,"bodyScrollW":1360}
+[main] open add-a-book :: clicked sh3-add
+[main] fields add-a-book 1360 :: {"input.app-nav-search-input[search]":13,"input#shelf-search-input.[search]":16,"input.shelf-editor-title-input[text]":14,"input.shelf-editor-author-input[text]":14,"select.shelf-editor-genre-input":14,"input.shelf-editor-isbn-input[text]":14,"input#yumi-input.yumi-input[text]":16,"input#spotlight-input.spotlight-input[text]":18,"textarea#capField.capdoor-field":16}
+[main] open spotlight :: opened
+[main] named+spotlight 1360 :: {"navSearch":13,"yumiInput":16,"spotlight":18}
+[main] open yumi :: clicked yumi-bloom
+[main] named+yumi 1360 :: {"navSearch":13,"yumiInput":16,"spotlight":18}
+[main] errors :: []

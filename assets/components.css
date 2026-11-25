@@ -18188,3 +18188,137 @@ body.l3-gated .cap-create-door, body.l3-gated .capdoor-seat-btn{ display:none !i
   .shelf.sh3 .sh3-pile .sh3-cv::before,.shelf.sh3 .sh3-shared .sh3-cv::before,.shelf.sh3.is-selecting .sh3-cv::before,.shelf.sh3 .sh3-case.is-finding .sh3-cv::before{content:"";position:absolute;left:-7px;right:-7px;top:168px;height:9px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.2)),color-mix(in srgb,var(--page-3) 85%,var(--ink-2));box-shadow:inset 0 1px 0 var(--line);pointer-events:none}
 }
 /* === L4b-3a.2 THE SHELF: THE LIBRARY — end === */
+/* === R1 HOME AND SEARCH -- begin (BETA.md row R1; docs/checkpoints/r1.md) ===
+   Home under the sky (.lx.ol.r1.r1-home) and the Search page (.lx.ol.r1.r1-search), from the Style Study.
+   Both reuse Open Lens's sections, groups, rows and links (.lx.ol); every rule in this first part is scoped
+   under .r1, so nothing reaches another surface. Tokens only. EVERY text size here is one of the seven of
+   the type scale (--ts-*, assets/theme.css), and the shared primitives these two rooms reuse are set onto the
+   scale inside .r1. No rule here stacks anything (no z-index): these two rooms sit on the page layer.
+   The warm block behind "Where you left off" is --card-2 at night and yellow mixed into --card-2 by day (no
+   new colour value). A cover row is one swipe row on a phone and wraps from 760. On Home from 1200 the body
+   is the column beside the sky. */
+.lx.ol.r1 .ol-sh h3{font-size:var(--ts-heading)}
+.lx.ol.r1 .ol-lnk,.lx.ol.r1 .ol-back{font-size:var(--ts-reading)}
+.lx.ol.r1 .ol-foot,.lx.ol.r1 .ol-rw .ol-s{font-size:var(--ts-note)}
+.lx.ol.r1 .ol-chev{font-size:var(--ts-heading)}
+.lx.ol.r1 .r1-cv{box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;width:116px;height:174px;border-radius:6px;padding:0;background:var(--card-2);color:var(--ink);position:relative;overflow:hidden;flex:none;scroll-snap-align:start;box-shadow:inset 5px 0 0 rgba(0,0,0,.14),inset 0 0 0 1px rgba(0,0,0,.12),0 6px 14px rgba(0,0,0,.22)}
+.lx.ol.r1 .r1-cv.big{width:132px;height:198px}
+.lx.ol.r1 .r1-cv .r1-img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+.lx.ol.r1 .r1-cv .r1-tt{display:flex;flex-direction:column;gap:4px;padding:12px 10px;min-width:0}
+.lx.ol.r1 .r1-cv .r1-tt b{font:500 var(--ts-body)/1.14 var(--font-serif);letter-spacing:-.01em;overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.lx.ol.r1 .r1-cv .r1-tt small{font:var(--ts-note)/1.15 var(--font-body);color:var(--ink-2);overflow-wrap:anywhere}
+.lx.ol.r1 .r1-covers{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;margin:0 -20px;padding:4px 20px 12px;scrollbar-width:none}
+.lx.ol.r1 .r1-covers::-webkit-scrollbar{display:none}
+/* Home under the sky */
+.home-page.lum-amber-deep > .lx.ol.r1-home{box-sizing:border-box;display:flex;flex-direction:column;gap:0;width:100%;max-width:680px;margin:0 auto;padding:14px 20px 40px;color:var(--ink);font-family:var(--font-body);font-size:var(--ts-body);line-height:1.45}
+.lx.ol.r1-home .r1-side{min-width:0}
+.lx.ol.r1-home .r1-feat + .r1-side{margin-top:26px}
+.lx.ol.r1-home .r1-feat{box-sizing:border-box;background:var(--card-2);border-radius:22px;padding:20px 18px;margin:0 -4px}
+html[data-mood="day"] .lx.ol.r1-home .r1-feat{background:color-mix(in srgb,var(--gold) 20%,var(--card-2))}
+@media (prefers-color-scheme: light){html[data-mood="auto"] .lx.ol.r1-home .r1-feat{background:color-mix(in srgb,var(--gold) 20%,var(--card-2))}}
+.lx.ol.r1-home .r1-left{display:grid;grid-template-columns:132px minmax(0,1fr);gap:18px;align-items:end}
+.lx.ol.r1-home .r1-tx{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
+.lx.ol.r1-home .r1-t{font:500 var(--ts-heading)/1.12 var(--font-serif);letter-spacing:-.015em;color:var(--ink);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.lx.ol.r1-home .r1-s{font:400 var(--ts-body)/1.35 var(--font-body);color:var(--ink);overflow-wrap:anywhere}
+.lx.ol.r1-home .r1-feat .ol-foot{color:var(--ink)}
+.lx.ol.r1-home .r1-open{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:0 22px;min-height:48px;margin-top:8px;font:600 var(--ts-reading) var(--font-body);background:var(--gold);color:var(--on-gold);white-space:nowrap;max-width:100%}
+.lx.ol.r1-home .r1-last{margin:0;font:italic 400 var(--ts-reading)/1.42 var(--font-serif);color:var(--ink);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.lx.ol.r1-home .r1-arcs{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--card-1);color:var(--ink);border-radius:14px;padding:10px 14px 10px 16px;width:100%;min-height:60px;box-shadow:inset 0 0 0 1px var(--line)}
+.lx.ol.r1-home .r1-arcs b{display:block;font:600 var(--ts-reading) var(--font-body)}
+.lx.ol.r1-home .r1-arcs small{display:block;font:400 var(--ts-note) var(--font-body);color:var(--ink-2);margin-top:1px}
+/* Search */
+.lx.ol.r1-search{font-size:var(--ts-body)}
+.lx.ol.r1-search .r1-head{box-sizing:border-box;display:flex;flex-direction:column;gap:4px;width:100%;max-width:680px;margin:0 auto;padding:6px 20px 0}
+.lx.ol.r1-search .r1-head .ol-back{color:var(--gold-ink);margin-left:-4px}
+.lx.ol.r1-search .r1-name{margin:6px 0 0;font:500 var(--ts-display)/1.05 var(--font-serif);letter-spacing:-.025em;color:var(--ink)}
+.lx.ol.r1-search .r1-col{box-sizing:border-box;display:flex;flex-direction:column;gap:30px;width:100%;max-width:680px;margin:0 auto;padding:26px 20px 120px}
+.lx.ol.r1-search .r1-in{box-sizing:border-box;display:flex;align-items:center;gap:10px;min-height:50px;padding:0 16px;border-radius:14px;background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink-2);cursor:text}
+.lx.ol.r1-search .r1-in svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;flex:none}
+.lx.ol.r1-search .r1-in input{box-sizing:border-box;flex:1;min-width:0;width:100%;border:0;border-radius:0;background:none;outline:none;margin:0;padding:0;min-height:48px;font:400 var(--ts-reading) var(--font-body);color:var(--ink);text-overflow:ellipsis;appearance:none;-webkit-appearance:none}
+.lx.ol.r1-search .r1-in input:focus-visible{outline:none}
+.lx.ol.r1-search .r1-in input::placeholder{color:var(--ink-2);opacity:1}
+.lx.ol.r1-search .r1-in input:placeholder-shown::-webkit-search-cancel-button{display:none}
+.lx.ol.r1-search .r1-in:focus-within{box-shadow:inset 0 0 0 2px var(--gold-ink)}
+.lx.ol.r1-search .r1-sides{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:999px;background:var(--card-2)}
+.lx.ol.r1-search .r1-side-b{display:flex;align-items:center;justify-content:center;min-height:40px;padding:0 12px;border-radius:999px;font:500 var(--ts-body) var(--font-body);color:var(--ink-2);text-align:center;white-space:nowrap}
+.lx.ol.r1-search .r1-side-b[aria-pressed="true"]{background:var(--card-1);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.lx.ol.r1-search .r1-chips{display:flex;gap:8px;overflow-x:auto;margin:0 -20px;padding:0 20px;scrollbar-width:none}
+.lx.ol.r1-search .r1-chips::-webkit-scrollbar{display:none}
+.lx.ol.r1-search .r1-chip{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;font:500 var(--ts-body) var(--font-body);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line);white-space:nowrap;flex:none}
+.lx.ol.r1-search .r1-chip[aria-pressed="true"]{background:var(--ink);color:var(--page);box-shadow:none}
+.lx.ol.r1-search .r1-res,.lx.ol.r1-search .r1-wide,.lx.ol.r1-search .r1-main,.lx.ol.r1-search .r1-aside{display:flex;flex-direction:column;gap:30px;min-width:0}
+.lx.ol.r1-search .r1-under{display:flex;flex-direction:column;gap:14px;min-width:0}
+.lx.ol.r1-search .ol-rw{gap:12px;padding:10px 16px;min-height:56px}
+.lx.ol.r1-search .ol-rw + .ol-rw::before{right:0;left:0}
+.lx.ol.r1-search .ol-rw .ol-tx{gap:1px}
+.lx.ol.r1-search .ol-rw .ol-c{font:italic 500 var(--ts-reading)/1.2 var(--font-serif)}
+.lx.ol.r1-search .ol-rw .ol-s{line-height:1.3}
+.lx.ol.r1-search .ol-rw .mark,.lx.ol.r1-search .ol-rw .search-row-mark,.lx.ol.r1-search .ol-rw .search-row-arc{display:block;width:40px;height:40px;flex:none}
+.lx.ol.r1-search .ol-rw .search-row-mark > svg,.lx.ol.r1-search .ol-rw .search-row-arc > svg{display:block;width:100%;height:100%}
+.lx.ol.r1-search .ol-rw .search-row-arc{color:var(--gold-ink)}
+.lx.ol.r1-search .r1-t{font:500 var(--ts-reading)/1.25 var(--font-body);color:var(--ink);overflow-wrap:anywhere}
+.lx.ol.r1-search .r1-nrow{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:start;padding:14px 16px;width:100%;min-height:60px;color:var(--ink);position:relative}
+.lx.ol.r1-search .r1-nrow + .r1-nrow::before{content:"";position:absolute;top:0;right:0;left:0;height:1px;background:var(--line)}
+.lx.ol.r1-search .r1-k{grid-column:1;font:500 var(--ts-note)/1.3 var(--font-body);color:var(--ink-2);overflow-wrap:anywhere}
+.lx.ol.r1-search .r1-k i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;background:var(--gold)}
+.lx.ol.r1-search .r1-k i.q{background:var(--gold-ink)}
+.lx.ol.r1-search .r1-p{grid-column:1;font:400 var(--ts-reading)/1.42 var(--font-serif);color:var(--ink);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.lx.ol.r1-search .r1-nrow small{grid-column:1;font:400 var(--ts-note) var(--font-body);color:var(--ink-2)}
+.lx.ol.r1-search .r1-nrow .mark{grid-column:2;grid-row:1 / span 3;width:40px;height:40px;align-self:center}
+.lx.ol.r1-search .r1-more{box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border-radius:14px;font:500 var(--ts-reading) var(--font-body);color:var(--gold-ink);background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line);text-align:center}
+@media (max-width:359px){
+  .lx.ol.r1-home .r1-left{grid-template-columns:104px minmax(0,1fr);gap:14px}
+  .lx.ol.r1-home .r1-cv.big{width:104px;height:156px}
+  .lx.ol.r1-home .r1-open{padding:0 14px}
+}
+@media (min-width:760px){
+  .lx.ol.r1 .r1-covers{flex-wrap:wrap;overflow:visible;margin:0;padding:4px 0 12px}
+  .lx.ol.r1-search .r1-chips{margin:0;padding:0;flex-wrap:wrap;overflow:visible}
+  .lx.ol.r1-search .r1-sides{max-width:360px}
+}
+@media (min-width:1000px){
+  .lx.ol.r1-search .r1-head{max-width:1320px;padding:20px 48px 0}
+  .lx.ol.r1-search .r1-col{max-width:1320px;padding:18px 48px 80px;gap:26px}
+  .lx.ol.r1-search .r1-under{flex-direction:row;align-items:center;justify-content:space-between;gap:24px}
+  .lx.ol.r1-search .r1-cv{width:132px;height:198px}
+  .lx.ol.r1-search .r1-covers{gap:14px}
+}
+@media (min-width:1200px){
+  .lx.ol.r1-search .r1-res{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:30px 40px;align-items:start}
+  .lx.ol.r1-search .r1-wide{grid-column:1 / -1}
+  .lx.ol.r1-search .r1-res.r1-one .r1-main{grid-column:1 / -1}
+}
+@media (min-width:1200px){
+  .home-page.lum-amber-deep.home-composed.home-sky-on > .lx.ol.r1-home{grid-column:2;max-width:680px;margin:0;padding:28px 0 60px}
+  .home-page.lum-amber-deep.home-composed.r1-on:not(.home-sky-on){display:block}
+}
+/* R1, the one app-wide rule (Preston's 24 Nov walk, step 5): on a phone no text field is set under 16 px, so a
+   tap on a field no longer zooms the page. Fields drawn LARGER than 16 px are named in the :not() list, each by
+   the very selector that sizes it, and keep their own size; a new field drawn larger than 16 px on phones adds
+   its selector to that list. */
+@media (max-width:759px){
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="color"]):not([type="image"]):not([type="hidden"]),textarea,select):not(.account .stone-input,
+    .arcfield .arcfield-q,
+    .arcfield.af-world .af-q,
+    .arcfield.lum-amber .arcfield-q,
+    .cap-expanded .capdoor-field,
+    .desk-question-input,
+    .lx.ol .ol-band .lx-line input,
+    .lx.ol .ol-why textarea,
+    .lx.ol.r1-search .r1-in input,
+    .notebook-writeline-input,
+    .notebook.lum-amber-deep .nb-capfield,
+    .notebook.lum-amber-deep .nb-name-canvas-host .wc-input,
+    .notebook.lum-amber-deep .notebook-capture-line input[type=text],
+    .notebook.lum-amber-deep .notebook-capture-line textarea,
+    .search.lum-amber .search-input,
+    .spotlight-input,
+    .st-build.lum-amber-deep .stb-canvas-host .wc-input,
+    .st-build.lum-amber-deep .stb-title-input,
+    .st-page .st-title-input,
+    .subtheory-header-input,
+    .threshold-input,
+    .value-composer-input,
+    .wc-input){font-size:16px !important}
+}
+/* === R1 HOME AND SEARCH -- end === */
