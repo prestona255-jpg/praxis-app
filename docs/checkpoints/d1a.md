@@ -536,3 +536,25 @@ connection). Desktop: hard-refresh, DevTools → Application → Service Workers
 - **D1a-2 (the switch).** Phone: on a book with an artifact, switch "Yumi may read this" ON with
   airplane mode on; swipe away; airplane mode off; open. PASS: the switch is OFF.
 Any step that does not read as written goes to the build chat with what was on screen.
+
+## The commit, the push and the Checks run (24–25 Nov 2026)
+
+- **Commit** `db457de` on Preston's word "commit": 20 files by explicit path (the four app files,
+  the two suites and the rig README, this record and its six logs, the five ledgers, the Builder);
+  the pre-commit hook gate passed. The commit's blobs are the md5s shown at the commit gate.
+- **Push** on Preston's word "Push": `0b0a730..db457de`, `main` only. Before it, `origin/main..HEAD`
+  held that one commit and 20 paths, none under `docs/audit`. After it, HEAD == origin/main ==
+  `db457de`.
+- **Checks** on GitHub: run 45656211948, on the push of `db457de`, conclusion success (16:39–16:47
+  UTC, 25 Nov). Its annotation: `CHECKS: 33 of 33 passed, 0 failed`; its info line names commit
+  `db457de`, `praxis-v3.341`. Read through GitHub's API (the run's status and annotations).
+- **Deploy.** This machine cannot reach praxisreader.com or praxis-reading.netlify.app (measured
+  after the push: `000`, curl exit 56, both). Netlify's own record, read through its API: deploy
+  `6b070f2f…` built from `db457de` on `main`, state ready, the site's current deploy, published 25 Nov
+  2026 16:39 UTC, 20 files uploaded, its secret scan 0 matches over 1,405 files. At that commit sw.js
+  sets `praxis-v3.341`.
+- **Live smoke — PASSED, on Preston's word (25 Nov 2026, 10:49 am Central).** He reported all four checks
+  passed: the version (the cache name reads `praxis-v3.341`), C (BR-03: a note edited offline on the
+  desktop survives the tab closing), D1a-1 (a book marked read and a lens renamed with the phone in
+  airplane mode survive the app being swiped away), D1a-2 (the switch turned ON with no signal is OFF
+  after the reopen). Recorded on his word; no screenshots were taken.

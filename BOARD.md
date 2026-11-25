@@ -10,7 +10,7 @@ file IN THE SAME COMMIT (docs ride with the diff). The updating agent
 re-verifies the cell's evidence at current HEAD before flipping it; line
 anchors below drift as files grow, so re-grep before relying on them.
 
-**D1a (2026-11-24, v3.341, data tier, local until pushed) — fix build 1b, part one: an edit the cloud never confirmed survives a close (BR-03); the merge's artifact site and its Undo; what is waiting is sent at the load; a size meter on the six reader documents; no surface cell changes (nothing drawn but the two meter lines).** Record: `docs/checkpoints/d1a.md`.
+**D1a (2026-11-24, v3.341, data tier, pushed db457de; its push run green, 33 of 33) — fix build 1b, part one: an edit the cloud never confirmed survives a close (BR-03); the merge's artifact site and its Undo; what is waiting is sent at the load; a size meter on the six reader documents; no surface cell changes (nothing drawn but the two meter lines).** Record: `docs/checkpoints/d1a.md`.
 
 **P1 (2026-11-24, tools and docs only, no app file, no version bump, pushed f9c5495; its push run green, 32 of 32) — checks on every push: `tools/checks.ps1`, run by `.github/workflows/checks.yml`; no surface cell changes.** Record: `docs/checkpoints/p1.md`.
 
@@ -322,7 +322,7 @@ sync-render with none (W11-S8-L1: #profile social-fetch now graceful).
 | AUDIT | Fable, findings-report-only; charter = correctness + craft + writing-loop deep-dive; after July 7 | GATED ON ABOVE |
 
 ## 5 · Post-audit program queue (order set by audit findings)
-Order now led by BETA.md, 2026-11-23.
+Order now led by BETA.md (2026-11-23; re-ruled 2026-11-25: D1a, then the rooms back to back with LC2 right after R1, then Deeper Yumi, then D1b, D1c and D2, the demo page last).
 
 Writing-loop rebuild + Generative Yumi ("alive") — co-flagship, intertwined ·
 Sound build (Yumi voice + ambient, from the design doc) · Admin/moderation

@@ -31,11 +31,17 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-25 (the build order re-ruled)** -- Preston's ruling of 25 Nov, recorded in BETA.md, which leads: D1a
+  first; then the rooms back to back (R1, then LC2 as its own build right after R1, so every later room is checked
+  against the sky; then R2 to R5); then Deeper Yumi (F2, now after the rooms); then the data builds D1b, D1c and D2;
+  F3, R6 and R7 left in their 23 Nov places (an open call); the demo page (F1) last. It replaces the 23 Nov "data and
+  room builds alternate". His ruling, recorded as made, so no `PROPOSED:` flag.
 - **2026-11-24 (D1a: fix build 1b, part one, v3.341)** -- BETA.md's row D1 became three (D1a this build; D1b the
   profile and reader-model guards, BR-29; D1c two devices, BR-04), by Preston's ruling of 24 Nov. D1a keeps an edit the
   cloud never confirmed across a close (BR-03), fixes the merge's artifact site and its Undo, sends what is waiting at
   the load, and meters the six reader documents (`docs/checkpoints/d1a.md`). R4 gains Undo for a deleted note (BR-13);
   R5 gains the lasting not-synced line and the Export words (BR-30). No other reordering.
+  Pushed db457de: the push's own run on GitHub read 33 of 33; Preston's live smoke passed, on his word, 25 Nov (the version, C, D1a-1, D1a-2).
 - **2026-11-24 (P1: checks on every push; the phone gate walked)** -- BETA.md's row P1. `tools/checks.ps1` runs every
   check the repo already has (the parse check on every served script, the six cscript harnesses, every rig suite) and
   `.github/workflows/checks.yml` runs it on a GitHub Windows machine on each push to `main`. It reports after the push and

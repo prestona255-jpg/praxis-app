@@ -1,6 +1,7 @@
 # Praxis: the first beta (read this first)
 
 Written 2026-11-23 at v3.340 (main at fedbc77) from Preston's rulings of that day.
+Build order re-ruled 2026-11-25 (main at db457de, v3.341).
 
 This page leads on three things: the first beta's SCOPE, the BUILD ORDER, and the
 OPEN BLOCKERS. Where BOARD.md, docs/studio/sequence.md, docs/launch-runway.md,
@@ -45,8 +46,10 @@ cold. Only then is anyone invited.
 
 ## Build order
 
-Three lanes: data, rooms, features. Data builds and room builds alternate (ruled
-23 Nov). Every row finishes before the first invite.
+Three lanes: data, rooms, features. The order (ruled 25 Nov 2026, replacing the 23 Nov
+"data and room builds alternate"): D1a first; then the rooms back to back, with LC2 as
+its own build right after R1; then Deeper Yumi; then the data builds D1b, D1c and D2;
+the demo page last. Every row finishes before the first invite.
 
 | # | Lane | Build | Size | Status |
 |---|---|---|---|---|
@@ -54,17 +57,18 @@ Three lanes: data, rooms, features. Data builds and room builds alternate (ruled
 | P0 | process | This page leads | small | pushed e66c682 |
 | PG | gate | Preston's 25-step phone walk of the app as it stands | - | walked 24 Nov: step 5 no (a tap on a text field zooms the page), step 6 no by its screenshot, the rest yes |
 | P1 | process | Checks run by a machine on every push: the cscript harnesses and the rig | small | pushed f9c5495 |
-| D1a | data | Fix build 1b, part one: offline edits kept across a close (BR-03), the mergeBookDuplicates artifact site and its Undo, what is waiting sent at the load, a size meter on each of the six reader documents (warn past 700 KB of the 1 MiB cap) | data | built 24 Nov, v3.341, at the commit gate |
-| D1b | data | Fix build 1b, part two: the profile and reader-model guards (BR-29) | data | not started |
-| D1c | data | Fix build 1b, part three: two devices overwriting each other (BR-04), by a re-read on return to the front and a check of the cloud's copy before each save | data | not started |
+| D1a | data | Fix build 1b, part one: offline edits kept across a close (BR-03), the mergeBookDuplicates artifact site and its Undo, what is waiting sent at the load, a size meter on each of the six reader documents (warn past 700 KB of the 1 MiB cap) | data | pushed db457de, live as praxis-v3.341, Checks 33 of 33 |
 | R1 | rooms | Home and Search (L4b-3d), with the Search matching fix (every word, any order, accents and case ignored; artifacts, lenses and categories included), an "All books" side, and no text field under 16 px on phones (the walk's step 5) | small | patch to be cut fresh |
+| LC2 | rooms | The blue sky and sunset burst, its own build right after R1 (ruled 25 Nov), so every later room is checked against it | sized at its pre-flight | blocked until a design sitting produces the new js/hand.js |
 | R2 | rooms | Find a book: a search field replaces the Add a book form (NEW, ruled 23 Nov; comes before the book page) | small | to be drawn |
-| D2 | data | Fix build 2: the Yumi daily limit, docs/ off the live site, updates reaching readers | data | not started |
-| F2 | features | Deeper Yumi, her complexity and character (ruled in 23 Nov; built alongside the rooms; D2 still lands before any invite) | sized at its pre-flight | in design, its own chat |
-| F3 | features | ElevenLabs dictation (ruled in 23 Nov; after D2, it adds paid calls per reader) | sized at its pre-flight | in design, its own chat |
 | R3 | rooms | Book page and artifact (L4b-3b) | small | patch to be cut fresh |
 | R4 | rooms | Notebook and a note (L4b-3c); Undo for a deleted note (BR-13) | small | patch to be cut fresh |
 | R5 | rooms | You, Settings, Your data, What Yumi sees, About (L4b-3e, two builds); the lasting not-synced line and the Export words (BR-30) | small | patch to be cut fresh |
+| F2 | features | Deeper Yumi, her complexity and character (ruled in 23 Nov; built after the rooms (re-ruled 25 Nov); D2 still lands before any invite) | sized at its pre-flight | in design, its own chat |
+| D1b | data | Fix build 1b, part two: the profile and reader-model guards (BR-29) | data | not started |
+| D1c | data | Fix build 1b, part three: two devices overwriting each other (BR-04), by a re-read on return to the front and a check of the cloud's copy before each save | data | not started |
+| D2 | data | Fix build 2: the Yumi daily limit, docs/ off the live site, updates reaching readers | data | not started |
+| F3 | features | ElevenLabs dictation (ruled in 23 Nov; after D2, it adds paid calls per reader) | sized at its pre-flight | in design, its own chat |
 | R6 | rooms | Tell Preston | small | not started |
 | R7 | rooms | First run, the hide switch for out-of-beta rooms (L5), the sky's motion switch | small | design open |
 | F1 | features | The demo page, no sign-in (ruled in 23 Nov; LAST of the builds, after the rooms and Deeper Yumi, so it shows the finished app) | sized at its pre-flight | in design, its own chat |
@@ -115,7 +119,7 @@ Ruled 2026-11-24: a data build is handed to Claude Code as a short brief (the ho
 - The first run: how many screens, and whether the click-through guides stay or
   become tips.
 - Yumi's speaking voice (text to speech): in or out of the first beta.
-- Whether LC2 (the blue sky) lands before or after the first invites.
+- Where F3, R6 and R7 sit in the 25 Nov order (not re-ruled; left in their 23 Nov places).
 
 ## After the beta
 
