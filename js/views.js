@@ -29925,6 +29925,16 @@ function lxSkyHost(key) {
   var rec = { host: host, S: window.PraxisHand.Sky(host, {}), key: key, uid: null, holdT: null, held: false };
   lxSkies[key] = rec;
   lxWireSky(rec);
+  // LC2-b: on a phone's Home the status strip is see-through while the sky is under it. One observer, no
+  // scroll listener: <html data-sky-top> is set while Home's sky reaches the top of the screen, and cleared
+  // when the sky scrolls past or leaves the page. components.css (LC2-b) is the only reader.
+  if (key === 'home' && window.IntersectionObserver) {
+    rec.io = new window.IntersectionObserver(function (es) {
+      if (es.length && es[es.length - 1].isIntersecting) { document.documentElement.setAttribute('data-sky-top', ''); }
+      else { document.documentElement.removeAttribute('data-sky-top'); }
+    }, { rootMargin: '-60px 0px 0px 0px' });
+    rec.io.observe(host);
+  }
   return rec;
 }
 function lxWireSky(rec) {

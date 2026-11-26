@@ -20,6 +20,14 @@
 //                         var(--on-night-2) (lc2-fix1)
 //   g  THE SWITCH      -- js/views.js has "var LC2_BLUE_SKY = true;" once; sw.js reads praxis-v3.344 or a
 //                         later version (so the next build's bump does not turn Checks red)
+//   h  LC2-b, THE SKY TO THE TOP (phones, Home; ruled 26 Nov 2026) -- components.css has the LC2-b block once,
+//                         after LC2's end; every rule inside one @media (max-width:759px), every selector
+//                         starting html and carrying :not([data-sky="brown"]), no hex; --sky-top, Home's sky
+//                         margin and padding, Home's padding-top 0, .app-nav transparent only under
+//                         body:has(.home-page.home-sky-on), #statusbar-scrim var(--sky-blue) only under
+//                         html[data-sky-top]. views.js: one IntersectionObserver, in lxSkyHost, for 'home' only,
+//                         rootMargin '-60px 0px 0px 0px', touching only data-sky-top on <html>; scroll listeners
+//                         as many as at f6dc239 (4). LC2's block still 4 rules. sw.js praxis-v3.345 or later.
 // Where OLD comes from, in order: the second argument (a path to the old hand.js); else
 // `git show 93fe836:js/hand.js` run against [root]; else (a shallow clone, as on the Checks machine, or a
 // copy with no .git) the FINGERPRINTS below, which were read from OLD and are re-proven against OLD on
@@ -270,6 +278,73 @@ WScript.Echo('\ng THE SWITCH');
   check('views.js "var LC2_BLUE_SKY = true;"', count(v, 'var LC2_BLUE_SKY = true;'), 1);
   var m = /var CACHE_VERSION = 'praxis-v(\d+)\.(\d+)';/.exec(s), ver = m ? (parseInt(m[1], 10) * 100000 + parseInt(m[2], 10)) : 0;
   check('sw.js CACHE_VERSION is praxis-v3.344 or later' + (m ? ' (reads v' + m[1] + '.' + m[2] + ')' : ''), ver >= 300344, true); })();
+
+WScript.Echo('\nh LC2-b, THE SKY TO THE TOP (phones, Home)');
+(function () {
+  var c = '', v = '', s = '', blk = '', a, b, lc2End, body, rules = [], i, j, r, sel, decl, bad = 0, firstBad = '', nsel = 0, mo, depth, k, tail, head;
+  try { c = readFile(fso.BuildPath(root, 'assets\\components.css')); } catch (e) { c = ''; }
+  try { v = readFile(fso.BuildPath(root, 'js\\views.js')); } catch (e) { v = ''; }
+  try { s = readFile(fso.BuildPath(root, 'sw.js')); } catch (e) { s = ''; }
+  function trim(x) { return x.replace(/^\s+|\s+$/g, ''); }
+  // case a: the markers, once each, after LC2's end marker
+  check('LC2-b begin marker', count(c, 'LC2-b THE SKY TO THE TOP (phones, Home) -- begin'), 1);
+  check('LC2-b end marker', count(c, 'LC2-b THE SKY TO THE TOP (phones, Home) -- end'), 1);
+  a = c.indexOf('LC2-b THE SKY TO THE TOP (phones, Home) -- begin'); b = c.indexOf('LC2-b THE SKY TO THE TOP (phones, Home) -- end');
+  lc2End = c.indexOf('LC2 THE BLUE SKY -- end');
+  check('LC2-b block sits after LC2\'s end marker', lc2End >= 0 && a > lc2End && b > a, true);
+  if (a >= 0 && b > a) { a = c.lastIndexOf('/*', a); b = c.lastIndexOf('/*', b); blk = c.slice(a, b); }
+  // case b: one @media (max-width:759px) holds every rule; selectors html...:not([data-sky="brown"]); no hex
+  body = blk.replace(/\/\*[\s\S]*?\*\//g, '');
+  check('LC2-b block: @media blocks', count(body, '@media'), 1);
+  mo = body.indexOf('@media (max-width:759px){');
+  check('LC2-b block: opens with @media (max-width:759px){ and nothing before it', mo >= 0 && trim(body.slice(0, mo)) === '', true);
+  depth = 0; k = -1;
+  if (mo >= 0) { for (i = mo; i < body.length; i++) { if (body.charAt(i) === '{') { depth++; } else if (body.charAt(i) === '}') { depth--; if (depth === 0) { k = i; break; } } } }
+  tail = k >= 0 ? trim(body.slice(k + 1)) : 'unclosed';
+  check('LC2-b block: nothing after the @media closes', tail, '');
+  head = (mo >= 0 && k > mo) ? body.slice(body.indexOf('{', mo) + 1, k) : '';
+  r = head.split('}');
+  for (i = 0; i < r.length; i++) { if (r[i].indexOf('{') < 0) { continue; } rules.push({ sel: trim(r[i].slice(0, r[i].indexOf('{'))), decl: trim(r[i].slice(r[i].indexOf('{') + 1)) }); }
+  check('LC2-b block: rules inside the @media (7)', rules.length, 7);
+  for (i = 0; i < rules.length; i++) { sel = rules[i].sel.split(',');
+    for (j = 0; j < sel.length; j++) { nsel++; if (trim(sel[j]).indexOf('html') !== 0 || sel[j].indexOf(':not([data-sky="brown"])') < 0) { bad++; if (!firstBad) { firstBad = trim(sel[j]); } } } }
+  check('LC2-b block: selectors (8)', nsel, 8);
+  check('LC2-b block: selectors not starting html with :not([data-sky="brown"])' + (firstBad ? ' (first: ' + firstBad + ')' : ''), bad, 0);
+  check('LC2-b block: hex colours', (blk.match(/#[0-9a-fA-F]{3,8}\b/g) || []).length + (blk ? '' : ' (no block)'), '0');
+  // case c: the declarations
+  function find(selPart, declPart) { var n = 0, q; for (q = 0; q < rules.length; q++) { if (rules[q].sel.indexOf(selPart) !== -1 && rules[q].decl.indexOf(declPart) !== -1) { n++; } } return n; }
+  check('--sky-top: calc(72px + env(safe-area-inset-top, 0px)) on html', find('html:not([data-sky="brown"])', '--sky-top:calc(72px + env(safe-area-inset-top, 0px))'), 1);
+  check('Home\'s sky: margin-top calc(-1 * var(--sky-top))', find('.home-page.lum-amber-deep.home-sky-on > .sky.lx-sky', 'margin-top:calc(-1 * var(--sky-top))'), 1);
+  check('Home\'s sky: padding-top var(--sky-top)', find('.home-page.lum-amber-deep.home-sky-on > .sky.lx-sky', 'padding-top:var(--sky-top)'), 1);
+  check('Home: padding-top 0', find('.home-page.lum-amber-deep.home-sky-on', 'padding-top:0'), 1);
+  (function () { var n = 0, off = 0, q; for (q = 0; q < rules.length; q++) { if (rules[q].sel.indexOf('.app-nav') !== -1 && rules[q].decl.indexOf('transparent') !== -1) { n++; if (rules[q].sel.indexOf('body:has(.home-page.home-sky-on) .app-nav') === -1) { off++; } } }
+    check('.app-nav transparent: rules', n, 1);
+    check('  every one under body:has(.home-page.home-sky-on)', off, 0);
+    check('  background:transparent', find('body:has(.home-page.home-sky-on) .app-nav', 'background:transparent'), 1); })();
+  (function () { var n = 0, off = 0, q; for (q = 0; q < rules.length; q++) { if (rules[q].decl.indexOf('var(--sky-blue)') !== -1) { n++; if (rules[q].sel.indexOf('html[data-sky-top]') !== 0 || rules[q].sel.indexOf('#statusbar-scrim') === -1) { off++; } } }
+    check('#statusbar-scrim var(--sky-blue): rules', n, 1);
+    check('  every one starts html[data-sky-top] and colours #statusbar-scrim', off, 0); })();
+  // case d: views.js, one observer in lxSkyHost for 'home' only, touching only <html data-sky-top>; no new scroll listener
+  (function () { var f0 = v.indexOf('function lxSkyHost('), f1 = v.indexOf('\nfunction ', f0 + 1), fn = (f0 >= 0 && f1 > f0) ? v.slice(f0, f1) : '', g0, g1, io;
+    check('views.js: IntersectionObserver constructions in the file', count(v, 'new window.IntersectionObserver(') + count(v, 'new IntersectionObserver('), 1);
+    check('  that one is inside lxSkyHost', count(fn, 'new window.IntersectionObserver('), 1);
+    check('  guarded by key === \'home\'', count(fn, 'if (key === \'home\' && window.IntersectionObserver) {'), 1);
+    check('  rootMargin \'-60px 0px 0px 0px\'', count(fn, 'rootMargin: \'-60px 0px 0px 0px\''), 1);
+    g0 = fn.indexOf('new window.IntersectionObserver('); g1 = fn.indexOf('rec.io.observe(host);', g0); io = (g0 >= 0 && g1 > g0) ? fn.slice(g0, g1) : '';
+    check('  its callback: setAttribute calls (1, document.documentElement data-sky-top)', count(io, 'setAttribute(') + ' ' + count(io, 'document.documentElement.setAttribute(\'data-sky-top\''), '1 1');
+    check('  its callback: removeAttribute calls (1, document.documentElement data-sky-top)', count(io, 'removeAttribute(') + ' ' + count(io, 'document.documentElement.removeAttribute(\'data-sky-top\''), '1 1');
+    check('  data-sky-top in views.js only inside lxSkyHost', count(v, 'data-sky-top') === count(fn, 'data-sky-top') && count(fn, 'data-sky-top') > 0, true);
+    check('views.js: addEventListener(\'scroll\' as at f6dc239 (4)', count(v, 'addEventListener(\'scroll\'') + ' ' + count(v, 'addEventListener("scroll"') + ' ' + count(v, 'onscroll'), '4 0 0');
+    check('  no scroll listener inside lxSkyHost', count(fn, 'addEventListener(\'scroll\'') +count(fn, 'addEventListener("scroll"') + count(fn, 'onscroll'), 0); })();
+  // case e: LC2's block untouched in shape (its full cases are f above)
+  (function () { var x = c.indexOf('LC2 THE BLUE SKY -- begin'), y = c.indexOf('LC2 THE BLUE SKY -- end'), lb = '', n = 0, rr, q;
+    if (x >= 0 && y > x) { lb = c.slice(c.lastIndexOf('/*', x), c.lastIndexOf('/*', y)).replace(/\/\*[\s\S]*?\*\//g, ''); }
+    rr = lb.split('}'); for (q = 0; q < rr.length; q++) { if (rr[q].indexOf('{') >= 0) { n++; } }
+    check('LC2 block: still 4 rules', n, 4); })();
+  // case f: the version
+  (function () { var m = /var CACHE_VERSION = 'praxis-v(\d+)\.(\d+)';/.exec(s), ver = m ? (parseInt(m[1], 10) * 100000 + parseInt(m[2], 10)) : 0;
+    check('sw.js CACHE_VERSION is praxis-v3.345 or later' + (m ? ' (reads v' + m[1] + '.' + m[2] + ')' : ''), ver >= 300345, true); })();
+})();
 
 WScript.Echo('\n' + (total - failures) + ' of ' + total + ' passed, ' + failures + ' failed');
 WScript.Quit(failures ? 1 : 0);

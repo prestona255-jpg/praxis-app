@@ -18434,3 +18434,23 @@ html:not([data-sky="brown"]) .sky .orb .l,
 html:not([data-sky="brown"]) .sky .hint{text-shadow:var(--sky-edge)}
 html:not([data-sky="brown"]) .sky .quiet{color:var(--on-night-2);text-shadow:var(--sky-edge)}
 /* === LC2 THE BLUE SKY -- end === */
+/* === LC2-b THE SKY TO THE TOP (phones, Home) -- begin ===
+   LC2-b (ruled 26 Nov 2026, from the LC2 phone check: "the top brown space throws me off"): on a phone's Home
+   the blue sky runs to the very top of the screen, as the Style Study drew it. Three things stood above the sky:
+   the phone's status strip, the praxis bar and a 30px gap. Here the gap goes, the sky slides up under the bar
+   (--sky-top is taller than the bar on purpose: the spare runs off the top of the page, never short of it), the
+   bar is see-through with its words in the sky's own text colour, and the status strip is the sky's blue while
+   the sky is under it (<html data-sky-top>, set by views.js), so the clock always sits on a clean field; once the
+   sky scrolls past, the strip is the page colour again, as before. Home only, phones only, blue sky only: every other page, 760px and wider, and
+   <html data-sky="brown"> are as they were. Tokens only. */
+@media (max-width:759px){
+  html:not([data-sky="brown"]){--sky-top:calc(72px + env(safe-area-inset-top, 0px))}
+  html:not([data-sky="brown"]) .home-page.lum-amber-deep.home-sky-on{padding-top:0}
+  html:not([data-sky="brown"]) .home-page.lum-amber-deep.home-sky-on > .sky.lx-sky{margin-top:calc(-1 * var(--sky-top));padding-top:var(--sky-top)}
+  html:not([data-sky="brown"]) body:has(.home-page.home-sky-on) .app-nav{background:transparent;border-bottom-color:transparent}
+  html:not([data-sky="brown"]) body:has(.home-page.home-sky-on) .app-nav-wordmark,
+  html:not([data-sky="brown"]) body:has(.home-page.home-sky-on) .app-nav-searchpill{color:var(--on-night);text-shadow:var(--sky-edge)}
+  html:not([data-sky="brown"]) #statusbar-scrim{transition:background-color var(--dur-half) var(--ease)}
+  html[data-sky-top]:not([data-sky="brown"]) #statusbar-scrim{background:var(--sky-blue)}
+}
+/* === LC2-b THE SKY TO THE TOP (phones, Home) -- end === */

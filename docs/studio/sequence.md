@@ -31,6 +31,12 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-26 (LC2-b: the sky to the top on a phone's Home, v3.345)** -- BETA.md's new row LC2-b, after LC2 and before Find a
+  book (R2). Ruled by Preston on 26 Nov from his phone check of LC2 on v3.344 (Home "looks good but the top brown space
+  throws me off"; "sky to the top", "sky only"); his ruling, recorded as made, so no `PROPOSED:` flag. Applied byte for
+  byte from the build chat's lc2b.patch (cut on f6dc239). Phones only, Home only, blue sky only: the 30 px gap goes, the
+  sky slides up under a see-through praxis bar, the status strip is the sky's blue while the sky is under it (one
+  IntersectionObserver, `<html data-sky-top>`). Closes LC2's R-2 for Home. Find a book stays next.
 - **2026-11-26 (LC2: the blue sky and sunset burst, v3.344)** -- BETA.md's row LC2. The order after R3 was re-ruled by
   Preston on 26 Nov ("could we do the sky build next once the book page is good"; BETA.md leads): LC2 before Find a book
   (R2). His ruling, recorded as made, so no `PROPOSED:` flag. Applied byte for byte from the build chat's patch (cut on
@@ -1799,7 +1805,8 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   past the edge.
   · **L4b-4** — the capture dial, the hold menu, status behind the cover, the hint. Needs L4b-3 (book). Medium.
   · **LC2** — the blue sky and the sunset burst. Needs L4 AND a new `hand.js` from a design sitting (ledger E1). Engine.
-    BUILT 26 Nov 2026 at v3.344 (BETA.md row LC2, after the book page and before Find a book); record `docs/checkpoints/lc2.md`.
+    BUILT 26 Nov 2026 at v3.344 (BETA.md row LC2, after the book page and before Find a book); pushed f6dc239; record `docs/checkpoints/lc2.md`.
+    LC2-b (the sky to the top on a phone's Home, ruled 26 Nov from the LC2 phone check) BUILT 26 Nov at v3.345; record `docs/checkpoints/lc2b.md`.
   · **L4b-5** — the empty rooms. Needs W1–W3 ruled; ideally with L5. Small.
   History — the single L4b entry as written (ruling 79, 2026-10-29; after L4, before L5) — the rooms no lane owned: Search
   redrawn (r45: the labelled pill, scope under the box, one list in three groups) · the lens page (r46) · the category
