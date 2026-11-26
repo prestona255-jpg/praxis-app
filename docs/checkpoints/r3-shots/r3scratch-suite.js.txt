@@ -1,0 +1,127 @@
+// SCRATCH suite for R3's proofs 6 and 10 -- lives only in a temp copy of the tree, never in the repo.
+'use strict';
+
+rigSuite(async function () {
+  const U = 'r3-reader';
+  const LATCHES_OPEN = 'booksLoaded === true && arcsLoaded === true && subTheoriesLoaded === true && themesLoaded === true && artifactsLoaded === true && notebookLoaded === true';
+  async function reopen(d) { d.close(); await d.open(); await d.waitFor(LATCHES_OPEN, 40000); await d.wait(1200); return d; }
+  const go = async (d, h) => { await d.ev('location.hash = ' + J(h)); await d.wait(700); };
+  const route = (d) => d.ev("location.hash");
+  const backLabel = (d) => d.ev("(function(){ var b = document.querySelector('#app .ol-bar .ol-back span'); return b ? b.textContent : null; })()");
+  const clickBack = async (d) => { await d.ev("document.querySelector('#app .ol-bar .ol-back').click()"); await d.wait(700); };
+  const click = async (d, sel) => { const r = await d.ev('(function(){ var e = document.querySelector(' + J(sel) + '); if (!e) { return false; } e.click(); return true; })()'); await d.wait(500); return r; };
+  const clickText = async (d, sel, txt) => { const r = await d.ev('(function(){ var l = document.querySelectorAll(' + J(sel) + '), i; for (i = 0; i < l.length; i++) { if (l[i].textContent.replace(/^\\s+|\\s+$/g, "") === ' + J(txt) + ') { l[i].click(); return true; } } return false; })()'); await d.wait(500); return r; };
+  const art = (d, k) => d.ev('(function(){ var a = state.bookArtifacts[' + J(k) + ']; return a ? { body: a.body, up: a.updatedAt, on: a.yumiMayRead === true } : null; })()');
+  const cloudBody = (k) => { const a = get(rig.cloud.arts(U), k); return a ? get(a, 'body') : null; };
+  const typeArt = async (d, words) => d.ev('(function(){ var t = document.querySelector(".bk4 .bk4-ta"); if (!t) { return false; } t.value = ' + J(words) + '; t.dispatchEvent(new Event("input")); return true; })()');
+
+  await stage('setup', 'a reader with a book in two lenses, a category, notes and an artifact');
+  const P = await (await rig.device('phone').open()).sign_in(U);
+  const b1 = await P.ev("T.addBook('The Full Book')");
+  const b2 = await P.ev("T.addBook('A Bare Book')");
+  const cat = await P.ev("(function(){ var c = ['Philosophy','History','Fiction','Psychology','Science'], i; for (i = 0; i < c.length; i++) { if (isValidCategoryLabel(c[i])) { return c[i]; } } return null; })()");
+  await P.ev('(function(){ state.books[' + J(b1) + '].category = ' + J(cat) + '; state.books[' + J(b1) + "].status = 'reading'; markBooksDirty(); saveState(); })()");
+  const l1 = await P.ev("T.lens('Lens One')"), l2 = await P.ev("T.lens('Lens Two')");
+  await P.ev('(function(){ assignBookToTheme(' + J(l1) + ',' + J(b1) + '); assignBookToTheme(' + J(l2) + ',' + J(b1) + '); assignBookToTheme(' + J(l1) + ',' + J(b2) + '); markThemesDirty(); saveState(); })()');
+  await P.ev("captureNote('marginalia', 'a mark on the full book', 'inbox', [" + J(b1) + "], true)");
+  const k1 = await P.ev('T.artifact(' + J(b1) + ", 'the first words of the artifact')");
+  await P.wait(1000);
+  check('setup category valid, artifact in the cloud', [!!cat, cloudBody(k1)], [true, 'the first words of the artifact']);
+
+  // ---------------- proof 6: saving with no signal, the app closed, the signal back
+  await stage('p6', 'artifact page: no signal, Edit, change the words, Save; close; signal back; reopen');
+  await go(P, '#artifact/' + b1);
+  check('p6 the new artifact page is drawn', await P.ev("!!document.querySelector('#app .bk4.bk4a')"), true);
+  rig.cloud.offline.add('phone');
+  check('p6 Edit opens the field', [await click(P, '#bk4-edit'), await P.ev("!!document.querySelector('.bk4 .bk4-ta')")], [true, true]);
+  await typeArt(P, 'words changed with no signal');
+  const before6 = await art(P, k1);
+  check('p6 Save', await clickText(P, '.bk4 .bk4-two button', 'Save'), true);
+  const after6 = await art(P, k1);
+  check('p6 on the device at once: body changed, updatedAt moved on', [after6.body, after6.up > before6.up], ['words changed with no signal', true]);
+  check('p6 the cloud still has the old words while offline', cloudBody(k1), 'the first words of the artifact');
+  await P.wait(400);
+  P.close(); rig.cloud.offline.delete('phone'); await reopen(P);
+  check('p6 after reopen: the new words on the device and in the cloud', [(await art(P, k1)).body, cloudBody(k1)], ['words changed with no signal', 'words changed with no signal']);
+  const Lp = await (await rig.device('laptop').open()).sign_in(U);
+  await Lp.waitFor(LATCHES_OPEN, 40000); await Lp.wait(800);
+  check('p6 a second device reads the new words', (await art(Lp, k1)).body, 'words changed with no signal');
+  Lp.close();
+
+  // ---------------- proof 10: the taps
+  await stage('t1', 'Back names and returns to the room the book was opened from');
+  const rooms = [['#search', 'Search'], ['#home', 'Home'], ['#notebook', 'Notebook'], ['#books', 'Shelf'], ['#lenses', 'Lenses'], ['#profile', 'You']];
+  for (const [h, want] of rooms) {
+    await go(P, h); await go(P, '#book/' + b1);
+    const lab = await backLabel(P); await clickBack(P);
+    check('t1 from ' + h + ': Back reads ' + want + ' and lands there', [lab, await route(P)], [want, h]);
+  }
+  await go(P, '#search'); await go(P, '#book/' + b1); await go(P, '#artifact/' + b1);
+  check('t1 the artifact page Back reads The book', await backLabel(P), 'The book');
+  await clickBack(P);
+  check('t1 Search, book, artifact, The book: back on the book, Back still Search', [await route(P), await backLabel(P)], ['#book/' + b1, 'Search']);
+  await clickBack(P);
+  check('t1 then Back lands on Search', await route(P), '#search');
+
+  await stage('t2', 'Home, a lens, a book from it; a lens row on the book; no book-lens-book walk');
+  await go(P, '#home'); await go(P, '#lens/' + l1);
+  check('t2 the lens opened from Home: its Back reads Home', await backLabel(P), 'Home');
+  await go(P, '#book/' + b1);
+  check('t2 the book opened from the lens: Back reads Lens', await backLabel(P), 'Lens');
+  const rowOk = await clickText(P, '.bk4 .ol-left .ol-rw .ol-c', 'Lens Two');
+  await P.wait(300);
+  check('t2 a lens row on the book opens that lens; its Back reads Book', [rowOk, await route(P), await backLabel(P)], [true, '#lens/' + l2, 'Book']);
+  await clickBack(P);
+  check('t2 that Back returns to the book, whose Back still reads Lens', [await route(P), await backLabel(P)], ['#book/' + b1, 'Lens']);
+  await clickBack(P);
+  check('t2 the book Back returns to the FIRST lens, whose Back reads Home', [await route(P), await backLabel(P)], ['#lens/' + l1, 'Home']);
+  await clickBack(P);
+  check('t2 and lands on Home', await route(P), '#home');
+
+  await stage('t3', 'the category line is a door; its Back reads Book and returns');
+  await go(P, '#books'); await go(P, '#book/' + b1);
+  check('t3 the category line opens the category', [await click(P, '.bk4 .bk4-cat'), (await route(P)).indexOf('#category/') === 0, await backLabel(P)], [true, true, 'Book']);
+  await clickBack(P);
+  check('t3 its Back returns to the book (Back still Shelf)', [await route(P), await backLabel(P)], ['#book/' + b1, 'Shelf']);
+
+  await stage('t4', 'the status row and its toast Undo');
+  const st = () => P.ev('(function(){ var b = state.books[' + J(b1) + ']; return { s: normalizeStatus(b.status), fin: b.hasOwnProperty("finishedAt") }; })()');
+  check('t4 before', await st(), { s: 'reading', fin: false });
+  await click(P, '#bk4-srow');
+  check('t4 the status row opens three choices', await P.ev("document.querySelectorAll('.bk4 .bk4-segw .ol-seg button').length"), 3);
+  await clickText(P, '.bk4 .bk4-segw .ol-seg button', 'Have read');
+  check('t4 Have read: status read, finishedAt stamped, toast says so', [await st(), await P.ev("document.querySelector('#lx-toast .lx-toast-t').textContent")], [{ s: 'read', fin: true }, 'Have read.']);
+  await P.wait(700);
+  check('t4 the change reached the cloud', rig.cloud.book(U, b1).status, 'read');
+  await click(P, '#lx-toast .lx-toast-b');
+  await P.wait(700);
+  check('t4 Undo puts back the status and removes finishedAt (device and cloud)', [await st(), rig.cloud.book(U, b1).status, rig.cloud.book(U, b1).finishedAt === undefined], [{ s: 'reading', fin: false }, 'reading', true]);
+
+  await stage('t5', 'More about this book opens, survives the page\'s own re-render, closes');
+  const moreOpen = () => P.ev("!!document.querySelector('#app .bk4 .bk4-more')");
+  check('t5 closed on arrival', await moreOpen(), false);
+  await click(P, '#bk4-mrow');
+  check('t5 opens', [await moreOpen(), await P.ev("document.getElementById('bk4-mrow').getAttribute('aria-expanded')")], [true, 'true']);
+  await click(P, '#bk4-srow');   // the page re-renders itself
+  check('t5 stays open across the page\'s own re-render', await moreOpen(), true);
+  await click(P, '#bk4-srow');
+  await click(P, '#bk4-mrow');
+  check('t5 closes', await moreOpen(), false);
+
+  await stage('t6', 'artifact page: Cancel keeps the saved words; Save writes body and updatedAt; the switch flips');
+  await go(P, '#artifact/' + b1);
+  const a0 = await art(P, k1);
+  await click(P, '#bk4-edit'); await typeArt(P, 'words that should not be kept');
+  await clickText(P, '.bk4 .bk4-two button', 'Cancel');
+  check('t6 Cancel leaves the saved words', [(await art(P, k1)).body, await P.ev("document.querySelector('.bk4 .bk4-body').textContent")], [a0.body, a0.body]);
+  await click(P, '#bk4-edit'); await typeArt(P, 'the artifact, revised');
+  await clickText(P, '.bk4 .bk4-two button', 'Save');
+  const a1 = await art(P, k1);
+  await P.wait(700);
+  check('t6 Save writes body and updatedAt (device and cloud)', [a1.body, a1.up > a0.up, cloudBody(k1)], ['the artifact, revised', true, 'the artifact, revised']);
+  const sw = await P.ev("(function(){ var s = document.querySelector('.bk4 .art-may-switch'); s.click(); return s.getAttribute('aria-checked'); })()");
+  await P.wait(700);
+  check('t6 the switch flips yumiMayRead (device and cloud)', [sw, (await art(P, k1)).on, get(get(rig.cloud.arts(U), k1), 'yumiMayRead')], ['true', true, true]);
+
+  check('page errors on every device', [P.errors.length ? P.errors : 0], [0]);
+});

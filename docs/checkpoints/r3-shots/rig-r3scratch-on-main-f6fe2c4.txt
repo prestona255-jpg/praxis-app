@@ -1,0 +1,32 @@
+
+[setup] a reader with a book in two lenses, a category, notes and an artifact
+  PASS  setup category valid, artifact in the cloud
+
+[p6] artifact page: no signal, Edit, change the words, Save; close; signal back; reopen
+  FAIL  p6 the new artifact page is drawn
+        got  false
+        want true
+  FAIL  p6 Edit opens the field
+        got  [false,false]
+        want [true,true]
+  FAIL  p6 Save
+        got  false
+        want true
+  FAIL  p6 on the device at once: body changed, updatedAt moved on
+        got  ["the first words of the artifact",false]
+        want ["words changed with no signal",true]
+  PASS  p6 the cloud still has the old words while offline
+  FAIL  p6 after reopen: the new words on the device and in the cloud
+        got  ["the first words of the artifact","the first words of the artifact"]
+        want ["words changed with no signal","words changed with no signal"]
+  FAIL  p6 a second device reads the new words
+        got  "the first words of the artifact"
+        want "words changed with no signal"
+
+[t1] Back names and returns to the room the book was opened from
+
+  STOPPED in [t1]: TypeError: Cannot read properties of null (reading 'click')
+
+main-f6fe2c4: 2 / 8 passed, 6 failed, then STOPPED in [t1]
+RIG-DONE
+RUNNER: main-f6fe2c4 took 20 s, 2026-11-25 16:11

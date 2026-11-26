@@ -1,0 +1,392 @@
+== r3-test on the CRLF working copy
+  FAIL  self-check (expected to FAIL)
+        got  1
+        want 2
+
+B1 bk4Here
+  PASS  same room, same id  = true
+  PASS  same room, another id  = false
+  PASS  the artifact of the same book is another page  = false
+  PASS  an empty host  = false
+  PASS  no host  = false
+  PASS  a first child with no getAttribute (a text node)  = false
+
+B2 bk4Notes
+  PASS  b1: own marginalia + question, seed marginalia; newest first; a tie by id  = n2,n6,s1,n1
+  PASS  b2: only its own note  = n5
+  PASS  a book with nothing  =
+  PASS  another reader sees the seed marginalia and none of mine  = s1
+  PASS  no notebook at all  =
+
+B3 bk4Day
+  PASS  0  =
+  PASS  undefined  =
+  PASS  a string  =
+  PASS  a negative stamp  =
+  PASS  a real stamp gives words  = true
+
+B4 bk4Artifact
+  PASS  own artifact found  = x
+  PASS  none for another book  = null
+  PASS  signed out  = null
+  PASS  no artifacts map  = null
+
+B5 Back labels
+  PASS  a lens opened from a book  = Book
+  PASS  a lens opened from the Shelf (unchanged)  = Shelf
+  PASS  a lens with no origin (unchanged)  = Home
+  PASS  a category opened from a book  = Book
+  PASS  a category opened from Home (unchanged)  = Home
+  PASS  a category with no origin (unchanged)  = Shelf
+
+B6 the book page's Back returns to where the book was opened from
+  PASS  before any arrival: the Shelf  = Shelf #books
+  PASS  from Search  = Search #search
+  PASS  from Home  = Home #home
+  PASS  from the Notebook  = Notebook #notebook
+  PASS  from You  = You #profile
+  PASS  from Lenses  = Lenses #lenses
+  PASS  from the Shelf  = Shelf #books
+  PASS  back from its artifact keeps Search  = Search
+  PASS  back from a note keeps Search  = Search
+  PASS  from another book keeps Search  = Search
+  PASS  from an arc: the Shelf  = Shelf #books
+  PASS  a cold load: the Shelf  = Shelf
+  PASS  no route before: the Shelf  = Shelf
+  PASS  from a lens opened from Home  = Lens lens/L1
+  PASS    back from a lens opened from this book: the first lens is kept  = lens/L1
+  PASS    Back goes to the first lens  = #lens/L1
+  PASS    and hands it its own Back again (no book -> lens -> book walk)  = home
+  PASS  from a category opened from the Shelf  = Category category/Theory
+  PASS    back from a category opened from this book: the first is kept  = category/Theory
+  PASS    Back goes to the first category  = #category/Theory
+  PASS    and hands it its own Back again  = books
+  PASS  Back to a room leaves the lens bookkeeping alone  = book/b1
+
+B7 the source
+  PASS  the safety switch, declared once and on  = 1
+  FAIL    and it is the artifact page's first statement
+        got  0
+        want 1
+  PASS  renderBookDetail defined once  = 1
+  PASS  renderBookDetailV1 defined once  = 1
+  PASS  renderArtifactV1 defined once  = 1
+  FAIL  signed out renders the earlier book page
+        got  0
+        want 1
+  FAIL  the router calls bk4Arrive once, just above the line that moves olPrev on
+        got  0
+        want 1
+  FAIL  the book page's Back is bk4GoBack, once
+        got  0
+        want 1
+  FAIL  renderRoute's lens bookkeeping line is as L4b-2a left it
+        got  0
+        want 1
+  PASS    and a book is still not a room there  = 0
+  PASS  no new storage key in the block (sv / ls never called)  = 0
+
+B8 the CSS block
+  PASS  one begin marker and one end marker  = 2
+  FAIL  every rule (and every selector in a list) starts .lx.ol.bk4
+        got  3
+        want 0
+  PASS    the mood prefix is used exactly twice (the Day field: day, and auto in light)  = 2
+  PASS    and there are rules to check  = true
+  PASS  no hex colour in the block  = false
+  PASS  every font size in the block is a --ts-* token  = 0
+  PASS    and the block has text sizes at all  = true
+  PASS  no z-index in the block  = 0
+  FAIL  the writing field is named once in the 16 px phone rule
+        got  0
+        want 1
+
+61/68 passed
+== r3-test on the LF copy of the index
+  FAIL  self-check (expected to FAIL)
+        got  1
+        want 2
+
+B1 bk4Here
+  PASS  same room, same id  = true
+  PASS  same room, another id  = false
+  PASS  the artifact of the same book is another page  = false
+  PASS  an empty host  = false
+  PASS  no host  = false
+  PASS  a first child with no getAttribute (a text node)  = false
+
+B2 bk4Notes
+  PASS  b1: own marginalia + question, seed marginalia; newest first; a tie by id  = n2,n6,s1,n1
+  PASS  b2: only its own note  = n5
+  PASS  a book with nothing  =
+  PASS  another reader sees the seed marginalia and none of mine  = s1
+  PASS  no notebook at all  =
+
+B3 bk4Day
+  PASS  0  =
+  PASS  undefined  =
+  PASS  a string  =
+  PASS  a negative stamp  =
+  PASS  a real stamp gives words  = true
+
+B4 bk4Artifact
+  PASS  own artifact found  = x
+  PASS  none for another book  = null
+  PASS  signed out  = null
+  PASS  no artifacts map  = null
+
+B5 Back labels
+  PASS  a lens opened from a book  = Book
+  PASS  a lens opened from the Shelf (unchanged)  = Shelf
+  PASS  a lens with no origin (unchanged)  = Home
+  PASS  a category opened from a book  = Book
+  PASS  a category opened from Home (unchanged)  = Home
+  PASS  a category with no origin (unchanged)  = Shelf
+
+B6 the book page's Back returns to where the book was opened from
+  PASS  before any arrival: the Shelf  = Shelf #books
+  PASS  from Search  = Search #search
+  PASS  from Home  = Home #home
+  PASS  from the Notebook  = Notebook #notebook
+  PASS  from You  = You #profile
+  PASS  from Lenses  = Lenses #lenses
+  PASS  from the Shelf  = Shelf #books
+  PASS  back from its artifact keeps Search  = Search
+  PASS  back from a note keeps Search  = Search
+  PASS  from another book keeps Search  = Search
+  PASS  from an arc: the Shelf  = Shelf #books
+  PASS  a cold load: the Shelf  = Shelf
+  PASS  no route before: the Shelf  = Shelf
+  PASS  from a lens opened from Home  = Lens lens/L1
+  PASS    back from a lens opened from this book: the first lens is kept  = lens/L1
+  PASS    Back goes to the first lens  = #lens/L1
+  PASS    and hands it its own Back again (no book -> lens -> book walk)  = home
+  PASS  from a category opened from the Shelf  = Category category/Theory
+  PASS    back from a category opened from this book: the first is kept  = category/Theory
+  PASS    Back goes to the first category  = #category/Theory
+  PASS    and hands it its own Back again  = books
+  PASS  Back to a room leaves the lens bookkeeping alone  = book/b1
+
+B7 the source
+  PASS  the safety switch, declared once and on  = 1
+  PASS    and it is the artifact page's first statement  = 1
+  PASS  renderBookDetail defined once  = 1
+  PASS  renderBookDetailV1 defined once  = 1
+  PASS  renderArtifactV1 defined once  = 1
+  PASS  signed out renders the earlier book page  = 1
+  PASS  the router calls bk4Arrive once, just above the line that moves olPrev on  = 1
+  PASS  the book page's Back is bk4GoBack, once  = 1
+  PASS  renderRoute's lens bookkeeping line is as L4b-2a left it  = 1
+  PASS    and a book is still not a room there  = 0
+  PASS  no new storage key in the block (sv / ls never called)  = 0
+
+B8 the CSS block
+  PASS  one begin marker and one end marker  = 2
+  PASS  every rule (and every selector in a list) starts .lx.ol.bk4  = 0
+  PASS    the mood prefix is used exactly twice (the Day field: day, and auto in light)  = 2
+  PASS    and there are rules to check  = true
+  PASS  no hex colour in the block  = false
+  PASS  every font size in the block is a --ts-* token  = 0
+  PASS    and the block has text sizes at all  = true
+  PASS  no z-index in the block  = 0
+  PASS  the writing field is named once in the 16 px phone rule  = 1
+
+68/68 passed
+== break a
+  FAIL  self-check (expected to FAIL)
+        got  1
+        want 2
+
+B1 bk4Here
+  PASS  same room, same id  = true
+  PASS  same room, another id  = false
+  PASS  the artifact of the same book is another page  = false
+  PASS  an empty host  = false
+  PASS  no host  = false
+  PASS  a first child with no getAttribute (a text node)  = false
+
+B2 bk4Notes
+  PASS  b1: own marginalia + question, seed marginalia; newest first; a tie by id  = n2,n6,s1,n1
+  PASS  b2: only its own note  = n5
+  PASS  a book with nothing  =
+  PASS  another reader sees the seed marginalia and none of mine  = s1
+  PASS  no notebook at all  =
+
+B3 bk4Day
+  PASS  0  =
+  PASS  undefined  =
+  PASS  a string  =
+  PASS  a negative stamp  =
+  PASS  a real stamp gives words  = true
+
+B4 bk4Artifact
+  PASS  own artifact found  = x
+  PASS  none for another book  = null
+  PASS  signed out  = null
+  PASS  no artifacts map  = null
+
+B5 Back labels
+  PASS  a lens opened from a book  = Book
+  PASS  a lens opened from the Shelf (unchanged)  = Shelf
+  PASS  a lens with no origin (unchanged)  = Home
+  PASS  a category opened from a book  = Book
+  PASS  a category opened from Home (unchanged)  = Home
+  PASS  a category with no origin (unchanged)  = Shelf
+
+B6 the book page's Back returns to where the book was opened from
+  PASS  before any arrival: the Shelf  = Shelf #books
+  PASS  from Search  = Search #search
+  PASS  from Home  = Home #home
+  PASS  from the Notebook  = Notebook #notebook
+  PASS  from You  = You #profile
+  PASS  from Lenses  = Lenses #lenses
+  PASS  from the Shelf  = Shelf #books
+  PASS  back from its artifact keeps Search  = Search
+  PASS  back from a note keeps Search  = Search
+  PASS  from another book keeps Search  = Search
+  PASS  from an arc: the Shelf  = Shelf #books
+  PASS  a cold load: the Shelf  = Shelf
+  PASS  no route before: the Shelf  = Shelf
+  PASS  from a lens opened from Home  = Lens lens/L1
+  FAIL    back from a lens opened from this book: the first lens is kept
+        got  lens/L2
+        want lens/L1
+  FAIL    Back goes to the first lens
+        got  #lens/L2
+        want #lens/L1
+  FAIL    and hands it its own Back again (no book -> lens -> book walk)
+        got  book/b1
+        want home
+  PASS  from a category opened from the Shelf  = Category category/Theory
+  FAIL    back from a category opened from this book: the first is kept
+        got  category/Fiction
+        want category/Theory
+  FAIL    Back goes to the first category
+        got  #category/Fiction
+        want #category/Theory
+  FAIL    and hands it its own Back again
+        got  book/b1
+        want books
+  PASS  Back to a room leaves the lens bookkeeping alone  = book/b1
+
+B7 the source
+  PASS  the safety switch, declared once and on  = 1
+  PASS    and it is the artifact page's first statement  = 1
+  PASS  renderBookDetail defined once  = 1
+  PASS  renderBookDetailV1 defined once  = 1
+  PASS  renderArtifactV1 defined once  = 1
+  PASS  signed out renders the earlier book page  = 1
+  PASS  the router calls bk4Arrive once, just above the line that moves olPrev on  = 1
+  PASS  the book page's Back is bk4GoBack, once  = 1
+  PASS  renderRoute's lens bookkeeping line is as L4b-2a left it  = 1
+  PASS    and a book is still not a room there  = 0
+  PASS  no new storage key in the block (sv / ls never called)  = 0
+
+B8 the CSS block
+  PASS  one begin marker and one end marker  = 2
+  PASS  every rule (and every selector in a list) starts .lx.ol.bk4  = 0
+  PASS    the mood prefix is used exactly twice (the Day field: day, and auto in light)  = 2
+  PASS    and there are rules to check  = true
+  PASS  no hex colour in the block  = false
+  PASS  every font size in the block is a --ts-* token  = 0
+  PASS    and the block has text sizes at all  = true
+  PASS  no z-index in the block  = 0
+  PASS  the writing field is named once in the 16 px phone rule  = 1
+
+62/68 passed
+== break b
+  FAIL  self-check (expected to FAIL)
+        got  1
+        want 2
+
+B1 bk4Here
+  PASS  same room, same id  = true
+  PASS  same room, another id  = false
+  PASS  the artifact of the same book is another page  = false
+  PASS  an empty host  = false
+  PASS  no host  = false
+  PASS  a first child with no getAttribute (a text node)  = false
+
+B2 bk4Notes
+  PASS  b1: own marginalia + question, seed marginalia; newest first; a tie by id  = n2,n6,s1,n1
+  PASS  b2: only its own note  = n5
+  PASS  a book with nothing  =
+  PASS  another reader sees the seed marginalia and none of mine  = s1
+  PASS  no notebook at all  =
+
+B3 bk4Day
+  PASS  0  =
+  PASS  undefined  =
+  PASS  a string  =
+  PASS  a negative stamp  =
+  PASS  a real stamp gives words  = true
+
+B4 bk4Artifact
+  PASS  own artifact found  = x
+  PASS  none for another book  = null
+  PASS  signed out  = null
+  PASS  no artifacts map  = null
+
+B5 Back labels
+  PASS  a lens opened from a book  = Book
+  PASS  a lens opened from the Shelf (unchanged)  = Shelf
+  PASS  a lens with no origin (unchanged)  = Home
+  PASS  a category opened from a book  = Book
+  PASS  a category opened from Home (unchanged)  = Home
+  PASS  a category with no origin (unchanged)  = Shelf
+
+B6 the book page's Back returns to where the book was opened from
+  PASS  before any arrival: the Shelf  = Shelf #books
+  PASS  from Search  = Search #search
+  PASS  from Home  = Home #home
+  PASS  from the Notebook  = Notebook #notebook
+  PASS  from You  = You #profile
+  PASS  from Lenses  = Lenses #lenses
+  PASS  from the Shelf  = Shelf #books
+  FAIL  back from its artifact keeps Search
+        got  Shelf
+        want Search
+  FAIL  back from a note keeps Search
+        got  Shelf
+        want Search
+  FAIL  from another book keeps Search
+        got  Shelf
+        want Search
+  PASS  from an arc: the Shelf  = Shelf #books
+  PASS  a cold load: the Shelf  = Shelf
+  PASS  no route before: the Shelf  = Shelf
+  PASS  from a lens opened from Home  = Lens lens/L1
+  PASS    back from a lens opened from this book: the first lens is kept  = lens/L1
+  PASS    Back goes to the first lens  = #lens/L1
+  PASS    and hands it its own Back again (no book -> lens -> book walk)  = home
+  PASS  from a category opened from the Shelf  = Category category/Theory
+  PASS    back from a category opened from this book: the first is kept  = category/Theory
+  PASS    Back goes to the first category  = #category/Theory
+  PASS    and hands it its own Back again  = books
+  PASS  Back to a room leaves the lens bookkeeping alone  = book/b1
+
+B7 the source
+  PASS  the safety switch, declared once and on  = 1
+  PASS    and it is the artifact page's first statement  = 1
+  PASS  renderBookDetail defined once  = 1
+  PASS  renderBookDetailV1 defined once  = 1
+  PASS  renderArtifactV1 defined once  = 1
+  PASS  signed out renders the earlier book page  = 1
+  PASS  the router calls bk4Arrive once, just above the line that moves olPrev on  = 1
+  PASS  the book page's Back is bk4GoBack, once  = 1
+  PASS  renderRoute's lens bookkeeping line is as L4b-2a left it  = 1
+  PASS    and a book is still not a room there  = 0
+  PASS  no new storage key in the block (sv / ls never called)  = 0
+
+B8 the CSS block
+  PASS  one begin marker and one end marker  = 2
+  PASS  every rule (and every selector in a list) starts .lx.ol.bk4  = 0
+  PASS    the mood prefix is used exactly twice (the Day field: day, and auto in light)  = 2
+  PASS    and there are rules to check  = true
+  PASS  no hex colour in the block  = false
+  PASS  every font size in the block is a --ts-* token  = 0
+  PASS    and the block has text sizes at all  = true
+  PASS  no z-index in the block  = 0
+  PASS  the writing field is named once in the 16 px phone rule  = 1
+
+65/68 passed

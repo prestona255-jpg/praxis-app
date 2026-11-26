@@ -1,0 +1,190 @@
+// tools/r3-test -- R3 (L4b-3b) unit harness: the book page (#book/<id>) and its artifact (#artifact/<id>).
+// Runs the SHIPPED code: the helpers are cut out of js/views.js by text and compiled here.
+//   B1  bk4Here        -- is this page the one on screen (the folds' reset rule)
+//   B2  bk4Notes       -- the notes on one book: the reader's own (Journal never; another reader
+//                         never), plus the seed worked example's marginalia; newest first; no doubles
+//   B3  bk4Day         -- a date line is empty for a missing stamp, never "Invalid Date"
+//   B4  bk4Artifact    -- the reader's own artifact for a book, or null
+//   B5  Back labels    -- a lens / a category opened from a book names its Back "Book"; the rest unchanged
+//   B6  the source     -- the safety switch is the artifact page's first statement; the earlier pages
+//                         survive under their V1 names, once each; renderRoute's bookkeeping is untouched
+//   B7  the CSS block  -- present once, every rule scoped under .lx.ol.bk4 (the Day field's two rules
+//                         carry the mood in front), no hex colour; every font size a --ts-* token of
+//                         the type scale; no z-index; the artifact's writing field is named in R1's
+//                         16 px phone rule so it keeps its own size
+// EXTENSIONLESS on purpose (see tools/parse-check). ASCII-only.
+// Usage:  cscript //nologo //E:jscript tools/r3-test [root]
+// Exit:   0 = every case passed . 1 = a case failed . 2 = could not load
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName));
+if (WScript.Arguments.length > 0) { root = String(WScript.Arguments(0)); }
+// CR stripped on read: a CRLF checkout (core.autocrlf=true) reads the same as the committed LF bytes.
+function readFile(p) { var s = fso.OpenTextFile(p, 1, false); var t = s.ReadAll(); s.Close(); return t.replace(/\r/g, ''); }
+
+var failures = 0, total = 0;
+function check(name, got, want) { total++; if (got === want) { WScript.Echo('  PASS  ' + name + '  = ' + got); } else { failures++; WScript.Echo('  FAIL  ' + name + '\n        got  ' + got + '\n        want ' + want); } }
+(function () { var b = failures; check('self-check (expected to FAIL)', 1, 2); if (failures - b !== 1) { WScript.Echo('HARNESS SELF-CHECK FAILED'); WScript.Quit(2); } failures = b; total--; })();
+
+function between(src, a, b) {
+  var i = src.indexOf(a), j = src.indexOf(b, i + 1);
+  if (i < 0 || j < 0) { throw new Error('anchor not found: ' + a + ' .. ' + b); }
+  if (src.indexOf(a, i + 1) !== -1) { throw new Error('anchor not unique: ' + a); }
+  return src.slice(i, j);
+}
+function count(src, a) { var n = 0, i = src.indexOf(a); while (i !== -1) { n++; i = src.indexOf(a, i + 1); } return n; }
+
+var vsrc, csrc, X;
+try {
+  vsrc = readFile(fso.BuildPath(root, 'js\\views.js'));
+  csrc = readFile(fso.BuildPath(root, 'assets\\components.css'));
+  var helpers = between(vsrc, 'function bk4Here(host, kind, id) {', 'function renderBookDetail(bookId) {');
+  var olNotesSrc = between(vsrc, 'function olNotes(uid, ids) {', 'function olNotesOf(list, reg) {');
+  var olLabel = between(vsrc, 'function olFromLabel() {', '// The notes on a lens');
+  var cpLabel = between(vsrc, 'function cpFromLabel() {', 'function cpHash(label) {');
+  X = (new Function('state', 'marginaliaForBook', 'artifactKey', 'location',
+    "var olFrom = 'home', cpFrom = 'books', bk4From = 'books', bk4FromBack = '';\n" + helpers + olNotesSrc + olLabel + cpLabel +
+    "\nreturn { here: bk4Here, notes: bk4Notes, day: bk4Day, art: bk4Artifact, ol: olFromLabel, cp: cpFromLabel," +
+    " setOl: function (v) { olFrom = v; }, setCp: function (v) { cpFrom = v; }, getOl: function () { return olFrom; }, getCp: function () { return cpFrom; }," +
+    " arrive: bk4Arrive, label: bk4FromLabel, back: bk4GoBack, from: function () { return bk4From; } };"));
+} catch (e) { WScript.Echo('LOAD FAILED: ' + e.message); WScript.Quit(2); }
+
+var U = 'u1', SEED = '__praxis_seed__';
+var ST = { notebookEntries: {}, bookArtifacts: {} };
+function note(id, uid, reg, bookIds, at) { ST.notebookEntries[id] = { id: id, userId: uid, register: reg, body: 'body ' + id, bookIds: bookIds, createdAt: at }; }
+note('n1', U, 'marginalia', ['b1'], 1000);
+note('n2', U, 'question', ['b1'], 5000);
+note('n3', U, 'journal', ['b1'], 9000);          // the Journal: never listed
+note('n4', 'other', 'marginalia', ['b1'], 8000);  // another reader: never listed
+note('n5', U, 'marginalia', ['b2'], 7000);        // another book: not listed
+note('s1', SEED, 'marginalia', ['b1'], 3000);     // the seed worked example's marginalia: listed
+note('s2', SEED, 'question', ['b1'], 4000);       // a seed question: not listed (as before)
+note('n6', U, 'marginalia', ['b1'], 5000);        // a tie on time: ordered by id
+function margFor(bookId) {   // the shipped marginaliaForBook's rule: marginalia on this book, seed's or the reader's own
+  var out = [], k, e, j, on;
+  for (k in ST.notebookEntries) {
+    if (!ST.notebookEntries.hasOwnProperty(k)) { continue; }
+    e = ST.notebookEntries[k]; on = false;
+    for (j = 0; j < e.bookIds.length; j++) { if (e.bookIds[j] === bookId) { on = true; } }
+    if (on && e.register === 'marginalia' && (e.userId === SEED || e.userId === U)) { out.push(e); }
+  }
+  return out;
+}
+function key(u, b) { return u + ':' + b; }
+var LOC = { hash: '' };
+var Y = X(ST, margFor, key, LOC);
+function ids(list) { var o = [], i; for (i = 0; i < list.length; i++) { o.push(list[i].id); } return o.join(','); }
+function host(attr) { return { firstChild: attr === null ? null : { getAttribute: function (n) { return n === 'data-bk4' ? attr : null; } } }; }
+
+WScript.Echo('\nB1 bk4Here');
+check('same room, same id', Y.here(host('book:b1'), 'book', 'b1'), true);
+check('same room, another id', Y.here(host('book:b2'), 'book', 'b1'), false);
+check('the artifact of the same book is another page', Y.here(host('artifact:b1'), 'book', 'b1'), false);
+check('an empty host', Y.here(host(null), 'book', 'b1'), false);
+check('no host', Y.here(null, 'book', 'b1'), false);
+check('a first child with no getAttribute (a text node)', Y.here({ firstChild: {} }, 'book', 'b1'), false);
+
+WScript.Echo('\nB2 bk4Notes');
+check('b1: own marginalia + question, seed marginalia; newest first; a tie by id', ids(Y.notes(U, 'b1')), 'n2,n6,s1,n1');
+check('b2: only its own note', ids(Y.notes(U, 'b2')), 'n5');
+check('a book with nothing', ids(Y.notes(U, 'b9')), '');
+check('another reader sees the seed marginalia and none of mine', ids(Y.notes('u2', 'b1')), 's1');
+ST.notebookEntries = null;
+check('no notebook at all', ids(Y.notes(U, 'b1')), '');
+
+WScript.Echo('\nB3 bk4Day');
+check('0', Y.day(0), '');
+check('undefined', Y.day(undefined), '');
+check('a string', Y.day('2026'), '');
+check('a negative stamp', Y.day(-5), '');
+check('a real stamp gives words', (typeof Y.day(1790000000000) === 'string') && Y.day(1790000000000).length > 0 && Y.day(1790000000000).indexOf('Invalid') === -1, true);
+
+WScript.Echo('\nB4 bk4Artifact');
+ST.bookArtifacts['u1:b1'] = { userId: U, bookId: 'b1', body: 'x' };
+check('own artifact found', Y.art(U, 'b1').body, 'x');
+check('none for another book', Y.art(U, 'b2'), null);
+check('signed out', Y.art(null, 'b1'), null);
+ST.bookArtifacts = null;
+check('no artifacts map', Y.art(U, 'b1'), null);
+
+WScript.Echo('\nB5 Back labels');
+Y.setOl('book/b1'); check('a lens opened from a book', Y.ol(), 'Book');
+Y.setOl('books'); check('a lens opened from the Shelf (unchanged)', Y.ol(), 'Shelf');
+Y.setOl(''); check('a lens with no origin (unchanged)', Y.ol(), 'Home');
+Y.setCp('book/b1'); check('a category opened from a book', Y.cp(), 'Book');
+Y.setCp('home'); check('a category opened from Home (unchanged)', Y.cp(), 'Home');
+Y.setCp(null); check('a category with no origin (unchanged)', Y.cp(), 'Shelf');
+
+WScript.Echo('\nB6 the book page\'s Back returns to where the book was opened from');
+function went() { LOC.hash = ''; Y.back(); return LOC.hash; }
+Y.setOl('home'); Y.setCp('books');
+check('before any arrival: the Shelf', Y.label() + ' ' + went(), 'Shelf #books');
+Y.arrive('search'); check('from Search', Y.label() + ' ' + went(), 'Search #search');
+Y.arrive('home'); check('from Home', Y.label() + ' ' + went(), 'Home #home');
+Y.arrive('notebook'); check('from the Notebook', Y.label() + ' ' + went(), 'Notebook #notebook');
+Y.arrive('profile'); check('from You', Y.label() + ' ' + went(), 'You #profile');
+Y.arrive('lenses'); check('from Lenses', Y.label() + ' ' + went(), 'Lenses #lenses');
+Y.arrive('books'); check('from the Shelf', Y.label() + ' ' + went(), 'Shelf #books');
+Y.arrive('search'); Y.arrive('artifact/b1'); check('back from its artifact keeps Search', Y.label(), 'Search');
+Y.arrive('note/n1'); check('back from a note keeps Search', Y.label(), 'Search');
+Y.arrive('book/b2'); check('from another book keeps Search', Y.label(), 'Search');
+Y.arrive('arc/a1'); check('from an arc: the Shelf', Y.label() + ' ' + went(), 'Shelf #books');
+Y.arrive('search'); Y.arrive(''); check('a cold load: the Shelf', Y.label(), 'Shelf');
+Y.arrive('search'); Y.arrive(undefined); check('no route before: the Shelf', Y.label(), 'Shelf');
+// a lens opened from Home, then a book from it: Back is the lens, and the lens keeps Home as its own Back
+Y.setOl('home'); Y.arrive('lens/L1');
+check('from a lens opened from Home', Y.label() + ' ' + Y.from(), 'Lens lens/L1');
+Y.setOl('book/b1');   // the reader taps a lens row on the book page: that lens's Back is this book
+Y.arrive('lens/L2');
+check('  back from a lens opened from this book: the first lens is kept', Y.from(), 'lens/L1');
+check('  Back goes to the first lens', went(), '#lens/L1');
+check('  and hands it its own Back again (no book -> lens -> book walk)', Y.getOl(), 'home');
+// a category opened from the Shelf, then a book from it
+Y.setCp('books'); Y.arrive('category/Theory');
+check('from a category opened from the Shelf', Y.label() + ' ' + Y.from(), 'Category category/Theory');
+Y.setCp('book/b1'); Y.arrive('category/Fiction');
+check('  back from a category opened from this book: the first is kept', Y.from(), 'category/Theory');
+check('  Back goes to the first category', went(), '#category/Theory');
+check('  and hands it its own Back again', Y.getCp(), 'books');
+Y.arrive('home'); Y.setOl('book/b1'); went();
+check('Back to a room leaves the lens bookkeeping alone', Y.getOl(), 'book/b1');
+
+WScript.Echo('\nB7 the source');
+check('the safety switch, declared once and on', count(vsrc, 'var BK4_ARTIFACT_PAGE = true;'), 1);
+check('  and it is the artifact page\'s first statement', count(vsrc, 'function renderArtifact(bookId) {\n  if (!BK4_ARTIFACT_PAGE) { renderArtifactV1(bookId); return; }\n'), 1);
+check('renderBookDetail defined once', count(vsrc, '\nfunction renderBookDetail(bookId) {'), 1);
+check('renderBookDetailV1 defined once', count(vsrc, '\nfunction renderBookDetailV1(bookId) {'), 1);
+check('renderArtifactV1 defined once', count(vsrc, '\nfunction renderArtifactV1(bookId) {'), 1);
+check('signed out renders the earlier book page', count(vsrc, '  if (!uid) { renderBookDetailV1(bookId); return; }\n'), 1);
+check('the router calls bk4Arrive once, just above the line that moves olPrev on', count(vsrc, "  if (parts[0] === 'book') { bk4Arrive(olPrev); }   // R3: the book page's Back returns to where it was opened from\n  olPrev = rest || 'home';\n"), 1);
+check('the book page\'s Back is bk4GoBack, once', count(vsrc, "  head.appendChild(bk4Bar(bk4GoBack, bk4FromLabel()));\n"), 1);
+check('renderRoute\'s lens bookkeeping line is as L4b-2a left it', count(vsrc, "  if (parts[0] === 'lens' && olRoomRoute(olPrev)) { olFrom = olPrev; }\n"), 1);
+check('  and a book is still not a room there', count(between(vsrc, 'function olRoomRoute(r) {', 'function olFromLabel() {'), "'book'"), 0);
+check('no new storage key in the block (sv / ls never called)', count(helpers, 'sv(') + count(helpers, 'ls(') + count(between(vsrc, 'function renderBookDetail(bookId) {', 'function renderBookDetailV1(bookId) {'), "sv('"), 0);
+
+WScript.Echo('\nB8 the CSS block');
+var BEG = '/* === L4b-3b THE BOOK PAGE AND ITS ARTIFACT', END = '/* === L4b-3b THE BOOK PAGE AND ITS ARTIFACT -- end === */';
+check('one begin marker and one end marker', count(csrc, BEG), 2);
+var blk = csrc.slice(csrc.indexOf(BEG)), lines = blk.split('\n'), i, bad = 0, rules = 0, inHead = true, L;
+for (i = 0; i < lines.length; i++) {
+  L = lines[i].replace(/^\s+/, '');
+  if (inHead) { if (L.indexOf('*/') !== -1) { inHead = false; } continue; }
+  if (L === '' || L === '}' || L.indexOf('@media') === 0 || L.indexOf('/*') === 0) { continue; }
+  rules++;
+  L = L.replace(/^html\[data-mood="(day|auto)"\] /, '');   // the Day field's two rules carry the mood in front; nothing else may
+  if (L.indexOf('.lx.ol.bk4') !== 0) { bad++; }
+  else { var sel = L.slice(0, L.indexOf('{')).split(','), s; for (s = 0; s < sel.length; s++) { if (sel[s].indexOf('.lx.ol.bk4') !== 0) { bad++; } } }
+}
+check('every rule (and every selector in a list) starts .lx.ol.bk4', bad, 0);
+check('  the mood prefix is used exactly twice (the Day field: day, and auto in light)', count(blk, 'html[data-mood='), 2);
+check('  and there are rules to check', rules > 30, true);
+check('no hex colour in the block', /#[0-9A-Fa-f]{3,8}\b/.test(blk.slice(blk.indexOf('*/'))), false);
+var body7 = blk.slice(blk.indexOf('*/')), decl = body7.match(/font(-size)?:[^;}]*/g) || [], raw7 = 0, d7;
+for (d7 = 0; d7 < decl.length; d7++) { if (decl[d7].indexOf('var(--ts-') === -1) { raw7++; } }
+check('every font size in the block is a --ts-* token', raw7, 0);
+check('  and the block has text sizes at all', decl.length > 15, true);
+check('no z-index in the block', count(body7, 'z-index'), 0);
+check('the writing field is named once in the 16 px phone rule', count(csrc, '    .lx.ol.bk4 .bk4-ta,\n'), 1);
+
+WScript.Echo('\n' + (total - failures) + '/' + total + ' passed');
+WScript.Quit(failures ? 1 : 0);

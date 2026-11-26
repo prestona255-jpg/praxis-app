@@ -591,6 +591,7 @@ function renderRoute() {
   // L4b-2b: the category page's Back returns to the room it was opened from (a lens or a book opened FROM it is not a room).
   if (parts[0] === 'category' && cpRoomRoute(olPrev)) { cpFrom = olPrev; }
   if (parts[0] === 'category' && olPrev !== rest) { cpSt.fresh = true; }
+  if (parts[0] === 'book') { bk4Arrive(olPrev); }   // R3: the book page's Back returns to where it was opened from
   olPrev = rest || 'home';
   if (lxSheetOpen && location.hash !== lxSheetRoute) { lxSheetOpen(true); }   // a route CHANGE closes an open L4 sheet
 
@@ -4590,6 +4591,7 @@ function openEditor(opts) {
     } else {
       ok = trimVal(bodyInput).length > 0;
     }
+    if (opts.bodyRequired && trimVal(bodyInput).length === 0) { ok = false; }   // R-4 guard: a title and no words is refused
     saveBtn.disabled = !ok;
   }
   refreshSaveEnabled();
@@ -4607,6 +4609,7 @@ function openEditor(opts) {
     } else {
       if (bodyVal.length === 0) return;
     }
+    if (opts.bodyRequired && bodyVal.length === 0) return;
     opts.onSave(titleVal, bodyVal);
   });
 
@@ -14290,7 +14293,550 @@ function buildValueMarkRegister(kind, objId) {
 // "Your reading" aside, the artifact card, and the Edit/more disclosure.
 // All write-paths are the existing wired ones (status, rating, themes, arc,
 // send-to-sub, marginalia, artifact, fix, isbn, tradition, remove).
+// =====================================================================
+// R3 (L4b-3b) · THE BOOK PAGE AND ITS ARTIFACT, REDRAWN (BETA.md row R3; docs/checkpoints/r3.md; Style Study v12, rulings r88, r96;
+// Preston's rulings of 19 Nov 2026). Routes #book/<id> and #artifact/<id>.
+//
+// The book page: a field block (the cover large, the title, the author, the
+// category), then two columns -- Add a note and the lenses this book is in; what
+// was marked and the artifact -- then a quiet foot: Reading status, and one
+// closed "More about this book" row that keeps everything the drawing drops
+// (rating, moved-me, the finish date, arcs, sub-theories, values, the synopsis,
+// the book's details, Edit / more, Find this book) reachable.
+//   * Reading status at the foot is INTERIM (ruling 19 Nov): the cover tap (r94),
+//     the hold menu (r93) and the hint (r95) are L4b-4, which removes the row.
+//   * Signed out, the page is the earlier one (renderBookDetailV1): the drawing
+//     has no signed-out book page.
+// The artifact page: the reader's words large, when they were written, Edit in
+// place, and the "Yumi may read this" switch. BK4_ARTIFACT_PAGE is its safety
+// switch (ruling 19 Nov): false brings back the earlier artifact page
+// (renderArtifactV1) and leaves the new book page untouched.
+// Writes: book.status / finishedAt (as before), artifact.body / updatedAt (Edit),
+// artifact.yumiMayRead (the existing switch). No new field, no new storage key.
+// =====================================================================
+var BK4_ARTIFACT_PAGE = true;
+var bk4St = { notes: false, status: false, more: false };   // the book page's folds, kept across its own re-renders
+var bk4aSt = { edit: false };                                // the artifact page: is Edit open
+var bk4aDrafts = {};                                         // unsaved artifact words by book id, in memory only, until Save or Cancel
+var bk4From = 'books';       // the room the book page was opened from (its Back and the word on it); memory only
+var bk4FromBack = '';        // when that room is a lens or a category: where ITS Back pointed when the reader left it
+
+// Is this page (same room, same id) the one on screen right now? Then a render is
+// the page's own re-render and its folds stay as they are; otherwise it is an
+// arrival and they reset. Asked of the DOM, not of renderRoute.
+function bk4Here(host, kind, id) {
+  var f = host ? host.firstChild : null;
+  return !!(f && f.getAttribute && f.getAttribute('data-bk4') === kind + ':' + id);
+}
+function bk4Bar(hash, label) {
+  var bar = lxEl('div', 'ol-bar');
+  var back = lxBtn('ol-back', '', (typeof hash === 'function') ? hash : function () { location.hash = hash; });
+  back.setAttribute('aria-label', 'Back to ' + label);
+  back.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  back.appendChild(lxEl('span', '', label));
+  bar.appendChild(back);
+  return bar;
+}
+function bk4Plain(page, headline, btnLabel, hash) {
+  var col = lxEl('div', 'ol-col');
+  var plain = lxEl('div', 'ol-plain');
+  plain.appendChild(lxEl('h2', 'ol-gone', headline));
+  var pa = lxEl('div', 'lx-acts');
+  pa.appendChild(lxBtn('ghost', btnLabel, function () { location.hash = hash; }));
+  plain.appendChild(pa);
+  col.appendChild(plain);
+  page.appendChild(col);
+}
+// The notes on one book, newest first: the reader's own (never the Journal), and the
+// seed worked example's marginalia, which the earlier page also showed.
+function bk4Notes(uid, bookId) {
+  var out = olNotes(uid, [bookId]), seen = {}, i, m;
+  for (i = 0; i < out.length; i++) { seen[out[i].id] = true; }
+  m = marginaliaForBook(bookId);
+  for (i = 0; i < m.length; i++) {
+    if (m[i].userId === '__praxis_seed__' && !seen[m[i].id]) { out.push(m[i]); seen[m[i].id] = true; }
+  }
+  out.sort(function (a, b) { return ((b.createdAt || 0) - (a.createdAt || 0)) || ((a.id < b.id) ? -1 : 1); });
+  return out;
+}
+function bk4Day(ms) {
+  var s = '';
+  if (typeof ms === 'number' && ms > 0) {
+    // the year shows only when it is not this year (the drawing: "Written September 3")
+    try { s = new Date(ms).toLocaleDateString(undefined, (new Date(ms).getFullYear() === new Date().getFullYear()) ? { month: 'long', day: 'numeric' } : { month: 'long', day: 'numeric', year: 'numeric' }); } catch (e) { s = ''; }
+  }
+  return s;
+}
+function bk4Artifact(uid, bookId) {
+  var key;
+  if (!uid || !state.bookArtifacts) { return null; }
+  key = artifactKey(uid, bookId);
+  return state.bookArtifacts[key] || null;
+}
+
+// The book page's Back returns to where the book was opened from (found on the R1
+// phone check, 25 Nov: Back always went to the Shelf). renderRoute calls this, with
+// the route before, on every arrival at #book/<id>.
+//   * a room (Home, Shelf, You, Lenses, Search, the Notebook) is recorded;
+//   * a lens or a category is recorded with where ITS Back pointed, unless it was
+//     itself opened from a book: then its Back returns here and the earlier origin
+//     is kept, so Back never walks book -> lens -> book -> lens;
+//   * a page opened from a book (another book, the artifact, a note) keeps it;
+//   * anything else (a cold load, an arc, the scanner) is the Shelf.
+function bk4Arrive(prev) {
+  var p0 = (prev || '').split('/')[0], its;
+  if (p0 === 'home' || p0 === 'books' || p0 === 'profile' || p0 === 'lenses' || p0 === 'search' || p0 === 'notebook') {
+    bk4From = prev; bk4FromBack = ''; return;
+  }
+  if (p0 === 'lens' || p0 === 'category') {
+    its = (p0 === 'lens') ? olFrom : cpFrom;
+    if ((its || '').split('/')[0] === 'book') { return; }
+    bk4From = prev; bk4FromBack = its || ''; return;
+  }
+  if (p0 === 'book' || p0 === 'artifact' || p0 === 'note') { return; }
+  bk4From = 'books'; bk4FromBack = '';
+}
+function bk4FromLabel() {
+  var p0 = (bk4From || 'books').split('/')[0];
+  if (p0 === 'home') { return 'Home'; }
+  if (p0 === 'profile') { return 'You'; }
+  if (p0 === 'lenses') { return 'Lenses'; }
+  if (p0 === 'search') { return 'Search'; }
+  if (p0 === 'notebook') { return 'Notebook'; }
+  if (p0 === 'lens') { return 'Lens'; }
+  if (p0 === 'category') { return 'Category'; }
+  return 'Shelf';
+}
+// Going back to a lens or a category hands it the Back it had when the reader left it
+// (a lens row on this page may have pointed it here since).
+function bk4GoBack() {
+  var p0 = (bk4From || 'books').split('/')[0];
+  if (p0 === 'lens' && bk4FromBack) { olFrom = bk4FromBack; }
+  if (p0 === 'category' && bk4FromBack) { cpFrom = bk4FromBack; }
+  location.hash = '#' + (bk4From || 'books');
+}
+
 function renderBookDetail(bookId) {
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  var uid = lxUid();
+  if (!uid) { renderBookDetailV1(bookId); return; }
+  if (!bk4Here(host, 'book', bookId)) { bk4St = { notes: false, status: false, more: false }; }
+  host.innerHTML = '';
+  var page = lxEl('section', 'lx lx-page ol bk4');
+  page.setAttribute('data-bk4', 'book:' + bookId);
+  host.appendChild(page);
+  var book = (state.books && state.books[bookId]) || null;
+  if (!book) {
+    bk4Plain(page, 'Book not found.', 'See your shelf', '#books');
+    return;
+  }
+  var user = getCurrentUser();
+  if (typeof ensureLensLooks === 'function') { ensureLensLooks(uid); }   // a lens mark is never blank on a cold load
+  function rerender() {
+    var r = location.hash.replace(/^#/, '').split('/');
+    if (r[0] === 'book' && r[1] === bookId) { renderBookDetail(bookId); }
+  }
+  var i;
+
+  // ---- the field: Back, the cover large, the title, the author, the category ----
+  var head = lxEl('div', 'bk4-head');
+  head.appendChild(bk4Bar(bk4GoBack, bk4FromLabel()));
+  var hero = lxEl('div', 'bk4-hero');
+  var cv = lxEl('div', 'bk4-cv');
+  cv.appendChild(buildSelfHealingCover(book, 'bk4-img', function () {
+    var t = lxEl('span', 'bk4-tt');
+    t.appendChild(lxEl('b', '', book.title || 'Untitled'));
+    if (book.author) { t.appendChild(lxEl('small', '', book.author)); }
+    return t;
+  }));
+  hero.appendChild(cv);
+  var tx = lxEl('div', 'bk4-tx');
+  // a long title steps down a size (ruling 19 Nov): the cover card cuts it off, so the whole title must fit here
+  tx.appendChild(lxEl('h2', (book.title || '').length > 40 ? 'long' : '', book.title || 'Untitled'));
+  if (book.author) { tx.appendChild(lxEl('span', 'bk4-au', book.author)); }
+  var cat = classifyBookLocal(book);
+  if (cat) {
+    // the category is a door to its page (ruling 19 Nov); that page's Back returns here
+    var catb = lxBtn('bk4-cat', '', function () { cpFrom = 'book/' + bookId; location.hash = cpHash(cat); });
+    catb.appendChild(lxEl('span', '', cat));
+    catb.appendChild(lxEl('span', 'ol-chev', '›'));
+    catb.setAttribute('aria-label', cat + '. Opens the category.');
+    tx.appendChild(catb);
+  }
+  hero.appendChild(tx);
+  head.appendChild(hero);
+  page.appendChild(head);
+
+  var col = lxEl('div', 'ol-col');
+  page.appendChild(col);
+
+  // ---- the left column: Add a note, then the lenses this book is in ----
+  var left = lxEl('div', 'ol-left');
+  left.appendChild(lxBtn('bk4-add', 'Add a note', function () { openCaptureDoor({ mode: 'note', targetKey: bookId }); }));
+  var lenses = cpLenses(uid, [bookId]);
+  var ls = olSect('In your lenses', null);
+  if (lenses.length) {
+    var lg = lxEl('div', 'ol-grp');
+    for (i = 0; i < lenses.length; i++) {
+      (function (L) {
+        // Ruling 19 Nov: a lens opened from a book goes Back to that book. Set here, not in renderRoute:
+        // a book is still not a room there, so the origin set by this tap is the one that stands.
+        var row = lxBtn('ol-rw', '', function () { olFrom = 'book/' + bookId; location.hash = '#lens/' + L.t.id; });
+        row.appendChild(lxMark(L.t.look, L.t.name));
+        var rtx = lxEl('span', 'ol-tx');
+        rtx.appendChild(lxEl('span', 'ol-c', L.t.name || ''));
+        rtx.appendChild(lxEl('span', 'ol-s', lxPlural(L.t.bookIds.length, 'book')));
+        row.appendChild(rtx);
+        row.appendChild(lxEl('span', 'ol-chev', '›'));
+        row.setAttribute('aria-label', (L.t.name || 'Lens') + ', ' + lxPlural(L.t.bookIds.length, 'book') + '. Opens the lens.');
+        lg.appendChild(row);
+      })(lenses[i]);
+    }
+    ls.appendChild(lg);
+  } else {
+    ls.appendChild(lxEl('p', 'ol-foot', 'Not in a lens yet.'));
+  }
+  left.appendChild(ls);
+  col.appendChild(left);
+
+  // ---- the right column: what was marked, then the artifact ----
+  var right = lxEl('div', 'ol-right');
+  var notes = bk4Notes(uid, bookId);
+  var ncut = bk4St.notes ? notes.length : Math.min(3, notes.length), seeAll = null;
+  if (notes.length > ncut) { seeAll = lxBtn('ol-lnk', 'See all ' + notes.length, function () { bk4St.notes = true; rerender(); }); }
+  var nt = olSect('What you marked', seeAll);
+  if (!notes.length) {
+    nt.appendChild(lxEl('p', 'ol-foot', 'No notes yet. Your first mark from this book will appear here.'));
+  } else {
+    var ng = lxEl('div', 'ol-grp');
+    for (i = 0; i < ncut; i++) {
+      (function (en) {
+        var own = en.userId === uid;
+        // the drawn note row: a dot and the kind, the words, then when
+        var row = own ? lxBtn('ol-rw bk4-n', '', function () { location.hash = '#note/' + en.id; }) : lxEl('div', 'ol-rw bk4-n');
+        var kind = lxEl('span', 'bk4-k');
+        var dot = lxEl('i', en.register === 'question' ? 'q' : '');
+        dot.setAttribute('aria-hidden', 'true');
+        kind.appendChild(dot);
+        kind.appendChild(document.createTextNode(notebookRegisterLabel(en.register)));
+        row.appendChild(kind);
+        row.appendChild(lxEl('span', 'ol-n', (typeof en.body === 'string' && en.body.replace(/\s+/g, ' ').replace(/^ | $/g, '')) || 'Note'));
+        row.appendChild(lxEl('span', 'ol-s', lxAgo(en.createdAt)));
+        ng.appendChild(row);
+      })(notes[i]);
+    }
+    nt.appendChild(ng);
+  }
+  right.appendChild(nt);
+
+  var art = bk4Artifact(uid, bookId);
+  // R-4 (ruling A, 26 Nov): the reader's own artifact counts as existing even with no words yet -- "Open it", then
+  // Edit on its page; Write here would hand ensureOneArtifact a record it keeps untouched, dropping the words.
+  var hasArt = !!art;
+  var as = olSect('Your artifact', null);
+  as.appendChild(lxEl('p', 'bk4-artp', 'What this book is doing in your thinking, in your own words. '
+    + 'Yours to edit any time; Yumi reads it only when you say so.'));
+  if (hasArt) {
+    as.appendChild(lxBtn('bk4-btn2', 'Open it', function () { location.hash = '#artifact/' + bookId; }));
+  } else {
+    // Ruling 19 Nov: the offer to write no longer waits for "Have read" -- status is out of sight on this page now
+    as.appendChild(lxBtn('bk4-btn2', 'Write your artifact', function () { openArtifactEditor(bookId); }));
+  }
+  // openArtifactEditor mounts its editor here (the id is the editor's own contract)
+  var editorHost = lxEl('div', 'bk4-host');
+  editorHost.id = 'book-detail-editor-host';
+  as.appendChild(editorHost);
+  right.appendChild(as);
+  col.appendChild(right);
+
+  // ---- the foot: Reading status (interim, until L4b-4), then More about this book ----
+  var foot = lxEl('div', 'bk4-foot');
+  var fg = lxEl('div', 'ol-grp');
+  var cur = normalizeStatus(book.status);
+  var srow = lxBtn('ol-rw', '', function () { bk4St.status = !bk4St.status; rerender(); bk4Focus('bk4-srow'); });
+  srow.id = 'bk4-srow';
+  srow.setAttribute('aria-expanded', bk4St.status ? 'true' : 'false');
+  var stx = lxEl('span', 'ol-tx');
+  stx.appendChild(lxEl('span', 'bk4-rt', 'Reading status'));
+  srow.appendChild(stx);
+  srow.appendChild(lxEl('span', 'ol-chev' + (bk4St.status ? ' open' : ''), '›'));
+  fg.appendChild(srow);
+  if (bk4St.status) {
+    var segw = lxEl('div', 'bk4-segw');
+    var seg = lxEl('div', 'ol-seg');
+    seg.setAttribute('role', 'group');
+    seg.setAttribute('aria-label', 'Reading status');
+    var opts = [['reading', 'Reading'], ['read', 'Have read'], ['will-read', 'Will read']];
+    for (i = 0; i < opts.length; i++) {
+      (function (o) {
+        var b = lxBtn('', o[1], function () {
+          if (!state.books[bookId]) { return; }
+          var was = state.books[bookId].status, hadFin = state.books[bookId].hasOwnProperty('finishedAt'), wasFin = state.books[bookId].finishedAt;
+          state.books[bookId].status = o[0];
+          // as before: the first time a book goes 'read', stamp finishedAt
+          if (o[0] === 'read' && !state.books[bookId].finishedAt) { state.books[bookId].finishedAt = Date.now(); }
+          markBooksDirty();
+          saveState();
+          bk4St.status = false;
+          rerender();
+          bk4Focus('bk4-srow');
+          // Undo puts back the status AND the finish stamp: a slip must not leave a Finished date for good
+          lxToast(o[1] + '.', function () {
+            if (!state.books[bookId]) { return; }
+            state.books[bookId].status = was;
+            if (hadFin) { state.books[bookId].finishedAt = wasFin; } else { delete state.books[bookId].finishedAt; }
+            markBooksDirty();
+            saveState();
+            rerender();
+          });
+        });
+        b.setAttribute('aria-pressed', cur === o[0] ? 'true' : 'false');
+        seg.appendChild(b);
+      })(opts[i]);
+    }
+    segw.appendChild(seg);
+    fg.appendChild(segw);
+  }
+  var mrow = lxBtn('ol-rw', '', function () { bk4St.more = !bk4St.more; rerender(); bk4Focus('bk4-mrow'); });
+  mrow.id = 'bk4-mrow';
+  mrow.setAttribute('aria-expanded', bk4St.more ? 'true' : 'false');
+  var mtx = lxEl('span', 'ol-tx');
+  mtx.appendChild(lxEl('span', 'bk4-rt', 'More about this book'));
+  mrow.appendChild(mtx);
+  mrow.appendChild(lxEl('span', 'ol-chev' + (bk4St.more ? ' open' : ''), '›'));
+  fg.appendChild(mrow);
+  foot.appendChild(fg);
+  if (bk4St.more) { foot.appendChild(bk4More(bookId, book, user)); }
+  page.appendChild(foot);
+}
+function bk4Focus(id) {
+  var e = document.getElementById(id);
+  if (e && typeof e.focus === 'function') { try { e.focus(); } catch (err) {} }
+}
+
+// "More about this book": everything the drawn page drops, kept as it was -- the
+// earlier page's own builders, in the earlier page's own dress (.bk-surface tokens),
+// so nothing a reader could do on #book/<id> is lost while the rooms are redrawn.
+function bk4More(bookId, book, user) {
+  var more = lxEl('div', 'bk4-more bk-surface lum-amber-deep');
+  var rooted = rootedSubTheories(bookId);
+  var i;
+
+  // the reader's own line: rating, the finish date, moved-me
+  var controls = lxEl('div', 'bk-controls bk-meta-line');
+  var rate = lxEl('div', 'bk-rate');
+  rate.appendChild(lxEl('span', 'bk-rk', 'Rating'));
+  rate.appendChild(buildBookRatingStars(bookId, book));
+  controls.appendChild(rate);
+  var fin = '';
+  if (book.dateRead) { fin = '' + book.dateRead; }
+  else if (typeof book.finishedAt === 'number') {
+    try { fin = new Date(book.finishedAt).toLocaleDateString(); } catch (eF) { fin = ''; }
+  }
+  if (fin) {
+    var finWrap = lxEl('div', 'bk-finished');
+    finWrap.appendChild(lxEl('span', 'bk-rk', 'Finished'));
+    finWrap.appendChild(lxEl('span', 'bk-rv', fin));
+    controls.appendChild(finWrap);
+  }
+  var movedBtn = lxBtn('bk-moved' + (book.movedMe ? ' on' : ''), book.movedMe ? '♥ Moved you' : '♡ This moved me', function () {
+    if (!state.books[bookId]) { return; }
+    var on = !state.books[bookId].movedMe;
+    state.books[bookId].movedMe = on;
+    markBooksDirty();
+    saveState();
+    movedBtn.classList.toggle('on', on);
+    movedBtn.textContent = on ? '♥ Moved you' : '♡ This moved me';
+  });
+  controls.appendChild(movedBtn);
+  more.appendChild(controls);
+
+  // arcs and sub-theories
+  var arcChips = buildBookArcChips(bookId);
+  if (arcChips) { more.appendChild(arcChips); }
+  var actions = lxEl('div', 'bk-actions');
+  actions.appendChild(lxBtn('bk-actionbtn', 'Add to an arc', function () { openBookArcPicker(bookId); }));
+  actions.appendChild(lxBtn('bk-actionbtn', 'Send to sub-theory', function () { openBookSendToSubTheory(bookId); }));
+  more.appendChild(actions);
+  var arcPickerHost = lxEl('div', '');
+  arcPickerHost.id = 'book-detail-arc-picker-host';
+  more.appendChild(arcPickerHost);
+  var subPickerHost = lxEl('div', '');
+  subPickerHost.id = 'book-detail-subtheory-picker-host';
+  more.appendChild(subPickerHost);
+  if (rooted.length > 0) {
+    var gsec = lxEl('div', 'bk-sec bk-block lum-glass');
+    gsec.appendChild(lxEl('div', 'bk-subhead', 'What it grew into'));
+    var glist = lxEl('div', 'bk-grewlist');
+    for (i = 0; i < rooted.length; i++) { glist.appendChild(buildGrewRow(rooted[i])); }
+    gsec.appendChild(glist);
+    more.appendChild(gsec);
+  }
+
+  // what your reading carries
+  var vreg = buildValueMarkRegister('book', bookId);
+  if (vreg) { more.appendChild(vreg); }
+
+  // what it's about, and the book's own details
+  if (book.description && ('' + book.description).replace(/^\s+|\s+$/g, '') !== '') {
+    var aboutBlock = lxEl('div', 'bk-block lum-glass');
+    aboutBlock.appendChild(bkBlabel('What it’s about'));
+    aboutBlock.appendChild(lxEl('p', 'bk-synopsis', '' + book.description));
+    more.appendChild(aboutBlock);
+  }
+  var metaBlock = lxEl('div', 'bk-block lum-glass bk-meta');
+  metaBlock.appendChild(bkBlabel('The book'));
+  var dl = document.createElement('dl');
+  function addMetaRow(term, val) {
+    if (val === null || val === undefined || ('' + val).replace(/^\s+|\s+$/g, '') === '') { return; }
+    dl.appendChild(lxEl('dt', '', term));
+    dl.appendChild(lxEl('dd', '', '' + val));
+  }
+  addMetaRow('First published', book.year ? ('' + book.year) : '');
+  addMetaRow('Pages', (typeof book.pageCount === 'number' && book.pageCount > 0) ? book.pageCount : '');
+  addMetaRow('Publisher', book.publisher || '');
+  addMetaRow('ISBN', book.isbn || '');
+  var subjects = [];
+  var btrad = book.traditionOverride || book.tradition;
+  if (btrad && btrad !== 'unassigned') {
+    subjects.push((typeof TRADITION_LABELS !== 'undefined' && TRADITION_LABELS[btrad]) ? TRADITION_LABELS[btrad] : btrad);
+  }
+  if (book.category && ('' + book.category).replace(/^\s+|\s+$/g, '') !== '') { subjects.push(book.category); }
+  if (subjects.length > 0) { addMetaRow('Subjects', subjects.join(' · ')); }
+  if (dl.childNodes.length > 0) {
+    metaBlock.appendChild(dl);
+    more.appendChild(metaBlock);
+  }
+
+  // Edit / more, and Find this book
+  var tail = lxEl('div', 'bk4-tail');
+  var editToggle = lxBtn('bk-edit-toggle', _bookDetailEditOpen ? 'Close edit' : 'Edit / more', function () {
+    _bookDetailEditOpen = !_bookDetailEditOpen;
+    renderBookDetail(bookId);
+  });
+  editToggle.setAttribute('aria-expanded', _bookDetailEditOpen ? 'true' : 'false');
+  tail.appendChild(editToggle);
+  var findUrl = buildBookshopUrl(book.isbn);
+  if (findUrl) {
+    var findLink = lxEl('a', 'bk-find', 'Find this book');
+    findLink.href = findUrl;
+    findLink.target = '_blank';
+    findLink.rel = 'noopener noreferrer';
+    tail.appendChild(findLink);
+  }
+  more.appendChild(tail);
+  if (_bookDetailEditOpen) { more.appendChild(buildBookEditPanel(bookId, book, user)); }
+  return more;
+}
+
+function renderArtifact(bookId) {
+  if (!BK4_ARTIFACT_PAGE) { renderArtifactV1(bookId); return; }
+  var host = document.getElementById(APP_EL_ID);
+  if (!host) { return; }
+  // an arrival resets Edit -- unless words were left unsaved here, which reopen it so they are never lost
+  if (!bk4Here(host, 'artifact', bookId)) { bk4aSt = { edit: typeof bk4aDrafts[bookId] === 'string' }; }
+  host.innerHTML = '';
+  var page = lxEl('section', 'lx lx-page ol bk4 bk4a');
+  page.setAttribute('data-bk4', 'artifact:' + bookId);
+  host.appendChild(page);
+  var book = (state.books && state.books[bookId]) || null;
+  if (!book) {
+    bk4Plain(page, 'Book not found.', 'See your shelf', '#books');
+    return;
+  }
+  var uid = lxUid();
+  // the seed worked example's artifact shows signed out too, and when a signed-in reader has none of their own (as before)
+  var podKey = artifactKey('__praxis_seed__', bookId);
+  var podArt = (state.bookArtifacts && state.bookArtifacts[podKey]) ? state.bookArtifacts[podKey] : null;
+  var plain;
+  if (!uid && !podArt) {
+    plain = lxEl('div', 'ol-col');
+    var pw = lxEl('div', 'ol-plain');
+    pw.appendChild(buildSignedOutPrompt('Your Artifact is private', 'Sign in to see what this book became in your hands — the artifact is yours.'));
+    plain.appendChild(pw);
+    page.appendChild(plain);
+    return;
+  }
+  var artifact = bk4Artifact(uid, bookId) || podArt;
+  var own = !!(artifact && uid && artifact.userId === uid);
+  function rerender() {
+    var r = location.hash.replace(/^#/, '').split('/');
+    if (r[0] === 'artifact' && r[1] === bookId) { renderArtifact(bookId); }
+  }
+
+  // ---- the head: Back to the book, what this is, whose ----
+  var head = lxEl('div', 'bk4-ahead');
+  head.appendChild(bk4Bar('#book/' + bookId, 'The book'));
+  head.appendChild(lxEl('span', 'bk4-kick', (!artifact || own) ? 'Your artifact' : 'Artifact'));
+  head.appendChild(lxEl('h2', 'bk4-name', (artifact && artifact.title) ? artifact.title : (book.title || 'Untitled')));
+  head.appendChild(lxEl('p', 'bk4-sub', 'What this book is doing in your thinking'));
+  page.appendChild(head);
+
+  var col = lxEl('div', 'ol-col');
+  page.appendChild(col);
+  var left = lxEl('div', 'ol-left');
+  col.appendChild(left);
+  if (!artifact) {
+    left.appendChild(lxEl('p', 'ol-foot', 'No Artifact yet for this book.'));
+    return;
+  }
+
+  if (own && bk4aSt.edit) {
+    // ---- Edit, right here: the words in a field, Save or Cancel ----
+    var ta = lxEl('textarea', 'bk4-ta');
+    ta.value = (typeof bk4aDrafts[bookId] === 'string') ? bk4aDrafts[bookId] : (artifact.body || '');
+    ta.setAttribute('aria-label', 'Your artifact');
+    left.appendChild(ta);
+    var two = lxEl('div', 'bk4-two');
+    var save = lxBtn('bk4-add', 'Save', function () {
+      var v = ta.value.replace(/^\s+|\s+$/g, '');
+      if (!v) { return; }
+      delete bk4aDrafts[bookId];
+      artifact.body = v;
+      artifact.updatedAt = Date.now();
+      if (typeof markArtifactsDirty === 'function') { markArtifactsDirty(); }
+      saveState();
+      bk4aSt.edit = false;
+      rerender();
+      bk4Focus('bk4-edit');
+    });
+    var cancel = lxBtn('bk4-btn2', 'Cancel', function () { delete bk4aDrafts[bookId]; bk4aSt.edit = false; rerender(); bk4Focus('bk4-edit'); });
+    var fit = function () { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; };   // the field grows with the words; no inner scroll
+    ta.addEventListener('input', function () {
+      bk4aDrafts[bookId] = ta.value;
+      save.disabled = ta.value.replace(/^\s+|\s+$/g, '') === '';
+      fit();
+    });
+    two.appendChild(cancel);
+    two.appendChild(save);
+    left.appendChild(two);
+    window.setTimeout(function () { fit(); try { ta.focus({ preventScroll: true }); } catch (err) {} }, 0);
+  } else {
+    left.appendChild(lxEl('p', 'ol-passage bk4-body', artifact.body || ''));
+    var wrote = bk4Day(artifact.createdAt), rev = bk4Day(artifact.updatedAt);
+    if (wrote) {
+      left.appendChild(lxEl('p', 'ol-foot', 'Written ' + wrote + ((rev && rev !== wrote) ? ' · revised ' + rev : '')));
+    }
+    if (own) {
+      var edit = lxBtn('bk4-btn2', 'Edit', function () { bk4aSt.edit = true; rerender(); });
+      edit.id = 'bk4-edit';
+      left.appendChild(edit);
+    }
+  }
+
+  // ---- the right column: the reader's own artifact carries its "Yumi may read this" switch ----
+  if (own) {
+    var right = lxEl('div', 'ol-right');
+    var g = lxEl('div', 'ol-grp');
+    g.appendChild(buildArtifactMayReadSwitch(artifact));
+    right.appendChild(g);
+    col.appendChild(right);
+  }
+}
+
+// R3: the earlier book page. Signed out still renders it (the drawing has no signed-out book page).
+function renderBookDetailV1(bookId) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) { return; }
   host.innerHTML = '';
@@ -17010,7 +17556,8 @@ function renderSubTheoryBuild(id) {
   if (rfield && rfield.relayout) { rfield.relayout(); }
 }
 
-function renderArtifact(bookId) {
+// R3: the earlier artifact page, kept behind the safety switch BK4_ARTIFACT_PAGE.
+function renderArtifactV1(bookId) {
   var host = document.getElementById(APP_EL_ID);
   if (!host) return;
   host.innerHTML = '';
@@ -19785,7 +20332,7 @@ function openMarginaliaEditor(bookId, editEntryId) {
 // Stage 3.7: Artifact draft editor. Mounted into the book-detail
 // editor host (shared with marginalia -- only one editor lives there
 // at a time). Title pre-fills from book.title; user may edit before
-// save. Save is gated on title-non-empty; body is optional. Write
+// save. Save is gated on title-non-empty AND, from R3 (R-4, ruling of 26 Nov), body-non-empty (bodyRequired). Write
 // goes through ensureOneArtifact so a second invocation for the same
 // (uid, bookId) is a no-op (constitutional principle #3). Reached
 // from two entry points, both gated on !hasArtifact: the "I've
@@ -19800,6 +20347,7 @@ function openArtifactEditor(bookId) {
     hostId:         'book-detail-editor-host',
     emptySelector:  '.book-detail-empty-body',
     showTitleField: true,
+    bodyRequired:   true,   // R-4 (ruling 26 Nov): a title and no words is refused, as Edit on the artifact page refuses it
     titlePrefill:   book.title || '',
     onSave: function(titleVal, bodyVal) {
       var user = getCurrentUser();
@@ -28689,6 +29237,7 @@ function olFromLabel() {
   if (p0 === 'search') { return 'Search'; }
   if (p0 === 'notebook') { return 'Notebook'; }
   if (p0 === 'category') { return 'Category'; }
+  if (p0 === 'book') { return 'Book'; }   // R3
   return 'Home';
 }
 // The notes on a lens's books, newest first. The Journal is never listed.
@@ -29103,6 +29652,7 @@ function cpFromLabel() {
   if (p0 === 'search') { return 'Search'; }
   if (p0 === 'notebook') { return 'Notebook'; }
   if (p0 === 'lenses') { return 'Lenses'; }
+  if (p0 === 'book') { return 'Book'; }   // R3
   return 'Shelf';
 }
 function cpHash(label) { return '#category/' + encodeURIComponent(label); }

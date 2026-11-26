@@ -1,0 +1,73 @@
+== R3 behaviour rig on fix-taken-out ==
+
+[setup] a reader with three books; one carries an artifact with words
+  PASS  setup the cloud holds the two artifacts and Book S not moved
+
+[s] no signal: the artifact's words changed on its page, "This moved me" turned on; closed; signal back; reopened
+  PASS  s the new artifact page is drawn, Edit opens the field
+  PASS  s Save
+  PASS  s More about this book opens
+  PASS  s "This moved me" turns on
+  PASS  s on the device at once; the cloud still the old (offline)
+  PASS  s after reopen: the words and moved-me kept, on the device and in the cloud
+  PASS  s a second device reads both
+
+[r] an existing artifact: Edit, every word cleared, Save; then spaces only, Save
+  PASS  r cleared: Save is disabled and refused; the stored words and stamp unchanged; the field still open
+  PASS  r spaces only: Save is disabled and refused; the stored words unchanged
+  PASS  r the book page then offers Open it, not Write
+  PASS  r the cloud still holds the words
+
+[a] an artifact with a title and an empty body: the new book page offers Open it, not Write
+  PASS  a the artifact is stored with an empty body, on the device and in the cloud
+  FAIL  a the book page offers Open it and not Write your artifact
+        got  ["Write your artifact"]
+        want ["Open it"]
+
+[b] Open it, Edit, words, Save; closed; reopened; a second device
+  FAIL  b Open it goes to the artifact page
+        got  [false,"#book/bk_Book_W"]
+        want [true,"#artifact/bk_Book_W"]
+  FAIL  b Edit opens the field
+        got  [false,false]
+        want [true,true]
+  FAIL  b Save
+        got  false
+        want true
+  FAIL  b on the device at once
+        got  ""
+        want "the words I wrote into the empty artifact"
+  FAIL  b after a close and reopen: on the device and in the cloud
+        got  ["",""]
+        want ["the words I wrote into the empty artifact","the words I wrote into the empty artifact"]
+  FAIL  b a second device reads the words
+        got  ""
+        want "the words I wrote into the empty artifact"
+
+[c] Write your artifact with a title and no words, then spaces only: Save disabled, nothing stored
+  PASS  c Write your artifact is offered and opens the editor with the title filled in
+  FAIL  c a title and no words: Save disabled, no artifact stored
+        got  [false,{"body":"","up":1795716780837}]
+        want [true,null]
+  FAIL  c spaces only: Save disabled, no artifact stored
+        got  [null,{"body":"","up":1795716780837}]
+        want [true,null]
+  FAIL  c the cloud holds no artifact for the book
+        got  ""
+        want null
+
+[d] Write your artifact with a title and words still saves: the new page, the switch off, the earlier page
+  PASS  d the new page: Save enabled, the words stored, then Open it offered
+  PASS  d switch off: the book page is still the new page
+  PASS  d switch off: the words stored, and the earlier artifact page shows them
+  PASS  d the earlier page (drawn signed in) offers its Write
+  FAIL  d the earlier page: the guard holds (no words: disabled), then the words are stored
+        got  [false,false,"words for book V"]
+        want [true,false,"words for book V"]
+  PASS  d the three artifacts reach the cloud
+  PASS  d signed out: the earlier page is drawn and offers no Write (nothing can be saved signed out)
+  PASS  page errors on every device
+
+fix-taken-out: 21 / 32 passed, 11 failed
+RIG-DONE
+RUNNER: fix-taken-out took 46 s, 2026-11-26 12:13

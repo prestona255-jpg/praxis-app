@@ -1,0 +1,22 @@
+date 2026-11-26 12:16:05 | dpr 390=3 1360=1
+[390] boot: {"books":4,"cat":"Literary Fiction","lenses":5}
+[390] served sw.js: praxis-v3.343 | innerWidth 390
+[390-night] offers: ["Write your artifact"]
+r3-r4-empty-book-top-390-night.jpg (viewport)
+r3-r4-empty-book-full-390-night.jpg 390x1219 css
+r3-r4-empty-artifact-390-night.jpg 390x844 css
+[390-night] write editor: {"saveDisabled":false,"title":"Bare"}
+r3-r4-write-noword-390-night.jpg 390x1653 css
+[390-day] offers: ["Write your artifact"]
+r3-r4-empty-book-top-390-day.jpg (viewport)
+r3-r4-empty-book-full-390-day.jpg 390x1219 css
+r3-r4-empty-artifact-390-day.jpg 390x844 css
+[390-day] write editor: {"saveDisabled":false,"title":"Bare"}
+r3-r4-write-noword-390-day.jpg 390x1653 css
+[1360] boot: {"books":4,"cat":"Literary Fiction","lenses":5}
+[1360] served sw.js: praxis-v3.343 | innerWidth 1360
+[1360-night] offers: ["Write your artifact"]
+[1360-night] write editor: {"saveDisabled":false,"title":"Bare"}
+[1360-day] offers: ["Write your artifact"]
+[1360-day] write editor: {"saveDisabled":false,"title":"Bare"}
+page errors: []

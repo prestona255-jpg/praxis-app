@@ -296,7 +296,7 @@ for (i11 = 0; i11 < want11.length; i11++) {
 }
 check('U11 the seven sizes, each set once, in assets/theme.css', got11, [1, 1, 1, 1, 1, 1, 1]);
 var c0 = comp.indexOf('/* === R1 HOME AND SEARCH -- begin'), c1 = comp.indexOf('/* === R1 HOME AND SEARCH -- end === */');
-check('U11 the R1 style block, once, at the end', [c0 !== -1 && c1 > c0, count(comp, 'R1 HOME AND SEARCH'), comp.slice(c1).replace(/\s+$/, '')], [true, 2, '/* === R1 HOME AND SEARCH -- end === */']);
+check('U11 the R1 style block, once (a later room may follow it)', [c0 !== -1 && c1 > c0, count(comp, 'R1 HOME AND SEARCH')], [true, 2]);
 var cssBlock = comp.slice(c0, c1).replace(/\/\*[\s\S]*?\*\//g, '');
 var decl = cssBlock.match(/font(-size)?:[^;}]*/g) || [], bad11 = [], sixteen = 0;
 for (i11 = 0; i11 < decl.length; i11++) {

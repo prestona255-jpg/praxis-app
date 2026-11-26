@@ -1,0 +1,55 @@
+date 2026-11-25 16:19:14 | dpr 390=3 1360=1
+[390] boot: {"books":3,"cat":"Literary Fiction","lenses":5}
+[390] served sw.js: praxis-v3.343 | innerWidth 390
+[390 night] mood -> ?
+r3-book-top-390-night.jpg (viewport)
+r3-book-full-390-night.jpg 390x1663 css
+r3-book-more-390-night.jpg 390x2470 css
+r3-book-bare-390-night.jpg 390x1219 css
+r3-book-five-390-night.jpg 390x1557 css
+r3-artifact-390-night.jpg 390x852 css
+r3-artifact-edit-390-night.jpg 390x948 css
+[390 day] mood -> day
+r3-book-top-390-day.jpg (viewport)
+r3-book-full-390-day.jpg 390x1663 css
+r3-book-more-390-day.jpg 390x2470 css
+r3-book-bare-390-day.jpg 390x1219 css
+r3-book-five-390-day.jpg 390x1557 css
+r3-artifact-390-day.jpg 390x852 css
+r3-artifact-edit-390-day.jpg 390x948 css
+[1360] boot: {"books":3,"cat":"Literary Fiction","lenses":5}
+[1360] served sw.js: praxis-v3.343 | innerWidth 1360
+[1360 night] mood -> ?
+r3-book-top-1360-night.jpg (viewport)
+r3-book-full-1360-night.jpg 1360x1239 css
+r3-book-more-1360-night.jpg 1360x1761 css
+r3-book-bare-1360-night.jpg 1360x950 css
+r3-book-five-1360-night.jpg 1360x1120 css
+r3-artifact-1360-night.jpg 1360x900 css
+r3-artifact-edit-1360-night.jpg 1360x900 css
+[1360 day] mood -> day
+r3-book-top-1360-day.jpg (viewport)
+r3-book-full-1360-day.jpg 1360x1239 css
+r3-book-more-1360-day.jpg 1360x1761 css
+r3-book-bare-1360-day.jpg 1360x950 css
+r3-book-five-1360-day.jpg 1360x1120 css
+r3-artifact-1360-day.jpg 1360x900 css
+r3-artifact-edit-1360-day.jpg 1360x900 css
+[390 taps] boot: {"books":3,"cat":"Literary Fiction","lenses":5}
+TAP 390 from #search: label 'Search' (want 'Search') back-button {"w":95,"h":44,"top":63,"hit":true} -> landed #search
+TAP 390 from #home: label 'Home' (want 'Home') back-button {"w":87,"h":44,"top":63,"hit":true} -> landed #home
+TAP 390 from #notebook: label 'Notebook' (want 'Notebook') back-button {"w":118,"h":44,"top":63,"hit":true} -> landed #notebook
+TAP 390 from #books: label 'Shelf' (want 'Shelf') back-button {"w":80,"h":44,"top":63,"hit":true} -> landed #books
+TAP 390 from #lenses: label 'Lenses' (want 'Lenses') back-button {"w":96,"h":44,"top":63,"hit":true} -> landed #lenses
+[1024] boot: {"books":3,"cat":"Literary Fiction","lenses":5}
+[1024] widest: {"right":1024,"el":"div."}
+[760] boot: {"books":3,"cat":"Literary Fiction","lenses":5}
+[760] widest: {"right":861,"el":"ul.app-nav-list"}
+[signed out] rig loaded, signed out
+[signed out] {"uid":null,"bk4":false,"v1":true,"text":"← Back to the shelf\nThe Long Afternoon of Earth and the Gardeners of the Drowned Years\nAda Ferreira Lindqvist\nLiterary Fiction\n\nYour marks are private. Sign in "}
+r3-signedout-book-390-night.jpg (viewport)
+[switch off] boot: {"books":3,"cat":"Literary Fiction","lenses":5}
+[switch off] {"flag":false,"bookNew":true}
+[switch off] {"hash":"#artifact/bk_r3_full","bk4a":false,"anyBk4":false,"text":"What the garden keeps\nThis book is teaching me that keeping is a verb.\n\nI came to it for the flood and stayed for the gardeners: the people who decide, every morning, what is worth carrying on with.\nM"}
+r3-switchoff-artifact-390-night.jpg (viewport)
+page errors: []

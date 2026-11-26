@@ -31,6 +31,18 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-25 (R3: the book page and its artifact, v3.343)** -- BETA.md's row R3 (L4b-3b). The order after R1 was
+  re-ruled by Preston on 25 Nov (BETA.md leads): the book page, then Find a book (R2), then LC2 — so R3 runs before R2
+  and LC2. Applied byte for byte from the build chat's patch (cut on f6fe2c4). #book/<id> redrawn as a field (cover,
+  title, author, the category as a door), Add a note and the lenses, what was marked and the artifact, then Reading status
+  and "More about this book" at the foot; Back returns to where the book was opened from and names it. #artifact/<id>:
+  the words large, Edit in place, the "Yumi may read this" switch (moved here from the book page). Signed out keeps the
+  earlier book page; BK4_ARTIFACT_PAGE is the artifact page's safety switch. Proved: r3-test 68 / 68 (exit 2 on main; red
+  on both breaks), CHECKS 36 of 36 with the new rig suite r3 (32 / 32; Preston's R-4 rulings of 26 Nov: an artifact with a
+  title and no words offers "Open it", and Write refuses a title and no words), the saving proof offline and across a
+  close, the look at 390 and 1360 Night and Day,
+  the taps (`docs/checkpoints/r3.md`). R1 recorded pushed (f6fe2c4, Checks run 6 green, Preston's phone check passed
+  25 Nov). Next, by the re-ruled order: Find a book (R2), then LC2.
 - **2026-11-25 (R1: Home and Search, v3.342)** -- BETA.md's row R1, the first room build of the 25 Nov order. Applied
   byte for byte from the build chat's patch (cut on db457de; on f078c77 its BETA.md part did not apply and was left out,
   BETA.md taking two ruled edits instead). Home's body under the sky and a new Search, each behind a per-device switch

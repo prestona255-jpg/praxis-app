@@ -1,0 +1,22 @@
+date 2026-11-26 12:14:46 | dpr 390=3 1360=1
+[390] boot: {"books":4,"cat":"Literary Fiction","lenses":5}
+[390] served sw.js: praxis-v3.343 | innerWidth 390
+[390-night] offers: ["Open it"]
+r3-r4-empty-book-top-390-night.jpg (viewport)
+r3-r4-empty-book-full-390-night.jpg 390x1219 css
+r3-r4-empty-artifact-390-night.jpg 390x844 css
+[390-night] write editor: {"saveDisabled":true,"title":"Bare"}
+r3-r4-write-noword-390-night.jpg 390x1653 css
+[390-day] offers: ["Open it"]
+r3-r4-empty-book-top-390-day.jpg (viewport)
+r3-r4-empty-book-full-390-day.jpg 390x1219 css
+r3-r4-empty-artifact-390-day.jpg 390x844 css
+[390-day] write editor: {"saveDisabled":true,"title":"Bare"}
+r3-r4-write-noword-390-day.jpg 390x1653 css
+[1360] boot: {"books":4,"cat":"Literary Fiction","lenses":5}
+[1360] served sw.js: praxis-v3.343 | innerWidth 1360
+[1360-night] offers: ["Open it"]
+[1360-night] write editor: {"saveDisabled":true,"title":"Bare"}
+[1360-day] offers: ["Open it"]
+[1360-day] write editor: {"saveDisabled":true,"title":"Bare"}
+page errors: []

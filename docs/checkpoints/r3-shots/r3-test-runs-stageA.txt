@@ -1,0 +1,21 @@
+== CRLF working copy
+  PASS  the writing field is named once in the 16 px phone rule  = 1
+
+68/68 passed
+== LF copy
+68/68 passed
+== main (git archive f6fe2c4)
+LOAD FAILED: anchor not found: function bk4Here(host, kind, id) { .. function renderBookDetail(bookId) {
+== break a
+  FAIL    back from a lens opened from this book: the first lens is kept
+  FAIL    Back goes to the first lens
+  FAIL    and hands it its own Back again (no book -> lens -> book walk)
+  FAIL    back from a category opened from this book: the first is kept
+  FAIL    Back goes to the first category
+  FAIL    and hands it its own Back again
+62/68 passed
+== break b
+  FAIL  back from its artifact keeps Search
+  FAIL  back from a note keeps Search
+  FAIL  from another book keeps Search
+65/68 passed

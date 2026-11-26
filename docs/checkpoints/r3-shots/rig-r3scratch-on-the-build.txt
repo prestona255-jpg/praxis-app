@@ -1,0 +1,58 @@
+
+[setup] a reader with a book in two lenses, a category, notes and an artifact
+  PASS  setup category valid, artifact in the cloud
+
+[p6] artifact page: no signal, Edit, change the words, Save; close; signal back; reopen
+  PASS  p6 the new artifact page is drawn
+  PASS  p6 Edit opens the field
+  PASS  p6 Save
+  PASS  p6 on the device at once: body changed, updatedAt moved on
+  PASS  p6 the cloud still has the old words while offline
+  PASS  p6 after reopen: the new words on the device and in the cloud
+  PASS  p6 a second device reads the new words
+
+[t1] Back names and returns to the room the book was opened from
+  PASS  t1 from #search: Back reads Search and lands there
+  PASS  t1 from #home: Back reads Home and lands there
+  PASS  t1 from #notebook: Back reads Notebook and lands there
+  PASS  t1 from #books: Back reads Shelf and lands there
+  PASS  t1 from #lenses: Back reads Lenses and lands there
+  PASS  t1 from #profile: Back reads You and lands there
+  PASS  t1 the artifact page Back reads The book
+  PASS  t1 Search, book, artifact, The book: back on the book, Back still Search
+  PASS  t1 then Back lands on Search
+
+[t2] Home, a lens, a book from it; a lens row on the book; no book-lens-book walk
+  PASS  t2 the lens opened from Home: its Back reads Home
+  PASS  t2 the book opened from the lens: Back reads Lens
+  PASS  t2 a lens row on the book opens that lens; its Back reads Book
+  PASS  t2 that Back returns to the book, whose Back still reads Lens
+  PASS  t2 the book Back returns to the FIRST lens, whose Back reads Home
+  PASS  t2 and lands on Home
+
+[t3] the category line is a door; its Back reads Book and returns
+  PASS  t3 the category line opens the category
+  PASS  t3 its Back returns to the book (Back still Shelf)
+
+[t4] the status row and its toast Undo
+  PASS  t4 before
+  PASS  t4 the status row opens three choices
+  PASS  t4 Have read: status read, finishedAt stamped, toast says so
+  PASS  t4 the change reached the cloud
+  PASS  t4 Undo puts back the status and removes finishedAt (device and cloud)
+
+[t5] More about this book opens, survives the page's own re-render, closes
+  PASS  t5 closed on arrival
+  PASS  t5 opens
+  PASS  t5 stays open across the page's own re-render
+  PASS  t5 closes
+
+[t6] artifact page: Cancel keeps the saved words; Save writes body and updatedAt; the switch flips
+  PASS  t6 Cancel leaves the saved words
+  PASS  t6 Save writes body and updatedAt (device and cloud)
+  PASS  t6 the switch flips yumiMayRead (device and cloud)
+  PASS  page errors on every device
+
+R3-applied: 38 / 38 passed, 0 failed
+RIG-DONE
+RUNNER: R3-applied took 52 s, 2026-11-25 16:11

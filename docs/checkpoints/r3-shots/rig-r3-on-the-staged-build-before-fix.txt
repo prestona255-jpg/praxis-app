@@ -1,0 +1,35 @@
+== R3 behaviour rig on staged-build-before-fix ==
+
+[setup] a reader with three books; one carries an artifact with words
+  PASS  setup the cloud holds the two artifacts and Book S not moved
+
+[s] no signal: the artifact's words changed on its page, "This moved me" turned on; closed; signal back; reopened
+  PASS  s the new artifact page is drawn, Edit opens the field
+  PASS  s Save
+  PASS  s More about this book opens
+  PASS  s "This moved me" turns on
+  PASS  s on the device at once; the cloud still the old (offline)
+  PASS  s after reopen: the words and moved-me kept, on the device and in the cloud
+  PASS  s a second device reads both
+
+[e] an existing artifact: Edit, every word cleared, Save; then spaces only, Save
+  PASS  e cleared: Save is disabled and refused; the stored words and stamp unchanged; the field still open
+  PASS  e spaces only: Save is disabled and refused; the stored words unchanged
+  PASS  e the book page then offers Open it, not Write
+  PASS  e the cloud still holds the words
+
+[w] an artifact with empty words, made by Write with a title and no words; then Write again with words
+  PASS  w Write your artifact is offered and opens the editor
+  PASS  w a title and no words: an artifact is stored with an empty body
+  PASS  w the book page offers Write your artifact again
+  FAIL  w the words typed the second time are kept on the device
+        got  ""
+        want "the words I wrote the second time"
+  FAIL  w after a close and reopen: kept on the device and in the cloud
+        got  ["",""]
+        want ["the words I wrote the second time","the words I wrote the second time"]
+  PASS  page errors on every device
+
+staged-build-before-fix: 16 / 18 passed, 2 failed
+RIG-DONE
+RUNNER: staged-build-before-fix took 30 s, 2026-11-26 12:01

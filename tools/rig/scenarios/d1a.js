@@ -29,9 +29,9 @@ rigSuite(async function () {
 
   // A device opened afresh with a signal, its six loads answered.
   async function reopen(d) { d.close(); await d.open(); await d.waitFor(LATCHES_OPEN, 40000); await d.wait(1200); return d; }
-  // The book page's "Yumi may read this" switch, clicked as a reader clicks it. Returns its state after the click.
+  // The artifact page's "Yumi may read this" switch (R3 moved it there from the book page), clicked as a reader clicks it. Returns its state after the click.
   async function flip(d, bookId) {
-    await d.ev('location.hash = ' + J('#book/' + bookId)); await d.wait(500);
+    await d.ev('location.hash = ' + J('#artifact/' + bookId)); await d.wait(500);
     return d.ev("(function(){ var s = document.querySelector('.art-may-switch'); if (!s) { return 'no switch'; } s.click(); return s.getAttribute('aria-checked'); })()");
   }
   const devArt = (d, k) => d.ev('(function(){ var a = state.bookArtifacts[' + J(k) + ']; return a ? { body: a.body, on: a.yumiMayRead === true } : null; })()');

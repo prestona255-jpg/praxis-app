@@ -15,7 +15,7 @@ file stays the living plan, this is its runway view (and the Builder's LAUNCH
 RUNWAY panel). No clock — the July-15 date is retired; order, not dates.
 
 ## The sequence
-Order now led by BETA.md (2026-11-23; re-ruled 2026-11-25: D1a, then the rooms back to back with LC2 right after R1, then Deeper Yumi, then D1b, D1c and D2, the demo page last).
+Order now led by BETA.md (2026-11-23; re-ruled 2026-11-25: D1a, then R1, then — re-ruled again after R1 on 25 Nov — the book page (R3), Find a book (R2) and LC2, then the remaining rooms, then Deeper Yumi, then D1b, D1c and D2, the demo page last).
 
 | # | Round / gate-item | Status | Notes |
 |---|---|---|---|
