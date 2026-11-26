@@ -28,6 +28,13 @@
    The result is stored on the lens as `look` (lens-contract.md §1) and is never
    re-derived, so a rename, a regeneration or a re-ordering keeps the colour.
 
+   Blue sky (LC2, r88-r89, 26 Nov 2026): unless <html data-sky="brown">, a Sky paints
+   its current as a sunset burst -- each stroke coloured by its distance from the
+   flower (gold, coral, pink, pale blue), the gold strokes untouched -- and tells its
+   host where the flower is (--sky-fx, --sky-fy, --sky-rx, --sky-ry) so the host's
+   glow sits behind it. With data-sky="brown" every stroke is as it was before LC2.
+   YumiSky never takes the burst. No stored look is changed by any of this.
+
    Motion law (seventh r9): the sky is never still, paper is. Everything here
    is transform/opacity CSS keyframes plus one canvas (the current) driven by
    one requestAnimationFrame loop that runs only for skies on screen and stops
@@ -256,9 +263,25 @@ var PraxisHand = (function(){
     return svgEl(h,'-50 -50 100 100');
   }
 
+  /* LC2: the sunset burst. A stroke's colour by its distance from the flower: gold at the flower, through coral and pink, to pale blue at the edge.
+     33 steps, built once; burst() is one square root and one string per stroke. The alpha is the brown current's, lifted, and thinned toward the edge. */
+  var RAMP=[[255,222,140],[255,170,104],[255,128,128],[244,150,190],[206,222,246]], BURST=(function(){
+    var o=[],i,t,k,u,a,b;
+    for(i=0;i<=32;i++){ t=i/32; k=Math.min(3,Math.floor(t*4)); u=t*4-k; a=RAMP[k]; b=RAMP[k+1]; o.push(Math.round(a[0]+(b[0]-a[0])*u)+','+Math.round(a[1]+(b[1]-a[1])*u)+','+Math.round(a[2]+(b[2]-a[2])*u)); }
+    return o;
+  })();
+  function burst(dx,dy,rad,al){ var t=c01(Math.sqrt(dx*dx+dy*dy)/(rad||1)); return 'rgba('+BURST[Math.round(t*32)]+','+(Math.round(Math.min(.6,al*2.1+.06)*(1-.35*t)*1000)/1000)+')'; }
+  function blueSky(){ var d=window.document&&window.document.documentElement; return !(d&&d.getAttribute&&d.getAttribute('data-sky')==='brown'); }
+  /* LC2: the host's glow follows the flower. Written only when a value changes. */
+  function skyVars(S,G){
+    var rx=Math.round(Math.min(2.78*G.g,.84*G.W)), ry=Math.round(rx*.543), fx=Math.round(((S.field&&S.field.offsetLeft)||0)+G.cx), fy=Math.round(G.ft+G.cy), k=fx+','+fy+','+rx, st=S.host.style;
+    if(S.bk===k||!st||!st.setProperty){return;} S.bk=k;
+    st.setProperty('--sky-fx',fx+'px'); st.setProperty('--sky-fy',fy+'px'); st.setProperty('--sky-rx',rx+'px'); st.setProperty('--sky-ry',ry+'px');
+  }
+
   /* the current: a canvas of slow strokes that circles the centre and whatever lenses are in the sky, taking a little of each colour as it passes */
   function Flow(canvas,host){
-    var F={L:[],P:[],ctx:null,W:0,H:0,ft:0,al:.3,gal:.8,rnd:rng(23)};
+    var F={L:[],P:[],ctx:null,W:0,H:0,ft:0,al:.3,gal:.8,rnd:rng(23),blue:false};
     function vec(x,y){
       var L=F.L,i,vx=.011,vy=.004*Math.sin(x/34)+.003*Math.cos(y/26),dx,dy,d,near=9,t=0,m;
       for(i=0;i<L.length;i++){dx=x-L[i][0];dy=y-L[i][1];d=Math.sqrt(dx*dx+dy*dy)+.01;vx+=(-dy/d)*L[i][2]/Math.pow(d,1.25);vy+=(dx/d)*L[i][2]/Math.pow(d,1.25);if(d/L[i][3]<near){near=d/L[i][3];t=i;}}
@@ -279,8 +302,8 @@ var PraxisHand = (function(){
       for(i=0;i<P.length;i++){ p=P[i];v=vec(p.x,p.y);
         if((L.length&&v[2]<((v[3]===0)?.56:.72))||p.life<0||p.x<-6||p.y<-6||p.x>F.W+6||p.y>F.H+6){spawn(p);continue;}
         sp=(.34+.3*c01(1.7-v[2]))*k*(p.g?1.6:1);nx=p.x+v[0]*sp;ny=p.y+v[1]*sp;
-        if(p.g){col='#E8C25C';al=(p.y<F.ft)?.16:F.gal;}else{col=(L.length&&v[2]<1.8)?mix(p.c,L[v[3]][4],sstep(1.8,.9,v[2])*.6):p.c;al=(p.y<F.ft)?F.al*.45:F.al;}
-        c.strokeStyle=rgba(col,al);c.lineWidth=p.w;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(nx,ny);c.stroke();
+        if(p.g){col='#E8C25C';al=(p.y<F.ft)?.16:F.gal;}else{col=(F.blue&&L.length)?'':((L.length&&v[2]<1.8)?mix(p.c,L[v[3]][4],sstep(1.8,.9,v[2])*.6):p.c);al=(p.y<F.ft)?F.al*.45:F.al;}
+        c.strokeStyle=col?rgba(col,al):burst(p.x-L[0][0],p.y-L[0][1],Math.max(F.W,F.H)*.62,al);c.lineWidth=p.w;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(nx,ny);c.stroke();
         p.x=nx;p.y=ny;p.life-=k;
       }
     };
@@ -326,6 +349,7 @@ var PraxisHand = (function(){
       G=geo(); if(S.fx){ G.g=gFix(G.W); }
       if(!G.W){return;}
       S.G=G;
+      S.flow.blue=blueSky(); if(S.flow.blue){ skyVars(S,G); }
       sig=N+':';for(i=0;i<N;i++){sig+=S.items[i].name+'|'+S.items[i].state+'|'+S.items[i].books+';';}
       sig+='K'+S.keptLooks.length+'/'+G.W+'x'+(S.fx?'f':G.H)+'/'+(S.threads?'t':'-')+(S.names?'n':'-')+(S.stems?'s':'-')+(S.fl?'w':'-');
       changed=(sig!==S.sig); S.sig=sig;
@@ -484,6 +508,7 @@ var PraxisHand = (function(){
         if(up!==o.up||side!==o.side){ o.up=up;o.side=side; if(!side&&(!o.pos||o.pos.charAt(0)==='u'||o.pos.charAt(0)==='d'||o.pos===o.wasSide)){ o.pos=up?'up':'dn'; } o.wasSide=side; }
         L.push([o.x,G.ft+o.y,(l.state==='kept'||l.state==='own'||l.state==='deciding'||l.state==='cat'||l.state==='book')?.42:.2,o.sz*.5,mix(l.look.c[0],'#4A3220',.4)]);}
       S.flow.L=[[G.cx,G.ft+G.cy,1.3,G.g*.52,'#8A6226']].concat(L);
+      if(S.flow.blue){ skyVars(S,G); }
       solve(snap);
       if(snap){ readDims(true); solve(true); readDims(true); solve(true); }
       var tg=S.field.querySelector('[data-threads]'),el,p,q,dx,dy,d,ux,uy,x0,y0,x1,y1,mx,my,j;

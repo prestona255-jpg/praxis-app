@@ -18420,3 +18420,17 @@ html[data-mood="day"] .lx.ol.bk4 .bk4-head{background:color-mix(in srgb,var(--go
   .lx.ol.bk4.bk4a .ol-col{padding-top:28px;padding-bottom:80px}
 }
 /* === L4b-3b THE BOOK PAGE AND ITS ARTIFACT -- end === */
+/* === LC2 THE BLUE SKY -- begin ===
+   LC2 (rulings r88-r89, 14 Nov 2026; built 26 Nov): the lens sky is blue with a sunset burst behind the flower and
+   warm ground at its foot, in both moods; the Open Lens band is the same blue under its lens's glow (r90). The blue
+   is scoped to the sky's own hosts: --sky stays the night brown everywhere else (Yumi's panel, covers, sunk fields).
+   The burst is one still background layer; hand.js places it on the flower (--sky-fx/-fy/-rx/-ry) and colours the
+   current to match. Lens names and the hint carry a soft dark edge so they read on the burst as on the blue.
+   The way back: <html data-sky="brown"> (views.js, LC2_BLUE_SKY) and every rule here stops applying. Tokens only. */
+html:not([data-sky="brown"]) .sky,
+html:not([data-sky="brown"]) .lx.ol .ol-band{--sky:var(--sky-blue);--on-night-2:var(--on-sky-2);--on-night-3:var(--on-sky-3)}
+html:not([data-sky="brown"]) .sky{--sky-a:radial-gradient(var(--sky-rx,84%) var(--sky-ry,37%) at var(--sky-fx,50%) var(--sky-fy,56%),var(--sky-burst));--sky-b:var(--sky-ground)}
+html:not([data-sky="brown"]) .sky .orb .l,
+html:not([data-sky="brown"]) .sky .hint{text-shadow:var(--sky-edge)}
+html:not([data-sky="brown"]) .sky .quiet{color:var(--on-night-2);text-shadow:var(--sky-edge)}
+/* === LC2 THE BLUE SKY -- end === */

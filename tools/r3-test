@@ -165,7 +165,7 @@ check('no new storage key in the block (sv / ls never called)', count(helpers, '
 WScript.Echo('\nB8 the CSS block');
 var BEG = '/* === L4b-3b THE BOOK PAGE AND ITS ARTIFACT', END = '/* === L4b-3b THE BOOK PAGE AND ITS ARTIFACT -- end === */';
 check('one begin marker and one end marker', count(csrc, BEG), 2);
-var blk = csrc.slice(csrc.indexOf(BEG)), lines = blk.split('\n'), i, bad = 0, rules = 0, inHead = true, L;
+var blk = csrc.slice(csrc.indexOf(BEG), csrc.indexOf(END) + END.length), lines = blk.split('\n'), i, bad = 0, rules = 0, inHead = true, L;
 for (i = 0; i < lines.length; i++) {
   L = lines[i].replace(/^\s+/, '');
   if (inHead) { if (L.indexOf('*/') !== -1) { inHead = false; } continue; }

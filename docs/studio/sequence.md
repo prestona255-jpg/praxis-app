@@ -31,6 +31,16 @@ records a dated one-line rationale here; a re-plan that changes the launch spine
 retires an item, or contradicts a Preston decision is written as `PROPOSED:` and
 flagged at the top of the Builder's sequence page for his call — never applied silently.
 
+- **2026-11-26 (LC2: the blue sky and sunset burst, v3.344)** -- BETA.md's row LC2. The order after R3 was re-ruled by
+  Preston on 26 Nov ("could we do the sky build next once the book page is good"; BETA.md leads): LC2 before Find a book
+  (R2). His ruling, recorded as made, so no `PROPOSED:` flag. Applied byte for byte from the build chat's patch (cut on
+  93fe836; rulings r88, r89, r90 and R1–R8 of 26 Nov) and its follow-on lc2-fix1.patch (Preston's G1–G3: the burst on the
+  flower where the field is inset, the sky's quiet links readable in Day). The lens sky is blue with a sunset burst behind the flower on Home,
+  You and desktop, and the Open Lens band is the same blue; `--sky` stays brown everywhere else. js/hand.js unlocked for
+  this build only, locked again at `4000e9cc…` (55,796 B). The way back: `LC2_BLUE_SKY`, or `?sky=brown` for one load.
+  Proved: tools/lc2-test 46 / 46 (red on the 93fe836 tree, 22 / 46; three mutations caught), r3-test 68 / 68 (its CSS slice ends at its own block, G1), CHECKS 37 of 37, captures of Home and You at
+  390 and 1360 Night and Day (`docs/checkpoints/lc2.md`). R3 recorded pushed (93fe836, Checks green 36 of 36, Preston's
+  phone check passed). Next, by the re-ruled order: Find a book (R2).
 - **2026-11-25 (R3: the book page and its artifact, v3.343)** -- BETA.md's row R3 (L4b-3b). The order after R1 was
   re-ruled by Preston on 25 Nov (BETA.md leads): the book page, then Find a book (R2), then LC2 — so R3 runs before R2
   and LC2. Applied byte for byte from the build chat's patch (cut on f6fe2c4). #book/<id> redrawn as a field (cover,
@@ -1789,6 +1799,7 @@ the stranger's walk of the mockup. Landed: 8 deltas, brief v3, spine mockup + ca
   past the edge.
   · **L4b-4** — the capture dial, the hold menu, status behind the cover, the hint. Needs L4b-3 (book). Medium.
   · **LC2** — the blue sky and the sunset burst. Needs L4 AND a new `hand.js` from a design sitting (ledger E1). Engine.
+    BUILT 26 Nov 2026 at v3.344 (BETA.md row LC2, after the book page and before Find a book); record `docs/checkpoints/lc2.md`.
   · **L4b-5** — the empty rooms. Needs W1–W3 ruled; ideally with L5. Small.
   History — the single L4b entry as written (ruling 79, 2026-10-29; after L4, before L5) — the rooms no lane owned: Search
   redrawn (r45: the labelled pill, scope under the box, one list in three groups) · the lens page (r46) · the category

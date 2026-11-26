@@ -19,7 +19,8 @@ $Harnesses = @(
   @('lens-data-test',    'tools/lens-data-test/run.js'),
   @('lens-eval-test',    'tools/lens-eval-test/run.js'),
   @('r1-test',           'tools/r1-test'),
-  @('r3-test',           'tools/r3-test')
+  @('r3-test',           'tools/r3-test'),
+  @('lc2-test',          'tools/lc2-test')
 )
 $CscriptTimeoutSec = 300
 $RigTimeoutSec = 1000

@@ -1,0 +1,275 @@
+// tools/lc2-test -- LC2 unit harness: the blue sky and sunset burst (rulings r88, r89, r90; 26 Nov 2026).
+// Runs the SHIPPED engine: js/hand.js is compiled here, twice, into a stub page with a recording canvas
+// context -- OLD (hand.js at 93fe836, before LC2) and NEW (hand.js in the tree under test) -- and the
+// two are driven with the same lenses, the same flow field and the same clock.
+//   a  BROWN UNCHANGED -- with <html data-sky="brown"> a Sky's current sets the same strokeStyle strings,
+//                         in the same order, in OLD and NEW (40 steps after the build)
+//   b  LOOKS UNCHANGED -- makeLook for the same names, and gardenColour 0..16, equal in OLD and NEW
+//   c  BLUE            -- with no attribute NEW's strokes differ from OLD's; the gold strokes
+//                         (rgba(232,194,92,..)) match the brown run in number and place; every other
+//                         stroke is one of the 33 steps between the five burst stops, alpha never over .6;
+//                         and each such stroke is EXACTLY the step and alpha its start point's distance
+//                         from the flower gives (no lens tint in the blue sky: ruling R5)
+//   d  THE FLOWER      -- after the build the host's style carries --sky-fx/-fy/-rx/-ry in px, at the
+//                         flower's place and the burst's size the geometry gives; with the field inset
+//                         24 px in its host, --sky-fx carries the inset (lc2-fix1)
+//   e  YUMI            -- YumiSky's strokes are identical in OLD and NEW with no attribute set
+//   f  THE SHEETS      -- theme.css: --sky #1C120A once and #2B1E12 twice; --sky-blue #0F2F5E once and
+//                         #1D5AA6 twice. components.css, LC2 THE BLUE SKY block: every selector starts
+//                         html:not([data-sky="brown"]); no hex colour; one rule for the sky's quiet links in
+//                         var(--on-night-2) (lc2-fix1)
+//   g  THE SWITCH      -- js/views.js has "var LC2_BLUE_SKY = true;" once; sw.js reads praxis-v3.344 or a
+//                         later version (so the next build's bump does not turn Checks red)
+// Where OLD comes from, in order: the second argument (a path to the old hand.js); else
+// `git show 93fe836:js/hand.js` run against [root]; else (a shallow clone, as on the Checks machine, or a
+// copy with no .git) the FINGERPRINTS below, which were read from OLD and are re-proven against OLD on
+// every run that has it. The run prints which one it used.
+// EXTENSIONLESS on purpose (see tools/parse-check). ASCII-only.
+// Usage:  cscript //nologo //E:jscript tools/lc2-test [root] [old-hand.js]
+// Exit:   0 = every case passed . 1 = a case failed . 2 = could not load
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName));
+var oldPath = '';
+if (WScript.Arguments.length > 0) { root = String(WScript.Arguments(0)); }
+if (WScript.Arguments.length > 1) { oldPath = String(WScript.Arguments(1)); }
+// CR stripped on read: a CRLF checkout (core.autocrlf=true) reads the same as the committed LF bytes.
+function readFile(p) { var s = fso.OpenTextFile(p, 1, false); var t = s.AtEndOfStream ? '' : s.ReadAll(); s.Close(); return t.replace(/\r/g, ''); }
+
+var failures = 0, total = 0;
+function check(name, got, want) { total++; if (got === want) { WScript.Echo('  PASS  ' + name + '  = ' + got); } else { failures++; WScript.Echo('  FAIL  ' + name + '\n        got  ' + got + '\n        want ' + want); } }
+(function () { var b = failures; check('self-check (expected to FAIL)', 1, 2); if (failures - b !== 1) { WScript.Echo('HARNESS SELF-CHECK FAILED'); WScript.Quit(2); } failures = b; total--; })();
+function count(src, a) { var n = 0, i = src.indexOf(a); while (i !== -1) { n++; i = src.indexOf(a, i + 1); } return n; }
+
+// The fingerprints of OLD (93fe836, hand.js md5 dc6a021e5b89652cf5e6c0a84ae249cd), read by this harness from OLD.
+var FP = { brownN: 11355, brown: '273d22fd', looks: '07b13a22', yumiN: 9069, yumi: '077dd2ea' };
+
+// FNV-1a over a string, as 8 hex digits.
+function fnv(s) { var h = 2166136261, i, x; for (i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0; } x = h.toString(16); while (x.length < 8) { x = '0' + x; } return x; }
+function ser(v) {
+  var t = typeof v, o, k, ks, i;
+  if (v === null) { return 'null'; }
+  if (t === 'number' || t === 'boolean') { return String(v); }
+  if (t === 'string') { return '"' + v + '"'; }
+  if (t === 'undefined') { return 'undefined'; }
+  if (v instanceof Array) { o = []; for (i = 0; i < v.length; i++) { o.push(ser(v[i])); } return '[' + o.join(',') + ']'; }
+  ks = []; for (k in v) { if (v.hasOwnProperty(k)) { ks.push(k); } } ks.sort();
+  o = []; for (i = 0; i < ks.length; i++) { o.push(ks[i] + ':' + ser(v[ks[i]])); } return '{' + o.join(',') + '}';
+}
+
+// ---- the stub page ----
+// JScript has no Array.prototype.indexOf; the browser does, and hand.js uses it (solve). Same meaning here.
+if (!Array.prototype.indexOf) { Array.prototype.indexOf = function (v, from) { var i; for (i = from || 0; i < this.length; i++) { if (this[i] === v) { return i; } } return -1; }; }
+function mkStyle() { var s = { props: {} }; s.setProperty = function (k, v) { s.props[k] = String(v); }; return s; }
+function El(tag) {
+  var e = { tagName: tag, className: '', style: mkStyle(), attrs: {}, children: [], innerHTML: '', firstChild: null, lastChild: null,
+    offsetWidth: 0, offsetHeight: 0, clientWidth: 0, clientHeight: 0, offsetTop: 0, sel: {} };
+  e.setAttribute = function (n, v) { e.attrs[n] = String(v); };
+  e.getAttribute = function (n) { return e.attrs.hasOwnProperty(n) ? e.attrs[n] : null; };
+  e.hasAttribute = function (n) { return e.attrs.hasOwnProperty(n); };
+  e.appendChild = function (c) { e.children.push(c); return c; };
+  e.removeChild = function (c) { var i; for (i = 0; i < e.children.length; i++) { if (e.children[i] === c) { e.children.splice(i, 1); break; } } return c; };
+  e.querySelector = function (s) { return e.sel.hasOwnProperty(s) ? e.sel[s] : null; };
+  e.addEventListener = function () {};
+  e.getBoundingClientRect = function () { return { top: 0, bottom: e.clientHeight, left: 0, right: e.clientWidth }; };
+  return e;
+}
+// A recording canvas context: stroke() records the strokeStyle set at that moment, and the point moveTo began at.
+function Ctx(rec) {
+  var c = { strokeStyle: '', fillStyle: '', lineWidth: 1, lineCap: '', globalCompositeOperation: '' }, nop = function () {}, mx = 0, my = 0;
+  c.setTransform = nop; c.fillRect = nop; c.beginPath = nop; c.lineTo = nop;
+  c.moveTo = function (x, y) { mx = x; my = y; };
+  c.stroke = function () { if (rec.on) { rec.list.push(c.strokeStyle); rec.xy.push([mx, my]); } };
+  return c;
+}
+// One engine, compiled from source into its own page. sky = null (no attribute) or 'brown'.
+function Page(src, sky) {
+  var P = { rec: { on: false, list: [], xy: [] } }, html = El('html');
+  if (sky) { html.setAttribute('data-sky', sky); }
+  var doc = { documentElement: html, hidden: false, fonts: null,
+    createElement: function (t) { var b = El(t), art = El('span'), lab = El('span'); lab.offsetWidth = 64; lab.offsetHeight = 16; b.firstChild = art; b.lastChild = lab; return b; } };
+  var win = { document: doc, devicePixelRatio: 2, innerHeight: 800,
+    matchMedia: function () { return { matches: false }; }, addEventListener: function () {},
+    requestAnimationFrame: function () {}, setTimeout: function () { return 0; }, clearTimeout: function () {} };
+  P.H = (new Function('window', 'document', src + '\nreturn PraxisHand;'))(win, doc);
+  P.canvas = function () { var cv = El('canvas'), ctx = Ctx(P.rec); cv.getContext = function () { return ctx; }; return cv; };
+  return P;
+}
+var NAMES = ['Liberation', 'Care', 'Doubt'];
+function items(H) { var out = [], looks = [], i, lk; for (i = 0; i < NAMES.length; i++) { lk = H.makeLook(NAMES[i], looks); looks.push(lk); out.push({ name: NAMES[i], look: lk, books: 3 + i * 4, state: ['kept', 'own', 'offer'][i] }); } return out; }
+// A Home-sized sky: the host 390 x 560, the field under a 40 px head. Built, then stepped 40 times; only the 40 steps are recorded.
+// inset (optional): the field's left offset in the host, its width shrinking to match (a phone's Home has 24 px each side).
+function runSky(src, sky, inset) {
+  var P = Page(src, sky), host = El('div'), field = El('div'), S, i, its;
+  inset = inset || 0;
+  host.clientWidth = 390; host.clientHeight = 560; host.offsetWidth = 390;
+  field.clientWidth = 390 - 2 * inset; field.clientHeight = 520; field.offsetTop = 40; field.offsetLeft = inset;
+  field.sel['[data-threads]'] = El('g'); field.sel['svg.bg'] = El('svg');
+  host.sel['[data-field]'] = field; host.sel['canvas.paint'] = P.canvas();
+  its = items(P.H);
+  S = P.H.Sky(host, {}); S.set(its, [[0, 1, 2]], [its[0].look, its[1].look]); S.build();
+  P.rec.on = true;
+  for (i = 0; i < 40; i++) { S.tick(1000 + i * 16); }
+  return { list: P.rec.list, xy: P.rec.xy, style: host.style.props, flowOn: !!S.flowOn };
+}
+// Yumi's panel: built (its own 270 settling steps) and stepped 40 times; everything is recorded.
+function runYumi(src) {
+  var P = Page(src, null), host = El('div'), S, i;
+  host.offsetWidth = 180; host.sel['canvas.paint'] = P.canvas();
+  P.rec.on = true;
+  S = P.H.YumiSky(host); S.build();
+  for (i = 0; i < 40; i++) { S.tick(1000 + i * 16); }
+  return P.rec.list;
+}
+function looksOf(src) {
+  var H = Page(src, null).H, out = [], others = [], i, lk, nm = ['Liberation', 'Power, named', 'Dignity', 'Solidarity', 'Care', 'Doubt', 'Praxis', 'Inheritance', 'Hope', 'Craft', 'Grief', 'Attention'];
+  for (i = 0; i < nm.length; i++) { lk = H.makeLook(nm[i], others); others.push(lk); out.push(nm[i] + '=' + ser(lk)); }
+  out.push('alone=' + ser(H.makeLook('Liberation')));
+  for (i = 0; i <= 16; i++) { out.push('g' + i + '=' + ser(H.gardenColour(i))); }
+  return out.join('\n');
+}
+function same(a, b) { var i; if (a.length !== b.length) { return 'lengths ' + a.length + ' vs ' + b.length; } for (i = 0; i < a.length; i++) { if (a[i] !== b[i]) { return 'first difference at ' + i + ': ' + a[i] + ' vs ' + b[i]; } } return 'identical'; }
+
+// ---- OLD: the argument, else git, else the fingerprints ----
+var newSrc, oldSrc = null, oldFrom = '';
+try {
+  newSrc = readFile(fso.BuildPath(root, 'js\\hand.js'));
+  if (oldPath) { oldSrc = readFile(oldPath); oldFrom = 'the file given: ' + oldPath; }
+  else {
+    var tmp = fso.BuildPath(fso.GetSpecialFolder(2), 'lc2-test-old-hand-' + (new Date()).getTime() + '.js'), sh = new ActiveXObject('WScript.Shell'), rc;
+    rc = sh.Run('cmd /c git -C "' + root + '" show 93fe836:js/hand.js > "' + tmp + '" 2>nul', 0, true);
+    if (rc === 0 && fso.FileExists(tmp) && fso.GetFile(tmp).Size > 0) { oldSrc = readFile(tmp); oldFrom = 'git show 93fe836:js/hand.js'; }
+    if (fso.FileExists(tmp)) { fso.DeleteFile(tmp); }
+    if (oldSrc === null) { oldFrom = 'the fingerprints (git could not give 93fe836 here)'; }
+  }
+  Page(newSrc, null);
+  if (oldSrc !== null) { Page(oldSrc, null); }
+} catch (e) { WScript.Echo('LOAD FAILED: ' + e.message); WScript.Quit(2); }
+WScript.Echo('tree under test: ' + root + '\nOLD from: ' + oldFrom);
+
+var newBrown = runSky(newSrc, 'brown'), newBlue = runSky(newSrc, null), newLooks = looksOf(newSrc), newYumi = runYumi(newSrc);
+var oldBrown = null, oldBlue = null, oldLooks = null, oldYumi = null;
+if (oldSrc !== null) { oldBrown = runSky(oldSrc, 'brown'); oldBlue = runSky(oldSrc, null); oldLooks = looksOf(oldSrc); oldYumi = runYumi(oldSrc); }
+
+if (oldSrc !== null) {
+  WScript.Echo('\n0 the fingerprints in this file are OLD\'s');
+  check('brown strokes, count', oldBrown.list.length, FP.brownN);
+  check('brown strokes, fingerprint', fnv(oldBrown.list.join('\n')), FP.brown);
+  check('looks and Garden colours, fingerprint', fnv(oldLooks), FP.looks);
+  check('Yumi strokes, count', oldYumi.length, FP.yumiN);
+  check('Yumi strokes, fingerprint', fnv(oldYumi.join('\n')), FP.yumi);
+}
+
+WScript.Echo('\na BROWN UNCHANGED (data-sky="brown", 40 steps)');
+check('the current ran', newBrown.flowOn && newBrown.list.length > 1000, true);
+if (oldSrc !== null) { check('NEW vs OLD, every strokeStyle in order (' + oldBrown.list.length + ' strokes)', same(newBrown.list, oldBrown.list), 'identical'); }
+else { check('NEW vs OLD by fingerprint (' + FP.brownN + ' strokes)', newBrown.list.length + ' ' + fnv(newBrown.list.join('\n')), FP.brownN + ' ' + FP.brown); }
+
+WScript.Echo('\nb LOOKS UNCHANGED (makeLook x 13, gardenColour 0..16)');
+if (oldSrc !== null) { check('NEW vs OLD', newLooks === oldLooks ? 'identical' : 'differ', 'identical'); }
+else { check('NEW vs OLD by fingerprint', fnv(newLooks), FP.looks); }
+
+WScript.Echo('\nc BLUE (no attribute)');
+var STEPS = {}, RAMP = [[255, 222, 140], [255, 170, 104], [255, 128, 128], [244, 150, 190], [206, 222, 246]];
+(function () { var i, t, k, u, a, b; for (i = 0; i <= 32; i++) { t = i / 32; k = Math.min(3, Math.floor(t * 4)); u = t * 4 - k; a = RAMP[k]; b = RAMP[k + 1];
+  STEPS[Math.round(a[0] + (b[0] - a[0]) * u) + ',' + Math.round(a[1] + (b[1] - a[1]) * u) + ',' + Math.round(a[2] + (b[2] - a[2]) * u)] = 1; } })();
+(function () { var n = 0, k; for (k in STEPS) { if (STEPS.hasOwnProperty(k)) { n++; } } check('the five stops make 33 distinct steps', n, 33); })();
+var GOLD = 'rgba(232,194,92,';
+if (oldSrc !== null) { check('NEW differs from OLD', same(newBlue.list, oldBlue.list) === 'identical' ? 'identical' : 'differs', 'differs'); }
+else { check('NEW differs from OLD (by fingerprint)', fnv(newBlue.list.join('\n')) === FP.brown ? 'identical' : 'differs', 'differs'); }
+(function () {
+  var L = newBlue.list, B = newBrown.list, gB = 0, gL = 0, place = 0, other = 0, offRamp = 0, hiAl = 0, maxAl = 0, i, m, a, firstOff = '';
+  check('as many strokes as the brown run', L.length, B.length);
+  for (i = 0; i < B.length; i++) { if (B[i].indexOf(GOLD) === 0) { gB++; } }
+  for (i = 0; i < L.length; i++) {
+    if (L[i].indexOf(GOLD) === 0) { gL++; if (B[i] !== L[i]) { place++; } continue; }
+    other++; m = /^rgba\((\d+,\d+,\d+),([0-9.]+)\)$/.exec(L[i]);
+    if (!m || !STEPS.hasOwnProperty(m[1])) { offRamp++; if (!firstOff) { firstOff = L[i]; } continue; }
+    a = parseFloat(m[2]); if (a > maxAl) { maxAl = a; } if (a > 0.6) { hiAl++; }
+  }
+  check('gold strokes, same number as the brown run (' + gB + ')', gL, gB);
+  check('gold strokes, same place and string as the brown run', place, 0);
+  check('other strokes exist (' + other + ')', other > 0, true);
+  check('other strokes off the 33 steps' + (firstOff ? ' (first: ' + firstOff + ')' : ''), offRamp, 0);
+  check('alpha over .6 (highest ' + maxAl + ')', hiAl, 0);
+  // R5, worked out here and not read from hand.js: the flower sits at the field's middle under the 40 px head
+  // (195, 300); the burst's reach is .62 of the canvas's longer side (560); the step is the distance over the
+  // reach, in 32nds; the alpha is the brown current's (.3, or .135 above the field) x 2.1 + .06, at most .6,
+  // thinned by 35% toward the edge, to 3 places. Every non-gold blue stroke must be exactly that.
+  var ORD = [], miss = 0, firstMiss = '', near = 0, far = 0, j, dx, dy, t, al0, want;
+  (function () { var i, t2, k, u, a2, b2; for (i = 0; i <= 32; i++) { t2 = i / 32; k = Math.min(3, Math.floor(t2 * 4)); u = t2 * 4 - k; a2 = RAMP[k]; b2 = RAMP[k + 1];
+    ORD.push(Math.round(a2[0] + (b2[0] - a2[0]) * u) + ',' + Math.round(a2[1] + (b2[1] - a2[1]) * u) + ',' + Math.round(a2[2] + (b2[2] - a2[2]) * u)); } })();
+  for (j = 0; j < L.length; j++) {
+    if (L[j].indexOf(GOLD) === 0) { continue; }
+    dx = newBlue.xy[j][0] - 195; dy = newBlue.xy[j][1] - 300; t = Math.sqrt(dx * dx + dy * dy) / (560 * 0.62); if (t > 1) { t = 1; }
+    al0 = (newBlue.xy[j][1] < 40) ? 0.3 * 0.45 : 0.3;
+    want = 'rgba(' + ORD[Math.round(t * 32)] + ',' + (Math.round(Math.min(0.6, al0 * 2.1 + 0.06) * (1 - 0.35 * t) * 1000) / 1000) + ')';
+    if (L[j] !== want) { miss++; if (!firstMiss) { firstMiss = L[j] + ' want ' + want; } }
+    if (t < 0.25) { near++; } else if (t > 0.75) { far++; }
+  }
+  check('other strokes not the exact step and alpha of their distance from the flower' + (firstMiss ? ' (first: ' + firstMiss + ')' : ''), miss, 0);
+  check('strokes both near the flower and far from it (' + near + ' / ' + far + ')', near > 100 && far > 100, true);
+})();
+
+WScript.Echo('\nd THE FLOWER (host style after the build)');
+(function () { var ks = ['--sky-fx', '--sky-fy', '--sky-rx', '--sky-ry'], i, v;
+  for (i = 0; i < ks.length; i++) { v = newBlue.style[ks[i]]; check(ks[i] + ' in px', (typeof v === 'string' && /^-?\d+px$/.test(v)) ? 'px' : String(v), 'px'); }
+  v = newBlue.style['--sky-fx']; check('--sky-fx is the field\'s middle (195px)', v, '195px');
+  v = newBlue.style['--sky-fy']; check('--sky-fy is the head plus the field\'s middle (300px)', v, '300px');
+  // the flower is 136 px at 390 (min(136, 390 x .36, 520 x .5)); the burst is min(2.78 x 136, .84 x 390) wide, .543 of that tall
+  v = newBlue.style['--sky-rx']; check('--sky-rx is min(2.78 x flower, .84 x width) (328px)', v, '328px');
+  v = newBlue.style['--sky-ry']; check('--sky-ry is .543 of --sky-rx (178px)', v, '178px');
+  check('brown sky writes none of them', newBrown.style['--sky-fx'] === undefined, true);
+  // lc2-fix1 (26 Nov): the burst's x carries the field's left offset, as its y carries the top offset. A field inset 24 px
+  // (342 wide, its flower at 171 inside it) puts the burst at 24 + 171 = 195 px in the host; with no inset it is as before.
+  var ins = runSky(newSrc, null, 24);
+  check('field inset 24: --sky-fx is 24 + the flower\'s x in the field (171) = 195px', ins.style['--sky-fx'], '195px');
+  check('field inset 24: --sky-fy unchanged (300px)', ins.style['--sky-fy'], '300px');
+  check('field inset 0: --sky-fx as before (195px)', runSky(newSrc, null, 0).style['--sky-fx'], '195px'); })();
+
+WScript.Echo('\ne YUMI (no attribute)');
+check('Yumi\'s current ran', newYumi.length > 1000, true);
+if (oldSrc !== null) { check('NEW vs OLD, every strokeStyle in order (' + oldYumi.length + ' strokes)', same(newYumi, oldYumi), 'identical'); }
+else { check('NEW vs OLD by fingerprint (' + FP.yumiN + ' strokes)', newYumi.length + ' ' + fnv(newYumi.join('\n')), FP.yumiN + ' ' + FP.yumi); }
+check('no burst stroke in Yumi\'s panel', (function () { var i, m; for (i = 0; i < newYumi.length; i++) { if (newYumi[i].indexOf(GOLD) === 0) { continue; } m = /^rgba\((\d+,\d+,\d+),/.exec(newYumi[i]); if (m && STEPS.hasOwnProperty(m[1])) { return newYumi[i]; } } return 'none'; })(), 'none');
+
+WScript.Echo('\nf THE SHEETS');
+(function () {
+  var t = '', c = '', blk = '', i, j, rules, sel, bad = 0, nsel = 0, nrule = 0, firstBad = '', a, b, quiet = [];
+  try { t = readFile(fso.BuildPath(root, 'assets\\theme.css')); } catch (e) { t = ''; }
+  function rx(re) { var m = t.match(re); return m ? m.length : 0; }
+  check('theme.css --sky: #1C120A', rx(/--sky:\s*#1C120A\s*;/g), 1);
+  check('theme.css --sky: #2B1E12', rx(/--sky:\s*#2B1E12\s*;/g), 2);
+  check('theme.css --sky-blue: #0F2F5E', rx(/--sky-blue:\s*#0F2F5E\s*;/g), 1);
+  check('theme.css --sky-blue: #1D5AA6', rx(/--sky-blue:\s*#1D5AA6\s*;/g), 2);
+  try { c = readFile(fso.BuildPath(root, 'assets\\components.css')); } catch (e) { c = ''; }
+  check('components.css LC2 begin marker', count(c, 'LC2 THE BLUE SKY -- begin'), 1);
+  check('components.css LC2 end marker', count(c, 'LC2 THE BLUE SKY -- end'), 1);
+  a = c.indexOf('LC2 THE BLUE SKY -- begin'); b = c.indexOf('LC2 THE BLUE SKY -- end');
+  if (a >= 0 && b > a) { a = c.lastIndexOf('/*', a); b = c.lastIndexOf('/*', b); blk = c.slice(a, b); }
+  rules = blk.replace(/\/\*[\s\S]*?\*\//g, '').split('}');
+  for (i = 0; i < rules.length; i++) {
+    if (rules[i].indexOf('{') < 0) { continue; } nrule++;
+    if (rules[i].slice(0, rules[i].indexOf('{')).indexOf('.quiet') !== -1) { quiet.push(rules[i].replace(/^\s+|\s+$/g, '')); }
+    sel = rules[i].slice(0, rules[i].indexOf('{')).split(',');
+    for (j = 0; j < sel.length; j++) { nsel++; if (sel[j].replace(/^\s+|\s+$/g, '').indexOf('html:not([data-sky="brown"])') !== 0) { bad++; if (!firstBad) { firstBad = sel[j]; } } }
+  }
+  check('LC2 block: rules (4) and selectors (6)', nrule + ' ' + nsel, '4 6');
+  // lc2-fix1 (26 Nov): exactly one rule for the sky's quiet links, under the brown switch, in the sky's own text colour
+  check('LC2 block: rules for the sky\'s quiet links', quiet.length, 1);
+  check('  that rule starts html:not([data-sky="brown"]) and uses var(--on-night-2)',
+    (quiet.length === 1 && quiet[0].indexOf('html:not([data-sky="brown"]) .sky .quiet') === 0 && quiet[0].indexOf('color:var(--on-night-2)') !== -1), true);
+  check('LC2 block: selectors not under html:not([data-sky="brown"])' + (firstBad ? ' (first: ' + firstBad + ')' : ''), bad, 0);
+  check('LC2 block: hex colours', (blk.match(/#[0-9a-fA-F]{3,8}\b/g) || []).length + (blk ? '' : ' (no block)'), '0');
+})();
+
+WScript.Echo('\ng THE SWITCH');
+(function () { var v = '', s = '';
+  try { v = readFile(fso.BuildPath(root, 'js\\views.js')); } catch (e) { v = ''; }
+  try { s = readFile(fso.BuildPath(root, 'sw.js')); } catch (e) { s = ''; }
+  check('views.js "var LC2_BLUE_SKY = true;"', count(v, 'var LC2_BLUE_SKY = true;'), 1);
+  var m = /var CACHE_VERSION = 'praxis-v(\d+)\.(\d+)';/.exec(s), ver = m ? (parseInt(m[1], 10) * 100000 + parseInt(m[2], 10)) : 0;
+  check('sw.js CACHE_VERSION is praxis-v3.344 or later' + (m ? ' (reads v' + m[1] + '.' + m[2] + ')' : ''), ver >= 300344, true); })();
+
+WScript.Echo('\n' + (total - failures) + ' of ' + total + ' passed, ' + failures + ' failed');
+WScript.Quit(failures ? 1 : 0);

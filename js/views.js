@@ -29900,6 +29900,11 @@ function lxYumiSeesSaidSection(uid, rerender) {
 // loop runs only while a sky is on screen and stops when the page is hidden
 // (hand.js); prefers-reduced-motion stills the canvas and every keyframe.
 // =====================================================================
+// LC2 (r88-r89): the sky is blue with a sunset burst. The way back to the brown sky, in code: set this to
+// false (or open the app once with ?sky=brown, which lasts until the next load and is never stored). Either
+// one puts data-sky="brown" on <html>; components.css (LC2 SKY) and hand.js read that and nothing else.
+var LC2_BLUE_SKY = true;
+if (!LC2_BLUE_SKY || /[?&]sky=brown\b/.test(location.search || '')) { document.documentElement.setAttribute('data-sky', 'brown'); }
 var lxSkies = {};          // 'home' | 'you' -> { host, S, key, uid, holdT, held }
 var lxYouMode = 'lenses';  // You's segmented control: lenses | cats | marks
 

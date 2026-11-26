@@ -52,6 +52,14 @@
   --pool:      radial-gradient(82% 46% at 50% 56%, rgba(92,59,33,.58), rgba(92,59,33,0) 72%);
   --sky-a:     var(--pool);
   --sky-b:     none;
+  /* LC2 (r88-r89): the lens sky is blue with a sunset burst behind the flower and warm ground at its foot.
+     Read only inside the sky's own hosts (components.css, LC2 SKY); --sky itself stays the night brown everywhere else. */
+  --sky-blue:   #0F2F5E;
+  --sky-burst:  rgba(252,176,96,.82) 0%, rgba(232,104,86,.68) 18%, rgba(196,66,104,.54) 40%, rgba(132,62,134,.28) 62%, rgba(0,0,0,0) 80%;
+  --sky-ground: linear-gradient(0deg, rgba(110,62,28,.96) 0, rgba(110,62,28,0) 140px);
+  --sky-edge:   0 1px 2px rgba(18,12,28,.82), 0 0 9px rgba(18,12,28,.6);
+  --on-sky-2:   #DCE6F5;
+  --on-sky-3:   #C9D8EE;
   --spill:     linear-gradient(180deg, rgba(232,178,58,.10), rgba(232,178,58,0) 140px);
   --star-glow: drop-shadow(0 0 5px rgba(232,178,58,.85));
   --hi:        rgba(255,255,255,.07);
@@ -401,6 +409,10 @@ html[data-mood="day"],
   --lamp:     radial-gradient(120% 70% at 50% -10%, rgba(92,59,33,.55), rgba(92,59,33,0) 60%);
   --sky-a:    var(--lamp-foot);
   --sky-b:    var(--lamp);
+  --sky-blue:  #1D5AA6;
+  --sky-burst: rgba(255,196,110,.95) 0%, rgba(250,124,92,.82) 18%, rgba(226,82,112,.66) 40%, rgba(178,78,150,.34) 62%, rgba(0,0,0,0) 80%;
+  --on-sky-2:  #E3ECF8;
+  --on-sky-3:  #D6E3F5;
   --spill:    linear-gradient(180deg, rgba(92,59,33,.16), rgba(92,59,33,0) 140px);
   --hi:       rgba(255,255,255,.55);
   --card-hi:  inset 0 1px 0 rgba(255,255,255,.55), 0 1px 0 rgba(42,30,16,.05);
@@ -434,6 +446,10 @@ html[data-mood="auto"] {
   --lamp:     radial-gradient(120% 70% at 50% -10%, rgba(92,59,33,.55), rgba(92,59,33,0) 60%);
   --sky-a:    var(--lamp-foot);
   --sky-b:    var(--lamp);
+  --sky-blue:  #1D5AA6;
+  --sky-burst: rgba(255,196,110,.95) 0%, rgba(250,124,92,.82) 18%, rgba(226,82,112,.66) 40%, rgba(178,78,150,.34) 62%, rgba(0,0,0,0) 80%;
+  --on-sky-2:  #E3ECF8;
+  --on-sky-3:  #D6E3F5;
   --spill:    linear-gradient(180deg, rgba(92,59,33,.16), rgba(92,59,33,0) 140px);
   --hi:       rgba(255,255,255,.55);
   --card-hi:  inset 0 1px 0 rgba(255,255,255,.55), 0 1px 0 rgba(42,30,16,.05);
