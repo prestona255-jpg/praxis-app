@@ -1,0 +1,132 @@
+== R2 behaviour rig on the r2Hold duplicate restored ==
+
+[setup] a reader with three books on the shelf: All About Love (Have read), Teaching Community (Have read), Empire of AI (Reading)
+  PASS  setup the lookups are replaced on the device
+  PASS  setup the cloud holds the three
+
+[1] a tap adds: on the device, in the cloud, and read by a second device, as Will read (and 10: the panel holds)
+  PASS  1 the pill opens the panel under the Shelf's head, the cursor in its field
+  PASS  1 nothing typed: the two scan rows
+  PASS  1 the count line before
+  PASS  1 "teach": three rows, the shelved one as owned
+  PASS  1 the plus's name
+  PASS  1 the row is the added row: the tick, On your shelf · Undo, Will read pressed
+  PASS  1 on the device: Will read, the year kept
+  PASS  10 the field keeps its words and the cursor, the list is there, the panel is in the redrawn Shelf
+  PASS  10 the Shelf's count line reads one more
+  PASS  1 in the cloud: Will read, 1994
+  PASS  1 a second device reads it as Will read
+  PASS  1 Reading pressed: on the device and the row, the panel still holds
+  PASS  1 Reading reaches the cloud
+
+[2] Undo straight after the tap, before the save has landed
+  PASS  2 the row is a plus row again
+  PASS  2 gone on the device
+  PASS  2 deleteBook called once, for the book this visit created
+  PASS  2 gone in the cloud
+  PASS  2 after a close and a reopen: still gone, on the device and in the cloud
+
+[3] a tap with no signal, the app closed, the signal back, reopened
+  PASS  3 the tap
+  PASS  3 on the device; not yet in the cloud
+  PASS  3 reopened with the signal back: kept, on the device and in the cloud
+
+[4] a book already on the shelf is never added again, and Undo never reaches it
+  PASS  4 by title and author: an owned row with its status, no plus, no Undo, no Editions
+  PASS  4 its tap target names it
+  PASS  4 by ISBN (a title the identity key would not match): found by resolveBook, owned
+  PASS  4 the ISBN row's second line
+  PASS  4 The Will to Change: a plus row
+  PASS  4 tapped after it arrived: one copy, the row owned, no Undo
+  PASS  4 from Search: the owned row
+  PASS  4 from Search, by ISBN: owned
+  PASS  4 deleteBook never called in 4; one All About Love on the shelf
+
+[5] an edition picked: its year, publisher, pageCount and ISBN are what is stored
+  PASS  5 the row offers Editions
+  PASS  5 the picker opens inside the row
+  PASS  5 the edition's plus names it
+  PASS  5 on the device: 1995, Vintage Books, 333, its ISBN
+  PASS  5 the row: added, the edition's year
+  PASS  5 in the cloud the same
+  PASS  5 the picker failing: the Editions link goes, the row stays
+
+[6] by hand: a title alone saves; no title, no save, even with an ISBN
+  PASS  6 no results: the card
+  PASS  6 the form: what was typed is the title, the cursor there, Will read pressed
+  PASS  6 no title, an ISBN: Add to shelf disabled
+  PASS  6 a submit anyway (Enter): nothing saved
+  PASS  6 a title alone: saved, no author, Have read
+  PASS  6 the field emptied; the scan rows and every book added in this visit (the edition from 5, then this one), its second line empty (nothing invented)
+  PASS  6 an ISBN with no match: its own card
+  PASS  6 an ISBN typed goes into ISBN; Title starts empty; Add to shelf disabled
+  PASS  6 Back to search: the card again, from memory
+
+[7] the lookup failing, empty, and with no connection
+  PASS  7 Open Library failing: Google Books answers
+  PASS  7 a Google Books row adds with its publisher, pages and subjects
+  PASS  7 both failing: the lookup-down card
+  PASS  7 Try again asks again for the same words
+  PASS  7 both empty: no results
+  PASS  7 offline: the offline card
+  PASS  7 offline: nothing was asked
+  PASS  7 back online, Try again: the rows
+
+[9] a late answer for older words is not drawn over the newer words' rows
+  PASS  9 the newer words' rows
+  PASS  9 after the late answer: still the newer words' rows, the field unchanged
+  PASS  9 the late answer is kept: "pedag" again is drawn from memory, not asked again
+  FAIL  9 while the next answer is on its way: the old list stays, dimmed; no placeholder rows
+        got  ["fb-list",3,3]
+        want ["fb-list is-stale",0,4]
+  PASS  9 then the new rows, not dimmed
+
+[11] a title holding markup is drawn as text and runs nothing
+  PASS  11 drawn as text; no element made from it; nothing ran
+  PASS  11 added and drawn on the Shelf: still nothing ran
+
+[b] Back from a book opened from the panel: the panel, its words and its list
+  PASS  b an owned row opens its book page
+  PASS  b Back: the Shelf with the panel open, the same words and list
+  PASS  b any other way back to the Shelf: the panel closed
+  PASS  b Done closes it; the pill takes the focus
+
+[u] Undo ends when the reader leaves the room the book was added in
+  PASS  u added: the row offers Undo
+  PASS  u Back: the panel and its words; the added book is now an owned row with no Undo; nothing deleted
+  PASS  u on Search: added, with Undo
+  PASS  u on Search, back from the book: All books, the words, the row owned with no Undo; nothing deleted
+
+[f] a redraw the panel did not ask for (a sync landing) keeps the field's focus and caret
+  PASS  f after renderShelf from outside: the same words, focus, caret [2,4], the list
+
+[s] All books: Back from a book opened from it keeps the words; a fresh visit forgets them (R-1)
+  PASS  s a fresh visit opens on Your library, its hint as before
+  PASS  s no match on Your library: the line and a way to All books, in one fb-body
+  PASS  s it switches to All books with the words kept
+  PASS  s All books rows in the full-width holder
+  PASS  s Back from the book: Search, All books, the words kept
+  PASS  s R-1: book from Search, then Home, then the same book, then Search: a fresh visit
+  PASS  s C-1: the device line
+
+[c] the Capture chip: after Scan a book; it opens the panel with the cursor in the field
+  PASS  c the chip follows "Scan a book"
+  PASS  c the sheet closed; the Shelf with the panel open, the cursor in its field
+
+[8] findbook=old: the typed form, no All books side, no Capture chip
+  PASS  8 the pill opens the typed form, not the panel
+  PASS  8 Search has no All books side
+  PASS  8 the Capture chip is absent
+  PASS  8 back to new: the chip again
+
+[e] an empty shelf: the panel is always there, for the first book, with no Done
+  PASS  e the panel is open, headed for the first book, no Done; the empty line reworded; no "+ Add a book"
+  PASS  e a book with no cover: its first letter, The skipped
+  PASS  e the first book added: the panel stays, now "Find a book" with Done; the shelf reads 1 book
+
+[12] no page errors on any device
+  PASS  12 page errors, every device
+
+the r2Hold duplicate restored: 88 / 89 passed, 1 failed
+RIG-DONE
+RUNNER: the r2Hold duplicate restored took 98 s, 2026-11-26 19:25

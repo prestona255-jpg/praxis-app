@@ -1,0 +1,44 @@
+== R2 behaviour rig on f95eb93 (before R2) ==
+
+[setup] a reader with three books on the shelf: All About Love (Have read), Teaching Community (Have read), Empire of AI (Reading)
+  PASS  setup the lookups are replaced on the device
+  PASS  setup the cloud holds the three
+
+[1] a tap adds: on the device, in the cloud, and read by a second device, as Will read (and 10: the panel holds)
+  FAIL  1 the pill opens the panel under the Shelf's head, the cursor in its field
+        got  {"focus":"","panel":false}
+        want {"focus":"fb-q","panel":true}
+  FAIL  1 nothing typed: the two scan rows
+        got  []
+        want ["Scan a book","Scan a shelf"]
+  PASS  1 the count line before
+  FAIL  1 "teach": three rows, the shelved one as owned
+        got  []
+        want ["Teaching to Transgress","=Teaching Community","Teaching Critical Thinking"]
+  FAIL  1 the plus's name
+        got  "no row"
+        want "Add Teaching to Transgress by bell hooks to your shelf"
+  FAIL  1 the row is the added row: the tick, On your shelf · Undo, Will read pressed
+        got  null
+        want {"cls":"fb-row is-added","eds":false,"on":"On your shelf ·Undo","plus":false,"pressed":"Will read","small":"bell hooks · 1994","undo":true}
+  FAIL  1 on the device: Will read, the year kept
+        got  [null,null,null]
+        want ["will-read","1994","bell hooks"]
+  FAIL  10 the field keeps its words and the cursor, the list is there, the panel is in the redrawn Shelf
+        got  {"caret":null,"focus":false,"inShelf":false,"q":null,"rows":0}
+        want {"caret":[5,5],"focus":true,"inShelf":true,"q":"teach","rows":3}
+  FAIL  10 the Shelf's count line reads one more
+        got  "3 books"
+        want "4 books"
+  FAIL  1 in the cloud: Will read, 1994
+        got  [null,null]
+        want ["will-read","1994"]
+  FAIL  1 a second device reads it as Will read
+        got  null
+        want "will-read"
+
+  STOPPED in [1]: TypeError: Cannot read properties of null (reading 'querySelectorAll')
+
+f95eb93 (before R2): 3 / 13 passed, 10 failed, then STOPPED in [1]
+RIG-DONE
+RUNNER: f95eb93 (before R2) took 16 s, 2026-11-26 18:29

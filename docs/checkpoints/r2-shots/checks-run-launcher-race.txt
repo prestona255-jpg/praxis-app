@@ -1,0 +1,152 @@
+INFO commit f95eb93
+INFO version praxis-v3.346
+INFO line-endings sw.js LF
+INFO powershell 5.1.26100.8457
+INFO chrome found
+INFO logs %TEMP%\praxis-checks-20261126-201856-072f66
+PASS  self parse-rejects-broken  exit 1  0.2 s  | wanted exit 1
+PASS  self rig-missing-suite  exit 1  6.2 s  | wanted exit 1
+PASS  parse sw.js  exit 0  0.4 s  | PARSE OK: sw.js
+PASS  parse js/app.js  exit 0  0.3 s  | PARSE OK: js/app.js
+PASS  parse js/arc-constellation.js  exit 0  0.3 s  | PARSE OK: js/arc-constellation.js
+PASS  parse js/arcs.js  exit 0  0.3 s  | PARSE OK: js/arcs.js
+PASS  parse js/hand.js  exit 0  0.2 s  | PARSE OK: js/hand.js
+PASS  parse js/import-capture.js  exit 0  0.2 s  | PARSE OK: js/import-capture.js
+PASS  parse js/integrations.js  exit 0  0.2 s  | PARSE OK: js/integrations.js
+PASS  parse js/intros.js  exit 0  0.2 s  | PARSE OK: js/intros.js
+PASS  parse js/measure.js  exit 0  0.2 s  | PARSE OK: js/measure.js
+PASS  parse js/recognition.js  exit 0  0.2 s  | PARSE OK: js/recognition.js
+PASS  parse js/room-field.js  exit 0  0.2 s  | PARSE OK: js/room-field.js
+PASS  parse js/spotlight.js  exit 0  0.2 s  | PARSE OK: js/spotlight.js
+PASS  parse js/state.js  exit 0  0.2 s  | PARSE OK: js/state.js
+PASS  parse js/tradition-forms-arc.js  exit 0  0.2 s  | PARSE OK: js/tradition-forms-arc.js
+PASS  parse js/verify-engine.js  exit 0  0.2 s  | PARSE OK: js/verify-engine.js
+PASS  parse js/views.js  exit 0  0.2 s  | PARSE OK: js/views.js
+PASS  parse js/voice-input.js  exit 0  0.2 s  | PARSE OK: js/voice-input.js
+PASS  parse js/writing-canvas.js  exit 0  0.2 s  | PARSE OK: js/writing-canvas.js
+PASS  parse js/yumi-brain.js  exit 0  0.2 s  | PARSE OK: js/yumi-brain.js
+PASS  parse js/yumi-ui.js  exit 0  0.2 s  | PARSE OK: js/yumi-ui.js
+PASS  parse assets/marks.js  exit 0  0.2 s  | PARSE OK: assets/marks.js
+PASS  harness fx1c-sim  exit 0  0.2 s  | 72 / 72 passed
+PASS  harness delete-test  exit 0  0.3 s  | 58 / 58 passed
+PASS  harness export-test  exit 0  0.3 s  | 58 / 58 passed
+PASS  harness ceiling-core-test  exit 0  0.2 s  | 36 / 36 passed
+PASS  harness lens-data-test  exit 0  0.3 s  | PASS 101/101
+PASS  harness lens-eval-test  exit 0  0.2 s  | PASS 68/68
+PASS  harness r1-test  exit 0  0.6 s  | %USERPROFILE%\Desktop\praxis-app\tools\r1-test(59, 84) JavaScript runtime error: The value of the property 'r2FindOn' is null or undefined, not a Function object
+PASS  harness r3-test  exit 0  0.3 s  | 68/68 passed
+PASS  harness r2-test  exit 0  0.4 s  | 83/83 passed
+PASS  harness lc2-test  exit 0  4.4 s  | 76 of 76 passed, 0 failed
+PASS  rig _template  exit 0  11.0 s  | _template: 1 / 1 passed, 0 failed
+PASS  rig d1a  exit 0  178.2 s  | d1a: 82 / 82 passed, 0 failed
+PASS  rig fb-1a  exit 0  164.3 s  | fb-1a: 99 / 99 passed, 0 failed
+PASS  rig fb-1a-extras  exit 0  115.9 s  | fb-1a-extras: 20 / 20 passed, 0 failed
+FAIL  rig r2  exit 1  78.0 s  | + FullyQualifiedErrorId : IOException
+----- output of rig r2 -----
+== R2 behaviour rig on r2 ==
+
+[setup] a reader with three books on the shelf: All About Love (Have read), Teaching Community (Have read), Empire of AI (Reading)
+  PASS  setup the lookups are replaced on the device
+  PASS  setup the cloud holds the three
+
+[1] a tap adds: on the device, in the cloud, and read by a second device, as Will read (and 10: the panel holds)
+  PASS  1 the pill opens the panel under the Shelf's head, the cursor in its field
+  PASS  1 nothing typed: the two scan rows
+  PASS  1 the count line before
+  PASS  1 "teach": three rows, the shelved one as owned
+  PASS  1 the plus's name
+  PASS  1 the row is the added row: the tick, On your shelf ú Undo, Will read pressed
+  PASS  1 on the device: Will read, the year kept
+  PASS  10 the field keeps its words and the cursor, the list is there, the panel is in the redrawn Shelf
+  PASS  10 the Shelf's count line reads one more
+  PASS  1 in the cloud: Will read, 1994
+  PASS  1 a second device reads it as Will read
+  PASS  1 Reading pressed: on the device and the row, the panel still holds
+  PASS  1 Reading reaches the cloud
+
+[2] Undo straight after the tap, before the save has landed
+  PASS  2 the row is a plus row again
+  PASS  2 gone on the device
+  PASS  2 deleteBook called once, for the book this visit created
+  PASS  2 gone in the cloud
+  PASS  2 after a close and a reopen: still gone, on the device and in the cloud
+
+[3] a tap with no signal, the app closed, the signal back, reopened
+  PASS  3 the tap
+  PASS  3 on the device; not yet in the cloud
+  PASS  3 reopened with the signal back: kept, on the device and in the cloud
+
+[4] a book already on the shelf is never added again, and Undo never reaches it
+  PASS  4 by title and author: an owned row with its status, no plus, no Undo, no Editions
+  PASS  4 its tap target names it
+  PASS  4 by ISBN (a title the identity key would not match): found by resolveBook, owned
+  PASS  4 the ISBN row's second line
+  PASS  4 The Will to Change: a plus row
+  PASS  4 tapped after it arrived: one copy, the row owned, no Undo
+  PASS  4 from Search: the owned row
+  PASS  4 from Search, by ISBN: owned
+  PASS  4 deleteBook never called in 4; one All About Love on the shelf
+
+[5] an edition picked: its year, publisher, pageCount and ISBN are what is stored
+  PASS  5 the row offers Editions
+  PASS  5 the picker opens inside the row
+  PASS  5 the edition's plus names it
+  PASS  5 on the device: 1995, Vintage Books, 333, its ISBN
+  PASS  5 the row: added, the edition's year
+  PASS  5 in the cloud the same
+  PASS  5 the picker failing: the Editions link goes, the row stays
+
+[6] by hand: a title alone saves; no title, no save, even with an ISBN
+  PASS  6 no results: the card
+  PASS  6 the form: what was typed is the title, the cursor there, Will read pressed
+  PASS  6 no title, an ISBN: Add to shelf disabled
+  PASS  6 a submit anyway (Enter): nothing saved
+  PASS  6 a title alone: saved, no author, Have read
+  PASS  6 the field emptied; the scan rows and every book added in this visit (the edition from 5, then this one), its second line empty (nothing invented)
+  PASS  6 an ISBN with no match: its own card
+  PASS  6 an ISBN typed goes into ISBN; Title starts empty; Add to shelf disabled
+  PASS  6 Back to search: the card again, from memory
+
+[7] the lookup failing, empty, and with no connection
+  PASS  7 Open Library failing: Google Books answers
+  PASS  7 a Google Books row adds with its publisher, pages and subjects
+  PASS  7 both failing: the lookup-down card
+  PASS  7 Try again asks again for the same words
+  PASS  7 both empty: no results
+  PASS  7 offline: the offline card
+  PASS  7 offline: nothing was asked
+  PASS  7 back online, Try again: the rows
+
+[9] a late answer for older words is not drawn over the newer words' rows
+  PASS  9 the newer words' rows
+  PASS  9 after the late answer: still the newer words' rows, the field unchanged
+  PASS  9 the late answer is kept: "pedag" again is drawn from memory, not asked again
+  PASS  9 while the next answer is on its way: the old list stays, dimmed; no placeholder rows
+  PASS  9 then the new rows, not dimmed
+
+[11] a title holding markup is drawn as text and runs nothing
+  PASS  11 drawn as text; no element made from it; nothing ran
+  PASS  11 added and drawn on the Shelf: still nothing ran
+
+[b] Back from a book opened from the panel: the panel, its words and its list
+  PASS  b an owned row opens its book page
+  PASS  b Back: the Shelf with the panel open, the same words and list
+  PASS  b any other way back to the Shelf: the panel closed
+  PASS  b Done closes it; the pill takes the focus
+
+[u] Undo ends when the reader leaves the room the book was added in
+  PASS  u added: the row offers Undo
+  PASS  u Back: the panel and its words; the added book is now an owned row with no Undo; nothing deleted
+  PASS  u on Search: added, with Undo
+  PASS  u on Search, back from the book: All books, the words, the row owned with no Undo; nothing deleted
+----- end -----
+FAIL  rig r3  exit 2  905.9 s  | done: r3 in 900 s -> %TEMP%\praxis-checks-20261126-201856-072f66\rig-r3.txt   (NOT clean)
+----- output of rig r3 -----
+
+RUNNER: no RIG-DONE within 900 s
+RUNNER: r3 took 900 s, 2026-11-26 20:43
+----- end -----
+CHECKS: 37 of 39 passed, 2 failed
+FAILED: rig r2; rig r3
+CHECKS-DONE
+exit 1

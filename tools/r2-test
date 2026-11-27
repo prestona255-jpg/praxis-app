@@ -1,0 +1,266 @@
+// tools/r2-test -- R2 (Find a book) unit harness. Runs the SHIPPED code: the lookup is cut out of
+// js/integrations.js by text and compiled here with fetch stubbed; the rest reads the source.
+//   F1  the CSS block    -- the kit's block is in components.css once, begin before end, 11,698 bytes, no hex
+//                           colour; the 16 px phone rule names Find a book's two kinds of field
+//   F2  the words        -- every string the prompt words (its fixed part, in its \u form) is in views.js;
+//                           "Searched on this phone" and "coming here next" are gone; the earlier Search
+//                           page's "...ve gathered is searchable here." is the only one left
+//   F3  the source       -- no innerHTML and no ES5+ syntax between the R2 markers in views.js or in the
+//                           three new lookup functions; integrations.js defines them; the R2 block saves
+//                           only through scanCommitBook and deletes only through deleteBook
+//   F4  openLibrarySearch -- maps a fixed answer to the item shape; empty is ([], null); a failure is ([], err)
+//   F5  openLibraryEditions -- year and publisher kept; English or no language first; newest first; 8 at most
+//   F6  findBooks        -- Google Books only on an error or an empty answer; 'down' only when both could not
+//                           ask; an ISBN goes to resolveBook; offline makes no call
+// EXTENSIONLESS on purpose (see tools/parse-check). ASCII-only.
+// Usage:  cscript //nologo //E:jscript tools/r2-test [root]
+// Exit:   0 = every case passed . 1 = a case failed . 2 = could not load
+
+var fso = new ActiveXObject('Scripting.FileSystemObject');
+var root = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName));
+if (WScript.Arguments.length > 0) { root = String(WScript.Arguments(0)); }
+// CR stripped on read: a CRLF checkout (core.autocrlf=true) reads the same as the committed LF bytes.
+function readFile(p) { var s = fso.OpenTextFile(p, 1, false); var t = s.ReadAll(); s.Close(); return t.replace(/\r/g, ''); }
+
+var failures = 0, total = 0;
+function check(name, got, want) { total++; if (got === want) { WScript.Echo('  PASS  ' + name + '  = ' + got); } else { failures++; WScript.Echo('  FAIL  ' + name + '\n        got  ' + got + '\n        want ' + want); } }
+(function () { var b = failures; check('self-check (expected to FAIL)', 1, 2); if (failures - b !== 1) { WScript.Echo('HARNESS SELF-CHECK FAILED'); WScript.Quit(2); } failures = b; total--; })();
+
+function between(src, a, b) {
+  var i = src.indexOf(a), j = src.indexOf(b, i + 1);
+  if (i < 0 || j < 0) { throw new Error('anchor not found: ' + a + ' .. ' + b); }
+  if (src.indexOf(a, i + 1) !== -1) { throw new Error('anchor not unique: ' + a); }
+  return src.slice(i, j);
+}
+function count(src, a) { var n = 0, i = src.indexOf(a); while (i !== -1) { n++; i = src.indexOf(a, i + 1); } return n; }
+
+var vsrc, isrc, csrc, vblk, iblk, X;
+// the harness's own fakes, swapped per case through H
+var NAV = { onLine: true };
+var H = { urls: [], fetch: null, timers: [], gb: null, gbCalls: 0, rb: null, rbCalls: [], vtb: 0 };
+function thenable(ok, v) { return { then: function (a, b) { if (ok) { if (a) { a(v); } } else if (b) { b(new Error('no')); } return thenable(true); } }; }
+function resp(status, body, badJson) { return { ok: status >= 200 && status < 300, status: status, json: function () { return thenable(!badJson, body); } }; }
+try {
+  vsrc = readFile(fso.BuildPath(root, 'js\\views.js'));
+  isrc = readFile(fso.BuildPath(root, 'js\\integrations.js'));
+  csrc = readFile(fso.BuildPath(root, 'assets\\components.css'));
+  vblk = between(vsrc, '// === R2 FIND A BOOK -- begin', '// === R2 FIND A BOOK -- end');
+  iblk = between(isrc, "var OL_SEARCH_FIELDS = '", 'function resolveBook(query, callback) {');
+  X = (new Function('fetch', 'window', 'navigator', 'resolveBook', 'googleBooksSearch', 'volumeToBook', 'volumeIsbn',
+    iblk + '\nreturn { search: openLibrarySearch, editions: openLibraryEditions, find: findBooks };'))(
+    function (u) { H.urls.push(u); return H.fetch(u); },
+    { setTimeout: function (f, ms) { H.timers.push({ f: f, ms: ms }); return H.timers.length; }, clearTimeout: function () {} },
+    NAV,
+    function (q, cb) { H.rbCalls.push(q); H.rb(q, cb); },
+    function (q, cb) { H.gbCalls++; H.gb(q, cb); },
+    function (vi, isbn) { H.vtb++; return { title: vi.title || '', author: (vi.authors || []).join(', '), year: null, pageCount: null, publisher: '', description: '', isbn: isbn || '', coverUrl: null, coverCandidates: [], rawCategories: [] }; },
+    function (vi) { return vi.isbn || null; });
+} catch (e) { WScript.Echo('LOAD FAILED: ' + e.message); WScript.Quit(2); }
+
+// ------------------------------------------------------------------------------------------------
+WScript.Echo('\nF1 the CSS block');
+var CB = '/* === R2 FIND A BOOK -- begin ===', CE = '/* === R2 FIND A BOOK -- end === */';
+check('the begin marker, once', count(csrc, CB), 1);
+check('the end marker, once', count(csrc, CE), 1);
+check('  begin before end', csrc.indexOf(CB) < csrc.indexOf(CE), true);
+var cblk = csrc.slice(csrc.indexOf(CB), csrc.indexOf(CE) + CE.length + 1);
+check('  the block and its closing line feed are the kit\'s 11,698 bytes (ASCII: chars = bytes)', cblk.length, 11698);
+check('  it ends the file', csrc.slice(csrc.length - cblk.length) === cblk, true);
+check('no hex colour in the block', /#[0-9A-Fa-f]{3,8}\b/.test(cblk), false);
+var rule16 = between(csrc, ':is(input:not([type="checkbox"])', '){font-size:16px !important}');
+check('the 16 px rule names the panel\'s field', count(rule16, '    .shelf.sh3 .fb-field input,\n'), 1);
+check('  and the by-hand fields on the Shelf', count(rule16, '    .shelf.sh3 .fb-in,\n'), 1);
+check('  and the by-hand fields on Search', count(rule16, '    .r1-search .fb-in,\n'), 1);
+
+// ------------------------------------------------------------------------------------------------
+WScript.Echo('\nF2 the words');
+var W = [
+  "'Find a book'", "'Find your first book'", "'Done'", "'Title, author or ISBN'", "'Find a book by title, author or ISBN'",
+  "'Clear'", "'Scan a book'", "'Point the camera at its barcode or cover.'", "'Scan a shelf'", "'One photo adds a whole row of books.'",
+  "'Type 3 letters or more.'", "'An ISBN has 10 or 13 digits. Keep typing.'", "' \\u00b7 '", "'ISBN '", "'Editions'",
+  "'On your shelf'", "'\\u00a0\\u00b7'", "'Undo'", "'Reading status'", "['reading', 'Reading'], ['will-read', 'Will read'], ['read', 'Have read']",
+  "'On your shelf \\u00b7 '", "'Can\\u2019t find it? Add it by hand'", "'No book matches \\u201c' + q + '\\u201d'",
+  "'Check the spelling or try the author\\u2019s name. You can also add it by hand.'", "'Check the number, or add the book by hand.'",
+  "'Add it by hand'", "'You\\u2019re offline'", "'Finding a book needs a connection. You can still add one by hand.'", "'Try again'",
+  "'The book lookup isn\\u2019t answering'", "'Try again in a minute, or add the book by hand.'",
+  "'Title'", "'Author'", "'ISBN, if you have it'", "'Add to shelf'", "'Back to search'",
+  "'Your shelf is empty. Each book you add shows up here.'", "'Find any book and add it to your shelf.'",
+  "'Nothing on your shelf, in your notes or among your lenses matches \\u201c' + q + '\\u201d.'",
+  "'Look for \\u201c' + q + '\\u201d in All books'", "'Searched on this device. The Journal is never searched.'",
+  "'Your books, notes and lenses are searchable here.'",
+  "'Add ' + item.title + (au ? ' by ' + au : '') + ' to your shelf'", "'Open ' + item.title + ', already on your shelf'",
+  "'Add the ' + ed.year + ' ' + ed.publisher + ' edition of ' + item.title"
+], w, miss = [];
+for (w = 0; w < W.length; w++) { if (count(vsrc, W[w]) < 1) { miss.push(W[w]); } }
+check('every worded string is in views.js (' + W.length + ' of them)', miss.join(' | '), '');
+check('the Capture chip says Find a book', count(vblk, "chip.appendChild(document.createTextNode('Find a book'));"), 1);
+check('"Searched on this phone" is gone', count(vsrc, 'Searched on this phone'), 0);
+check('"coming here next" is gone', count(vsrc, 'coming here next'), 0);
+check('"...ve gathered is searchable here." once only (the earlier Search page)', count(vsrc, 've gathered is searchable here.'), 1);
+check('  and that one is the earlier Search page\'s line', count(vsrc, "    text.textContent = 'Everything you"), 1);
+
+// ------------------------------------------------------------------------------------------------
+WScript.Echo('\nF3 the source');
+function es(src) {
+  var t = src.replace(/\/\/[^\n]*/g, '');   // comments may say the words; code may not
+  return (/\bconst\b/.test(t) ? 'const ' : '') + (/\blet\b/.test(t) ? 'let ' : '') + (t.indexOf('=>') !== -1 ? '=> ' : '') +
+         (/\bclass\b/.test(t) ? 'class ' : '') + (t.indexOf('`') !== -1 ? 'backtick ' : '');
+}
+check('no innerHTML between the R2 markers in views.js', count(vblk, 'innerHTML'), 0);
+check('no ES5+ syntax there', es(vblk), '');
+check('no innerHTML in the three lookup functions', count(iblk, 'innerHTML'), 0);
+check('no ES5+ syntax there', es(iblk), '');
+check('integrations.js defines openLibrarySearch, once', count(isrc, '\nfunction openLibrarySearch(q, callback) {'), 1);
+check('integrations.js defines openLibraryEditions, once', count(isrc, '\nfunction openLibraryEditions(workKey, callback) {'), 1);
+check('integrations.js defines findBooks, once', count(isrc, '\nfunction findBooks(q, callback) {'), 1);
+// a second declaration of the same name silently wins over the first (it shipped once in this build: r2Hold)
+var fnames = vblk.match(/\nfunction [A-Za-z0-9_]+\(/g) || [], dup = [], fi, fn;
+for (fi = 0; fi < fnames.length; fi++) { fn = fnames[fi].slice(1); if (count(vsrc, '\n' + fn) + count(isrc, '\n' + fn) !== 1) { dup.push(fn.slice(9, -1)); } }
+check('every function the R2 block defines is defined once in views.js and integrations.js (' + fnames.length + ' of them)', dup.join(' '), '');
+check('  and there are functions to check', fnames.length > 50, true);
+check('the R2 block saves through scanCommitBook', count(vblk, 'scanCommitBook(spec, null, out)'), 1);
+check('the R2 block deletes through deleteBook, behind its created list', count(vblk, 'deleteBook(ctx.uid, id)'), 1);
+check('  and Undo checks that list first', count(vblk, "if (!id || ctx.created[id] !== true) { return; }"), 1);
+check('the R2 block never creates a record itself', /state\.books\[[^\]]+\]\s*=\s*\{/.test(vblk), false);
+check('no storage key in the R2 block (sv / ls never called)', count(vblk, ' sv(') + count(vblk, ' ls(') + count(vblk, 'localStorage'), 0);
+check('the switch is r1Switch(uid, findbook, new, old, true)', count(vblk, "function r2FindOn(uid) { return r1Switch(uid, 'findbook', 'new', 'old', true); }"), 1);
+check('All books is on by default and off with Find a book', count(vsrc, "function r1AllBooksOn(uid) { var a = r1Switch(uid, 'allbooks', 'on', 'off', true), f = r2FindOn(uid); return a && f; }"), 1);
+check('the pill keeps openShelfEditor for findbook=old', count(vsrc, "if (r2FindOn(user.uid)) { r2Open(user.uid); return; } openShelfEditor();"), 1);
+check('openShelfEditor is still defined, once', count(vsrc, '\nfunction openShelfEditor(prefillIsbn) {'), 1);
+
+// ------------------------------------------------------------------------------------------------
+WScript.Echo('\nF4 openLibrarySearch');
+var got = null, calls = 0;
+function cb(items, err) { calls++; got = { items: items, err: err }; }
+function reset() { H.urls = []; H.timers = []; H.gbCalls = 0; H.rbCalls = []; H.vtb = 0; NAV.onLine = true; got = null; calls = 0; }
+reset();
+H.fetch = function () { return thenable(true, resp(200, { numFound: 3, docs: [
+  { key: '/works/OL15053159W', title: 'Teaching to Transgress', author_name: ['bell hooks'], first_publish_year: 1994, cover_i: 3881117, edition_count: 10 },
+  { key: '/works/OL17582148W', title: 'The Undercommons', author_name: ['Stefano Harney', 'Fred Moten'] },
+  { key: '/works/OL1W', title: '' } ] })); };
+X.search('teach to', cb);
+check('one GET', H.urls.length, 1);
+check('  to the search URL with the six fields and limit 10', H.urls[0], 'https://openlibrary.org/search.json?q=teach%20to&fields=key,title,author_name,first_publish_year,cover_i,edition_count&limit=10');
+check('  with a 6 s timer', H.timers.length === 1 && H.timers[0].ms === 6000, true);
+check('answered once, err null', calls === 1 && got.err === null, true);
+check('a doc with no title is skipped', got.items.length, 2);
+var it = got.items[0];
+check('title', it.title, 'Teaching to Transgress');
+check('author', it.author, 'bell hooks');
+check('year (a string, as volumeToBook gives it)', it.year, '1994');
+check('coverUrl', it.coverUrl, 'https://covers.openlibrary.org/b/id/3881117-M.jpg');
+check('coverCandidates', it.coverCandidates.length === 1 && it.coverCandidates[0] === it.coverUrl, true);
+check('isbn / publisher / description empty', it.isbn + '|' + it.publisher + '|' + it.description, '||');
+check('pageCount null, rawCategories []', it.pageCount === null && it.rawCategories.length === 0, true);
+check('workKey and editionCount kept', it.workKey + ' ' + it.editionCount, '/works/OL15053159W 10');
+it = got.items[1];
+check('two authors joined', it.author, 'Stefano Harney, Fred Moten');
+check('no year, no cover: null, null, []', it.year === null && it.coverUrl === null && it.coverCandidates.length === 0, true);
+check('no edition_count: 0', it.editionCount, 0);
+reset(); H.fetch = function () { return thenable(true, resp(200, { numFound: 0, docs: [] })); };
+X.search('zzzz', cb);
+check('an empty answer is ([], null)', got.items.length === 0 && got.err === null, true);
+reset(); H.fetch = function () { return thenable(false); };
+X.search('zzzz', cb);
+check('a failed fetch is ([], err)', got.items.length === 0 && got.err !== null && got.err.kind === 'network', true);
+reset(); H.fetch = function () { return thenable(true, resp(503, {})); };
+X.search('zzzz', cb);
+check('an HTTP 503 is ([], err 503)', got.items.length === 0 && got.err.status === 503, true);
+reset(); H.fetch = function () { return thenable(true, resp(200, null, true)); };
+X.search('zzzz', cb);
+check('an answer that is not JSON is ([], err)', got.items.length === 0 && got.err.kind === 'parse', true);
+reset(); H.fetch = function () { return { then: function () { return thenable(true); } }; };   // never answers
+X.search('zzzz', cb);
+check('no answer yet: nothing called back', calls, 0);
+H.timers[0].f();
+check('at 6 s: ([], err timeout)', calls === 1 && got.err.kind === 'timeout', true);
+
+// ------------------------------------------------------------------------------------------------
+WScript.Echo('\nF5 openLibraryEditions');
+reset();
+H.fetch = function () { return thenable(true, resp(200, { size: 11, entries: [
+  { publish_date: '2019', publishers: ['Paz e terra'], languages: [{ key: '/languages/por' }], number_of_pages: 253, isbn_13: ['9788577534425'], covers: [14573638] },
+  { publish_date: '1990', publishers: ['Continuum'], languages: [{ key: '/languages/eng' }, { key: '/languages/por' }], number_of_pages: 186, isbn_10: ['0826400477'], covers: [15223639] },
+  { publish_date: '1972', publishers: ['Penguin'], languages: [{ key: '/languages/eng' }], number_of_pages: 153, isbn_10: ['0140135537'] },
+  { publish_date: '1971', languages: [{ key: '/languages/spa' }], number_of_pages: 250 },
+  { publish_date: 'May 03, 2021', publishers: ['Capitan Swing'], languages: [], isbn_13: ['9788412281842'], edition_name: 'Second edition' },
+  { publish_date: 'c1970', publishers: ['Herder and Herder'], languages: [{ key: '/languages/eng' }], covers: [-1] },
+  { publish_date: 'n.d.', publishers: ['Nobody'] },
+  { publish_date: '2000', publishers: ['Continuum'], languages: [{ key: '/languages/eng' }], edition_name: '30th anniversary edition' },
+  { publish_date: '2018', publishers: ['Bloomsbury Academic'], languages: [{ key: '/languages/eng' }], number_of_pages: 183 },
+  { publish_date: '2005', publishers: ['Continuum'] },
+  { publish_date: '2014', publishers: ['Routledge'], languages: [{ key: '/languages/eng' }] } ] })); };
+X.editions('/works/OL1870518W', cb);
+check('one GET to the work\'s editions, limit 50', H.urls.join(' '), 'https://openlibrary.org/works/OL1870518W/editions.json?limit=50');
+check('  with a 6 s timer', H.timers.length === 1 && H.timers[0].ms === 6000, true);
+var ys = [], e5;
+for (e5 = 0; e5 < got.items.length; e5++) { ys.push(got.items[e5].year + ' ' + got.items[e5].publisher); }
+check('kept: a year and a publisher; English or none first, newest first; 8 at most', ys.join(' / '),
+  '2021 Capitan Swing / 2018 Bloomsbury Academic / 2014 Routledge / 2005 Continuum / 2000 Continuum / 1990 Continuum / 1972 Penguin / 1970 Herder and Herder');
+check('the other language comes only after those (cut at 8 here)', ys.join('').indexOf('Paz e terra'), -1);
+var e0 = got.items[0], e1 = got.items[5];
+check('an edition: isbn_13, no pages: the edition name is its detail', e0.isbn + ' | ' + e0.pageCount + ' | ' + e0.detail + ' | ' + e0.coverUrl, '9788412281842 | null | Second edition | null');
+check('an edition: isbn_10, pages, a cover', e1.isbn + ' | ' + e1.pageCount + ' | ' + e1.detail + ' | ' + e1.coverUrl, '0826400477 | 186 | 186 pages | https://covers.openlibrary.org/b/id/15223639-M.jpg');
+check('a cover id of -1 is no cover', got.items[7].coverUrl, null);
+check('nothing extra on an edition', (function () { var k, n = 0; for (k in e0) { n++; } return n; })(), 6);
+reset(); H.fetch = function () { return thenable(true, resp(200, { size: 0, entries: [] })); };
+X.editions('/works/OL1W', cb);
+check('no editions: ([], null)', got.items.length === 0 && got.err === null, true);
+reset();
+X.editions('/works/../../x', cb);
+check('a key that is not a work key asks nothing and fails', H.urls.length === 0 && got.err !== null, true);
+reset(); H.fetch = function () { return thenable(false); };
+X.editions('/works/OL1W', cb);
+check('a failed fetch is ([], err)', got.items.length === 0 && got.err !== null, true);
+
+// ------------------------------------------------------------------------------------------------
+WScript.Echo('\nF6 findBooks');
+var OK1 = { docs: [{ key: '/works/OL1W', title: 'Teaching to Transgress', author_name: ['bell hooks'], first_publish_year: 1994, edition_count: 2 }] };
+function olOk() { return thenable(true, resp(200, OK1)); }
+function olEmpty() { return thenable(true, resp(200, { docs: [] })); }
+function olFail() { return thenable(false); }
+var GB1 = [{ volumeInfo: { title: 'Teaching Community', authors: ['bell hooks'], isbn: '9780415968188' }, printType: 'BOOK' }, { volumeInfo: { title: '' } }];
+function gbOk(q, c) { c(GB1, null); }
+function gbEmpty(q, c) { c([], null); }
+function gbFail(q, c) { c([], { kind: 'http', status: 429 }); }
+function cbf(items, outcome) { calls++; got = { items: items, outcome: outcome }; }
+function fb(q, ol, gb) { reset(); H.fetch = ol; H.gb = gb; X.find(q, cbf); return got; }
+fb('teach', olOk, gbOk);
+check('Open Library answers: ok, and Google Books is not asked', got.outcome + ' ' + H.gbCalls, 'ok 0');
+check('  its item', got.items.length + ' ' + got.items[0].title + ' ' + got.items[0].editionCount, '1 Teaching to Transgress 2');
+fb('teach', olEmpty, gbOk);
+check('Open Library empty: Google Books asked, ok', got.outcome + ' ' + H.gbCalls + ' ' + got.items.length, 'ok 1 1');
+check('  mapped by volumeToBook with volumeIsbn, editionCount 0, no workKey', got.items[0].title + ' ' + got.items[0].isbn + ' ' + got.items[0].editionCount + ' [' + got.items[0].workKey + ']', 'Teaching Community 9780415968188 0 []');
+fb('teach', olFail, gbOk);
+check('Open Library failing: Google Books asked, ok', got.outcome + ' ' + H.gbCalls, 'ok 1');
+fb('teach', olFail, gbFail);
+check('both could not ask: down', got.outcome + ' ' + got.items.length, 'down 0');
+fb('teach', olEmpty, gbFail);
+check('Open Library empty, Google Books failing: none (a true no-match was had)', got.outcome, 'none');
+fb('teach', olFail, gbEmpty);
+check('Open Library failing, Google Books empty: none', got.outcome, 'none');
+fb('teach', olEmpty, gbEmpty);
+check('both empty: none', got.outcome, 'none');
+fb('1984', olOk, gbOk);
+check('four digits are words: Open Library is asked', H.urls.length + ' ' + H.rbCalls.length, '1 0');
+reset(); H.fetch = olOk; H.gb = gbOk;
+H.rb = function (q, c) { c({ status: 'strong', book: { title: 'Pedagogy of the Oppressed', author: 'Paulo Freire', year: '2018', isbn: '9781501314131', coverUrl: null, coverCandidates: [] } }); };
+X.find(' 978-1-5013-1413-1 ', cbf);
+check('an ISBN goes to resolveBook, not Open Library\'s search', H.rbCalls.length + ' ' + H.urls.length + ' ' + H.gbCalls, '1 0 0');
+check('  asked as kind isbn with the digits', H.rbCalls[0].kind + ' ' + H.rbCalls[0].isbn, 'isbn 9781501314131');
+check('  a strong answer: one item, ok', got.outcome + ' ' + got.items.length + ' ' + got.items[0].title + ' ' + got.items[0].isbn, 'ok 1 Pedagogy of the Oppressed 9781501314131');
+H.rb = function (q, c) { c({ status: 'none', lookupFailed: true, book: {} }); };
+X.find('0826400477', cbf);
+check('  lookupFailed: down', got.outcome, 'down');
+H.rb = function (q, c) { c({ status: 'none', lookupFailed: false, book: {} }); };
+X.find('082640047X', cbf);
+check('  a final X is an ISBN too; no match: none', H.rbCalls[H.rbCalls.length - 1].isbn + ' ' + got.outcome, '082640047X none');
+reset(); NAV.onLine = false; H.fetch = olOk; H.gb = gbOk; H.rb = function () {};
+X.find('teach', cbf);
+check('offline: offline, and nothing is asked', got.outcome + ' ' + H.urls.length + ' ' + H.gbCalls + ' ' + H.rbCalls.length, 'offline 0 0 0');
+reset(); NAV.onLine = false;
+X.find('9781501314131', cbf);
+check('offline with an ISBN: offline, nothing asked', got.outcome + ' ' + H.rbCalls.length, 'offline 0');
+
+WScript.Echo('\n' + (total - failures) + '/' + total + ' passed');
+WScript.Quit(failures ? 1 : 0);

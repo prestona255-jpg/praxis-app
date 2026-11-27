@@ -167,3 +167,14 @@ r3 32/32, _template 1/1).
 5. Switch to Day and repeat 2–4 (the clock on the lighter blue is the one to look at).
 6. Open the Shelf: its top bar is as before (solid, with its hairline), the strip the page colour.
 Pass: all six as described. Compare with `lc2b-before-home-top-blue-390-*.jpg` and `lc2b-after-home-top-blue-390-*.jpg`.
+
+## The commit, the push and the Checks run (26 Nov 2026) — recorded after the push, uncommitted (rides the next build)
+- Commit `f95eb93` on Preston's word "commit": 26 files by explicit name; the pre-commit hook passed; subject with its
+  em-dashes intact (`git log -1 --format=%s`). Read from the commit: components.css 13d4da48…, views.js f2c2698d…,
+  sw.js 0b01c203… (the patch's), js/hand.js 4000e9cc… (lock held).
+- Push on Preston's word "push": `f6dc239..f95eb93`, `main` only. After it, HEAD == origin/main ==
+  `f95eb93897a140eba54c08501a036218f35afc0d`.
+- Checks on GitHub: run 45907875750 (#9), on the push of `f95eb93`, conclusion success (finished 23:05 UTC, 26 Nov). Its
+  annotations: "CHECKS: 37 of 37 passed, 0 failed"; "commit f95eb93, praxis-v3.345, sw.js LF". Read through GitHub's API.
+- Live site: this machine cannot reach it (`curl https://praxisreader.com/sw.js` → 000, exit 56). Preston's phone check
+  ("What Preston runs" above) confirms `praxis-v3.345` live; not yet run.

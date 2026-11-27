@@ -3571,6 +3571,145 @@ function googleBooksSearch(q, callback) {
   go();
 }
 
+// =====================================================================
+// R2 FIND A BOOK (BETA.md row R2; docs/checkpoints/r2.md) -- the lookup behind the
+// Shelf's Find a book panel and Search's "All books" side. Three functions, set
+// here beside googleBooksSearch; nothing above or below them changes.
+//   openLibrarySearch(q, cb)        one GET to Open Library's search, 6 s, no retry
+//   openLibraryEditions(key, cb)    one GET to a work's editions, 6 s, no retry
+//   findBooks(q, cb)                the one door both rooms call: an ISBN goes to
+//                                   resolveBook; words go to Open Library, then to
+//                                   Google Books when Open Library has nothing or
+//                                   cannot be asked. cb(items, outcome), outcome
+//                                   one of 'ok', 'none', 'down', 'offline'.
+// Every item has the shape volumeToBook returns, plus workKey and editionCount,
+// which are kept in memory and never saved. Nothing here writes anything.
+// =====================================================================
+var OL_SEARCH_FIELDS = 'key,title,author_name,first_publish_year,cover_i,edition_count';
+function openLibrarySearch(q, callback) {
+  var done = false, timer = null;
+  function finish(items, err) {
+    if (done) { return; }
+    done = true;
+    if (timer) { window.clearTimeout(timer); }
+    if (typeof callback === 'function') { callback(items, err || null); }
+  }
+  // the 6000 that resolveBook already gives Open Library (isbnViaOpenLibrary)
+  timer = window.setTimeout(function () { finish([], { kind: 'timeout', status: 0 }); }, 6000);
+  try {
+    fetch('https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&fields=' + OL_SEARCH_FIELDS + '&limit=10').then(function (res) {
+      if (!res.ok) { finish([], { kind: 'http', status: res.status }); return; }
+      res.json().then(function (data) {
+        var docs = (data && data.docs instanceof Array) ? data.docs : [], out = [], i, d, cov;
+        for (i = 0; i < docs.length && out.length < 10; i++) {
+          d = docs[i];
+          if (!d || typeof d.title !== 'string' || !d.title) { continue; }
+          cov = (typeof d.cover_i === 'number' && d.cover_i > 0) ? ('https://covers.openlibrary.org/b/id/' + d.cover_i + '-M.jpg') : null;
+          out.push({
+            title:           d.title,
+            author:          (d.author_name instanceof Array) ? d.author_name.join(', ') : '',
+            year:            (typeof d.first_publish_year === 'number') ? String(d.first_publish_year) : null,
+            pageCount:       null,
+            publisher:       '',
+            description:     '',
+            isbn:            '',
+            coverUrl:        cov,
+            coverCandidates: cov ? [cov] : [],
+            rawCategories:   [],
+            workKey:         (typeof d.key === 'string') ? d.key : '',
+            editionCount:    (typeof d.edition_count === 'number') ? d.edition_count : 0
+          });
+        }
+        finish(out, null);
+      }, function () { finish([], { kind: 'parse', status: res.status }); });
+    }, function () { finish([], { kind: 'network', status: 0 }); });
+  } catch (e) { finish([], { kind: 'network', status: 0 }); }
+}
+
+// A work's editions: only those with a four-digit year and a publisher; English or
+// no language named first, newest first within each group; eight at most.
+function openLibraryEditions(workKey, callback) {
+  var done = false, timer = null;
+  function finish(list, err) {
+    if (done) { return; }
+    done = true;
+    if (timer) { window.clearTimeout(timer); }
+    if (typeof callback === 'function') { callback(list, err || null); }
+  }
+  if (typeof workKey !== 'string' || !/^\/works\/OL\d+W$/.test(workKey)) { finish([], { kind: 'key', status: 0 }); return; }
+  timer = window.setTimeout(function () { finish([], { kind: 'timeout', status: 0 }); }, 6000);
+  try {
+    fetch('https://openlibrary.org' + workKey + '/editions.json?limit=50').then(function (res) {
+      if (!res.ok) { finish([], { kind: 'http', status: res.status }); return; }
+      res.json().then(function (data) {
+        var ents = (data && data.entries instanceof Array) ? data.entries : [], first = [], rest = [], i, j, e, m, pub, eng, none, pc, isbn, cov, ed;
+        for (i = 0; i < ents.length; i++) {
+          e = ents[i];
+          if (!e) { continue; }
+          m = (typeof e.publish_date === 'string') ? e.publish_date.match(/(^|[^0-9])([0-9]{4})([^0-9]|$)/) : null;
+          pub = (e.publishers instanceof Array && typeof e.publishers[0] === 'string') ? e.publishers[0].replace(/^\s+|\s+$/g, '') : '';
+          if (!m || !pub) { continue; }
+          eng = false;
+          none = !(e.languages instanceof Array) || e.languages.length === 0;
+          if (!none) { for (j = 0; j < e.languages.length; j++) { if (e.languages[j] && e.languages[j].key === '/languages/eng') { eng = true; } } }
+          pc = (typeof e.number_of_pages === 'number' && e.number_of_pages > 0) ? e.number_of_pages : null;
+          isbn = (e.isbn_13 instanceof Array && e.isbn_13[0]) ? String(e.isbn_13[0]) : ((e.isbn_10 instanceof Array && e.isbn_10[0]) ? String(e.isbn_10[0]) : '');
+          cov = (e.covers instanceof Array && typeof e.covers[0] === 'number' && e.covers[0] > 0) ? ('https://covers.openlibrary.org/b/id/' + e.covers[0] + '-M.jpg') : null;
+          ed = { year: m[2], publisher: pub, pageCount: pc, isbn: isbn, coverUrl: cov,
+                 detail: pc ? (pc + ' pages') : ((typeof e.edition_name === 'string') ? e.edition_name : ''), at: i };
+          if (eng || none) { first.push(ed); } else { rest.push(ed); }
+        }
+        function newest(a, b) { return (+b.year - +a.year) || (a.at - b.at); }
+        first.sort(newest);
+        rest.sort(newest);
+        var out = first.concat(rest).slice(0, 8);
+        for (i = 0; i < out.length; i++) { delete out[i].at; }   // the delete OPERATOR (not a method), ES3
+        finish(out, null);
+      }, function () { finish([], { kind: 'parse', status: res.status }); });
+    }, function () { finish([], { kind: 'network', status: 0 }); });
+  } catch (e2) { finish([], { kind: 'network', status: 0 }); }
+}
+
+function findBooks(q, callback) {
+  var done = false;
+  function finish(items, outcome) { if (done) { return; } done = true; if (typeof callback === 'function') { callback(items, outcome); } }
+  q = (typeof q === 'string') ? q.replace(/^\s+|\s+$/g, '') : '';
+  if (navigator.onLine === false) { finish([], 'offline'); return; }
+  var d = q.replace(/[\s-]/g, '');
+  if (/^[0-9]{13}$/.test(d) || /^[0-9]{9}[0-9Xx]$/.test(d)) {
+    resolveBook({ kind: 'isbn', isbn: d.toUpperCase() }, function (r) {
+      if (r && r.status === 'strong' && r.book && r.book.title) {
+        var b = r.book;
+        finish([{ title: b.title, author: b.author || '', year: b.year || null, pageCount: (typeof b.pageCount === 'number') ? b.pageCount : null,
+                  publisher: b.publisher || '', description: b.description || '', isbn: b.isbn || d.toUpperCase(),
+                  coverUrl: b.coverUrl || null, coverCandidates: (b.coverCandidates instanceof Array) ? b.coverCandidates : [],
+                  rawCategories: (b.rawCategories instanceof Array) ? b.rawCategories : [], workKey: '', editionCount: 0 }], 'ok');
+        return;
+      }
+      finish([], (r && r.lookupFailed) ? 'down' : 'none');
+    });
+    return;
+  }
+  openLibrarySearch(q, function (items, err) {
+    if (items && items.length) { finish(items, 'ok'); return; }
+    var olNone = !err;   // Open Library answered and had nothing
+    googleBooksSearch(q, function (gItems, gErr) {
+      var out = [], i, vi, b;
+      for (i = 0; gItems && i < gItems.length && out.length < 10; i++) {
+        vi = gItems[i].volumeInfo || {};
+        vi._printType = gItems[i].printType;
+        b = volumeToBook(vi, volumeIsbn(vi));   // as resolveBook's title branch maps them
+        if (!b.title) { continue; }
+        b.workKey = '';
+        b.editionCount = 0;
+        out.push(b);
+      }
+      if (out.length) { finish(out, 'ok'); return; }
+      finish([], (olNone || !gErr) ? 'none' : 'down');
+    });
+  });
+}
+
 function resolveBook(query, callback) {
   var done = false;
   function finish(result) { if (done) { return; } done = true; if (typeof callback === 'function') { callback(result); } }

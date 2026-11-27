@@ -1,0 +1,66 @@
+
+[L] live Open Library from http://localhost:8800 (http://localhost:8800)
+A1 "Pedagogy of the Oppressed": status 200, 524 ms, read=true, numFound 65
+     1. "Pedagogia do Oprimido" | "Paulo Freire" | 1967 | cover_i 630082 | eds 19 | /works/OL1870556W
+     2. "Pedagogy of the Oppressed" | "Paulo Freire" | 1970 | cover_i 99306 | eds 9 | /works/OL1870518W
+     3. "Pedagogy of hope" | "Paulo Freire" | 1994 | cover_i 629886 | eds 3 | /works/OL1870548W
+     named book in first three: YES
+A2 "Teaching to Transgress": status 200, 239 ms, read=true, numFound 52
+     1. "Teaching to transgress" | "bell hooks" | 1994 | cover_i 3881117 | eds 10 | /works/OL15053159W
+     2. "Teaching to Transgress" | "bell hoks" | 2017 | cover_i undefined | eds 1 | /works/OL29249079W
+     3. "Summary of Bell Hooks's Teaching to Transgress" | "Irb Media" | 2022 | cover_i undefined | eds 1 | /works/OL28160910W
+     named book in first three: YES
+A3 "Discipline and Punish": status 200, 991 ms, read=true, numFound 496
+     1. "Discipline and Punish" | "Michel Foucault" | 1975 | cover_i 5539160 | eds 30 | /works/OL26841W
+     2. "Discipline and Punish" | "Meghan Kallman" | 2017 | cover_i undefined | eds 2 | /works/OL25197379W
+     3. "Discipline and punishment" | "David M. Haugen" | 2012 | cover_i 9731805 | eds 1 | /works/OL16585367W
+     named book in first three: YES
+A4 "The Undercommons": status 200, 100 ms, read=true, numFound 3
+     1. "The Undercommons" | "Stefano Harney" | 2013 | cover_i 7865006 | eds 1 | /works/OL17582148W
+     2. "Combination Acts" | "Stevphen Shukaitis" | 2019 | cover_i undefined | eds 1 | /works/OL21645057W
+     3. "Defending Rumba in Havana" | "Maya J. Berry" | 2024 | cover_i undefined | eds 2 | /works/OL42410391W
+     named book in first three: YES
+A5 "Empire of AI": status 200, 365 ms, read=true, numFound 91
+     1. "Empire of AI" | "Karen Hao" | 2025 | cover_i 15092439 | eds 3 | /works/OL42453624W
+     2. "New Empire of AI" | "Adams" | 2024 | cover_i undefined | eds 2 | /works/OL38122401W
+     3. "Mistress of the Empire" | "Raymond E. Feist" | 1992 | cover_i 8695449 | eds 19 | /works/OL554751W
+     named book in first three: YES
+A6 "Cruel Optimism": status 200, 197 ms, read=true, numFound 12
+     1. "Cruel optimism" | "Lauren Gail Berlant" | 2011 | cover_i 8773653 | eds 1 | /works/OL16624511W
+     2. "Cruel Optimism" | "Lauren Gail Berlant" | 2011 | cover_i undefined | eds 2 | /works/OL21764827W
+     3. "Cruel Optimism of Racial Justice" | "Nasar Meer" | 2022 | cover_i 12428117 | eds 3 | /works/OL25555841W
+     named book in first three: YES
+A7 "Fugitive Pedagogy": status 200, 141 ms, read=true, numFound 2
+     1. "Fugitive Pedagogy" | "Jarvis R. Givens" | 2021 | cover_i 12425953 | eds 3 | /works/OL25453974W
+     2. "Rereading the New Criticism" | "Miranda B. Hickman" | 2012 | cover_i undefined | eds 1 | /works/OL16184396W
+     named book in first three: YES
+A8 "pedagogy of the opressed": status 200, 169 ms, read=true, numFound 0
+A9 "hooks": status 200, 179 ms, read=true, numFound 7455
+     1. "All About Love" | "bell hooks" | 2000 | cover_i 42317 | eds 11 | /works/OL31111W
+     2. "Hooked" | "Emily McIntire" | 2021 | cover_i 14420484 | eds 7 | /works/OL25555522W
+     3. "Hooked" | "Nir Eyal" | 2014 | cover_i 12511799 | eds 7 | /works/OL19992071W
+middle of seven: 239 ms; slowest 991 ms; named in first three: 7 / 7
+B1 /works/OL1870556W: status 200, 198 ms, read=true, entries 19 (size 19), with 4-digit year AND publisher: 17
+     1. "2019" | "Paz e terra" | pages 253 | 9788577534425 | ["/languages/por"] | covers[0] 14573638
+     2. "1990" | "Continuum" | pages 186 | 0826400477 | ["/languages/eng","/languages/por"] | covers[0] 15223639
+     3. "1972" | "Penguin" | pages 153 | 0140135537 | ["/languages/eng"] | covers[0] undefined
+     4. "1971" | undefined | pages 250 | - | ["/languages/spa"] | covers[0] undefined
+     5. "1993" | "Continuum" | pages 164 | 0826406114 | ["/languages/eng"] | covers[0] 629816
+B2 /works/OL15053159W: status 200, 694 ms, read=true, entries 10 (size 10), with 4-digit year AND publisher: 10
+     1. "2023" | "Katakrak" | pages undefined | 9788416946860 | ["/languages/baq"] | covers[0] 14594725
+     2. "May 03, 2021" | "Capitán Swing" | pages 288 | 9788412281842 | [] | covers[0] 11968949
+     3. "2017" | "Dev Publishers & Distributors" | pages undefined | 9781138299849 | ["/languages/eng"] | covers[0] undefined
+     4. "2014" | "Routledge" | pages undefined | 9781306518529 | ["/languages/eng"] | covers[0] undefined
+     5. "2014" | "Taylor & Francis Group" | pages 200 | 9781135200008 | ["/languages/eng"] | covers[0] undefined
+B3 /works/OL26841W: status 200, 462 ms, read=true, entries 30 (size 30), with 4-digit year AND publisher: 30
+     1. "2023" | "Siglo XXI de España Editores, S.A." | pages undefined | 9788432320750 | [] | covers[0] 15233867
+     2. "Mar 02, 2012" | "Biblioteca Nueva" | pages 384 | 9788415555018 | [] | covers[0] 13997974
+     3. "Mar 02, 2012" | "Biblioteca Nueva" | pages 384 | 9788415555018 | [] | covers[0] 13997975
+     4. "Apr 04, 2022" | "Clave Intelectual" | pages 384 | 9788412471670 | [] | covers[0] 13686103
+     5. "Dec 04, 2005" | "Einaudi" | pages undefined | 9788806174767 | [] | covers[0] undefined
+C https://covers.openlibrary.org/b/id/630082-M.jpg: loaded 180x273 in 561 ms
+  PASS  L the page could read the search answers
+
+R2 0.6 live: 1 / 1 passed, 0 failed
+RIG-DONE
+RUNNER: R2 0.6 live took 8 s, 2026-11-26 18:05

@@ -18312,7 +18312,10 @@ html[data-mood="day"] .lx.ol.r1-home .r1-feat{background:color-mix(in srgb,var(-
     .notebook.lum-amber-deep .nb-name-canvas-host .wc-input,
     .notebook.lum-amber-deep .notebook-capture-line input[type=text],
     .notebook.lum-amber-deep .notebook-capture-line textarea,
+    .r1-search .fb-in,
     .search.lum-amber .search-input,
+    .shelf.sh3 .fb-field input,
+    .shelf.sh3 .fb-in,
     .spotlight-input,
     .st-build.lum-amber-deep .stb-canvas-host .wc-input,
     .st-build.lum-amber-deep .stb-title-input,
@@ -18454,3 +18457,97 @@ html:not([data-sky="brown"]) .sky .quiet{color:var(--on-night-2);text-shadow:var
   html[data-sky-top]:not([data-sky="brown"]) #statusbar-scrim{background:var(--sky-blue)}
 }
 /* === LC2-b THE SKY TO THE TOP (phones, Home) -- end === */
+/* === R2 FIND A BOOK -- begin ===
+   NEW rules. The panel (.fb) lives on the Shelf; its rows, cards and form (.fb-*) also draw on Search's
+   "All books" side, so those are scoped under :is(.shelf.sh3,.r1-search). Only fb- classes. Tokens only.
+   Type is on the seven-size scale (22, 17, 15, 13). No text field is under 16 px: the two fields here are
+   17 px, so the build adds them to the 16 px rule's :not() list in components.css (R1's residual R-2). */
+.shelf.sh3 .fb{display:flex;flex-direction:column;gap:12px;min-width:0}
+:is(.shelf.sh3,.r1-search) .fb-head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px}
+:is(.shelf.sh3,.r1-search) .fb-h{margin:0;font:500 22px/1.15 var(--font-serif);letter-spacing:-.015em;color:var(--ink)}
+:is(.shelf.sh3,.r1-search) .fb-done{min-height:44px;margin-right:-8px;padding:0 8px;border:0;border-radius:10px;background:transparent;font:500 15px/1 var(--font-body);color:var(--gold-ink);cursor:pointer}
+:is(.shelf.sh3,.r1-search) .fb-field{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 2px 0 16px;border-radius:14px;background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink-2);cursor:text}
+:is(.shelf.sh3,.r1-search) .fb-field svg{flex:none;width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+:is(.shelf.sh3,.r1-search) .fb-field input{flex:1;min-width:0;min-height:46px;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;outline:none;-webkit-appearance:none;appearance:none;font:400 17px/1.2 var(--font-body);color:var(--ink)}
+:is(.shelf.sh3,.r1-search) .fb-field input::placeholder{color:var(--ink-2);opacity:1}
+:is(.shelf.sh3,.r1-search) .fb-field input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+:is(.shelf.sh3,.r1-search) .fb-field:focus-within{box-shadow:inset 0 0 0 2px var(--gold-ink)}
+:is(.shelf.sh3,.r1-search) .fb-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--ink-2);cursor:pointer}
+:is(.shelf.sh3,.r1-search) .fb-x[hidden]{display:none}
+:is(.shelf.sh3,.r1-search) .fb-x svg{width:20px;height:20px}
+:is(.shelf.sh3,.r1-search) .fb-line{margin:0;font:400 15px/1.45 var(--font-body);color:var(--ink-2)}
+:is(.shelf.sh3,.r1-search) .fb-list{border-radius:18px;overflow:hidden;background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line)}
+:is(.shelf.sh3,.r1-search) .fb-list.is-stale{opacity:.55}
+:is(.shelf.sh3,.r1-search) .fb-row{position:relative;display:grid;grid-template-columns:48px minmax(0,1fr) 44px;column-gap:14px;align-items:center;padding:12px 10px 12px 14px}
+:is(.shelf.sh3,.r1-search) .fb-row + .fb-row{box-shadow:inset 0 1px 0 var(--line)}
+:is(.shelf.sh3,.r1-search) .fb-hit{position:absolute;top:0;right:0;bottom:0;left:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;cursor:pointer}
+:is(.shelf.sh3,.r1-search) .fb-cov{display:block;width:48px;height:72px;border-radius:2px 3px 3px 2px;overflow:hidden;background:var(--card-2);box-shadow:inset 3px 0 0 rgba(0,0,0,.12),inset 0 0 0 1px rgba(0,0,0,.12)}
+:is(.shelf.sh3,.r1-search) .fb-cov img{display:block;width:100%;height:100%;object-fit:cover}
+/* a book with no cover picture: its first letter on the plain card */
+:is(.shelf.sh3,.r1-search) .fb-cov.is-none{display:flex;align-items:center;justify-content:center;font:500 22px/1 var(--font-serif);color:var(--ink-2)}
+:is(.shelf.sh3,.r1-search) .fb-ed .fb-cov.is-none{font-size:17px}
+:is(.shelf.sh3,.r1-search) .fb-tx{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+:is(.shelf.sh3,.r1-search) .fb-tx b{font:500 17px/1.2 var(--font-serif);letter-spacing:-.01em;color:var(--ink);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+:is(.shelf.sh3,.r1-search) .fb-tx small{max-width:100%;font:400 13px/1.3 var(--font-body);color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:is(.shelf.sh3,.r1-search) .fb-go{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--line);color:var(--gold-ink);pointer-events:none}
+:is(.shelf.sh3,.r1-search) .fb-go svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+:is(.shelf.sh3,.r1-search) .fb-row.is-added .fb-go{background:var(--gold);box-shadow:none;color:var(--on-gold)}
+:is(.shelf.sh3,.r1-search) .fb-row.is-owned .fb-go{box-shadow:none;color:var(--ink-2)}
+:is(.shelf.sh3,.r1-search) .fb-eds,:is(.shelf.sh3,.r1-search) .fb-undo{position:relative;z-index:1;display:inline-flex;align-items:center;gap:2px;margin:-10px 0 -14px -8px;padding:13px 8px;border:0;border-radius:10px;background:transparent;font:500 13px/1.4 var(--font-body);color:var(--gold-ink);cursor:pointer}
+:is(.shelf.sh3,.r1-search) .fb-eds svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+:is(.shelf.sh3,.r1-search) .fb-eds[aria-expanded="true"] svg{transform:rotate(90deg)}
+:is(.shelf.sh3,.r1-search) .fb-on{display:flex;align-items:center;flex-wrap:wrap;gap:0 2px;font:400 13px/1.4 var(--font-body);color:var(--ink-2)}
+:is(.shelf.sh3,.r1-search) .fb-on .fb-undo{margin:-13px 0 -13px -2px}
+:is(.shelf.sh3,.r1-search) .fb-seg{grid-column:1 / -1;display:flex;gap:2px;margin-top:12px;padding:2px;border-radius:12px;background:color-mix(in srgb,var(--page) 75%,var(--page-2));box-shadow:inset 0 0 0 1px var(--line)}
+:is(.shelf.sh3,.r1-search) .fb-seg button{position:relative;z-index:1;flex:1;min-width:0;min-height:44px;padding:0 4px;border:0;border-radius:10px;background:transparent;font:500 15px/1 var(--font-body);color:var(--ink-2);white-space:nowrap;cursor:pointer}
+:is(.shelf.sh3,.r1-search) .fb-seg button[aria-pressed="true"]{background:var(--card-2);color:var(--ink);font-weight:600}
+:is(.shelf.sh3,.r1-search) .fb-edl{grid-column:1 / -1;display:flex;flex-direction:column;margin:12px -10px -12px -14px;background:color-mix(in srgb,var(--page) 75%,var(--page-2));box-shadow:inset 0 1px 0 var(--line)}
+:is(.shelf.sh3,.r1-search) .fb-ed{position:relative;display:grid;grid-template-columns:36px minmax(0,1fr) 44px;column-gap:14px;align-items:center;padding:8px 10px 8px 26px}
+:is(.shelf.sh3,.r1-search) .fb-ed + .fb-ed{box-shadow:inset 0 1px 0 var(--line)}
+:is(.shelf.sh3,.r1-search) .fb-ed .fb-cov{width:36px;height:54px}
+:is(.shelf.sh3,.r1-search) .fb-ed .fb-tx b{font:500 15px/1.25 var(--font-body);letter-spacing:0;-webkit-line-clamp:1}
+:is(.shelf.sh3,.r1-search) .fb-note{display:flex;flex-direction:column;gap:6px;padding:18px 16px;border-radius:18px;background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line)}
+:is(.shelf.sh3,.r1-search) .fb-note b{font:500 17px/1.25 var(--font-serif);letter-spacing:-.01em;color:var(--ink);overflow-wrap:anywhere}
+:is(.shelf.sh3,.r1-search) .fb-note p{margin:0;font:400 15px/1.45 var(--font-body);color:var(--ink-2)}
+:is(.shelf.sh3,.r1-search) .fb-btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+:is(.shelf.sh3,.r1-search) .fb-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border:0;border-radius:999px;background:transparent;box-shadow:inset 0 0 0 1px var(--line);font:500 15px/1 var(--font-body);color:var(--ink);white-space:nowrap;cursor:pointer}
+:is(.shelf.sh3,.r1-search) .fb-btn.is-main{background:var(--gold);box-shadow:none;font-weight:600;color:var(--on-gold)}
+:is(.shelf.sh3,.r1-search) .fb-btn:disabled{opacity:.45;cursor:default}
+:is(.shelf.sh3,.r1-search) .fb-hand{align-self:flex-start;min-height:44px;margin:-4px 0 0 -8px;padding:0 8px;border:0;border-radius:10px;background:transparent;font:500 15px/1 var(--font-body);color:var(--gold-ink);cursor:pointer}
+:is(.shelf.sh3,.r1-search) .fb-form{display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:18px;background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line)}
+:is(.shelf.sh3,.r1-search) .fb-form .fb-seg{margin-top:0}
+:is(.shelf.sh3,.r1-search) .fb-lab{display:flex;flex-direction:column;gap:6px;font:500 13px/1.3 var(--font-body);color:var(--ink-2)}
+:is(.shelf.sh3,.r1-search) .fb-in{box-sizing:border-box;width:100%;min-height:48px;margin:0;padding:0 14px;border:0;border-radius:12px;background:color-mix(in srgb,var(--page) 75%,var(--page-2));box-shadow:inset 0 0 0 1px var(--line);outline:none;-webkit-appearance:none;appearance:none;font:400 17px/1.2 var(--font-body);color:var(--ink)}
+:is(.shelf.sh3,.r1-search) .fb-in:focus{box-shadow:inset 0 0 0 2px var(--gold-ink)}
+:is(.shelf.sh3,.r1-search) .fb-wait{display:block;height:12px;border-radius:6px;background:var(--card-2)}
+:is(.shelf.sh3,.r1-search) .fb-wait.is-short{width:45%}
+:is(.shelf.sh3,.r1-search) .fb-wait.is-long{width:78%;height:15px}
+:is(.shelf.sh3,.r1-search) .fb-done:focus-visible,:is(.shelf.sh3,.r1-search) .fb-x:focus-visible,:is(.shelf.sh3,.r1-search) .fb-eds:focus-visible,:is(.shelf.sh3,.r1-search) .fb-undo:focus-visible,:is(.shelf.sh3,.r1-search) .fb-seg button:focus-visible,:is(.shelf.sh3,.r1-search) .fb-btn:focus-visible,:is(.shelf.sh3,.r1-search) .fb-hand:focus-visible{outline:2px solid var(--gold-ink);outline-offset:2px}
+:is(.shelf.sh3,.r1-search) .fb-hit:focus-visible{outline:2px solid var(--gold-ink);outline-offset:-2px}
+/* the two scan doors: two rows that say what each does (ruled 24 Nov, option D) */
+:is(.shelf.sh3,.r1-search) .fb-ico{display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:var(--card-2);color:var(--gold-ink)}
+:is(.shelf.sh3,.r1-search) .fb-ico svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+:is(.shelf.sh3,.r1-search) .fb-row.is-way{padding-top:10px;padding-bottom:10px}
+:is(.shelf.sh3,.r1-search) .fb-row.is-way .fb-go{box-shadow:none;color:var(--ink-2)}
+:is(.shelf.sh3,.r1-search) .fb-row.is-way .fb-tx small{white-space:normal}
+/* Search's "All books" side and its "not in your library" line hold fb- pieces in one column */
+.r1-search .fb-body{display:flex;flex-direction:column;gap:12px;min-width:0}
+/* The flower steps aside while Find a book is open on a phone, as it does for the Manage sheet, so it
+   cannot sit on a result's add button. On an empty shelf the panel is always there (.is-first), so there
+   the flower steps aside only while the reader is working inside it. The same on Search's "All books" side. */
+@media (max-width: 759px){
+  body:has(.shelf.sh3 .fb:not(.is-first)) #yumi-bloom,body:has(.shelf.sh3 .fb:focus-within) #yumi-bloom,body:has(.r1-search .fb-list) #yumi-bloom{visibility:hidden}
+}
+/* From 760: nothing swipes and the page is wide, so rows stand two across, each its own card.
+   The field stays the full width; a card and the by-hand form keep a reading width. */
+@media (min-width: 760px){
+  .shelf.sh3 .fb{gap:14px}
+  :is(.shelf.sh3,.r1-search) .fb-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start;overflow:visible;border-radius:0;background:none;box-shadow:none}
+  :is(.shelf.sh3,.r1-search) .fb-list .fb-row{border-radius:18px;overflow:hidden;background:var(--card-1);box-shadow:inset 0 0 0 1px var(--line)}
+  :is(.shelf.sh3,.r1-search) .fb-note,:is(.shelf.sh3,.r1-search) .fb-form{max-width:640px}
+}
+@media (prefers-reduced-motion: no-preference){
+  :is(.shelf.sh3,.r1-search) .fb-row.is-wait{animation:fb-wait 1.2s ease-in-out infinite alternate}
+  @keyframes fb-wait{from{opacity:.55}to{opacity:1}}
+}
+/* === R2 FIND A BOOK -- end === */

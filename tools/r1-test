@@ -69,6 +69,8 @@ var b0 = views.indexOf('\nvar r1Seen = {};'), b1 = views.indexOf('\n// === R1 --
 if (b0 === -1 || b1 === -1 || b1 < b0) { WScript.Echo('LOAD: this tree has no R1 block in js/views.js'); WScript.Quit(2); }
 var block = views.slice(b0, b1);
 var keysFn = liftFn(integ, 'accountLocalKeysFor');
+// R2 (v3.346): r1AllBooksOn reads Find a book's switch too (C1); lifted when the tree has it (older trees do not)
+var r2FindFn = liftFn(views, 'r2FindOn') || '';
 if (!keysFn) { WScript.Echo('LOAD: accountLocalKeysFor not found in js/integrations.js'); WScript.Quit(2); }
 
 var stubs = [
@@ -97,7 +99,7 @@ var tail = '\nreturn { r1Fold: r1Fold, r1Words: r1Words, r1Has: r1Has, r1Pick: r
   + ' wipe: function () { var k; for (k in store) { if (Object.prototype.hasOwnProperty.call(store, k)) { delete store[k]; } } storeOrder.length = 0; },'
   + ' reload: function () { r1Seen = {}; }, setOld: function (a) { oldIndex = a; }, keys: function () { return storeOrder.slice(0); } };';
 var api;
-try { api = (new Function(stubs + '\n' + keysFn + '\n' + block + tail))(); }
+try { api = (new Function(stubs + '\n' + keysFn + '\n' + r2FindFn + '\n' + block + tail))(); }
 catch (e1) { WScript.Echo('LOAD: the R1 block did not run: ' + e1.message); WScript.Quit(2); }
 // localStorage.length is read by accountLocalKeysFor; the stub answers through a getter-free count.
 var st = api.state;
@@ -184,7 +186,7 @@ check('U4 nothing', [api.r1Total(api.r1Match(ix, 'zebra')), api.r1Found(api.r1Ma
 
 // ---- U5
 reset();
-check('U5 defaults', [api.r1HomeOn('u1'), api.r1SearchOn('u1'), api.r1AllBooksOn('u1')], [true, true, false]);
+check('U5 defaults (All books on since R2, C1)', [api.r1HomeOn('u1'), api.r1SearchOn('u1'), api.r1AllBooksOn('u1')], [true, true, true]);
 check('U5 a default writes nothing', api.keys(), []);
 api.reload(); api.location.search = '?home=old&x=1'; api.replaced.length = 0;
 check('U5 ?home=old turns Home back', api.r1HomeOn('u1'), false);
@@ -204,7 +206,10 @@ check('U5 ?allbooks=on', [api.r1AllBooksOn('u1'), api.ls('praxis_r1_allbooks_u1'
 api.reload(); api.location.search = '?homework=old&searching=old';
 api.sv('praxis_r1_home_u1', true); api.sv('praxis_r1_search_u1', true);
 check('U5 a longer word is not the switch', [api.r1HomeOn('u1'), api.r1SearchOn('u1')], [true, true]);
-check('U5 another reader starts at the defaults', [api.r1HomeOn('u2'), api.r1AllBooksOn('u2')], [true, false]);
+check('U5 another reader starts at the defaults', [api.r1HomeOn('u2'), api.r1AllBooksOn('u2')], [true, true]);
+api.reload(); api.location.search = '?findbook=old';
+check('U5 ?findbook=old turns All books off too (R2, C1), the allbooks choice kept', [api.r1AllBooksOn('u3'), api.ls('praxis_r1_findbook_u3', 'none'), api.ls('praxis_r1_allbooks_u3', 'none')], [false, false, 'none']);
+api.reload(); api.location.search = '';
 api.sv('praxis_r1_home_u1', 'damaged');
 check('U5 a damaged value reads as the default', api.r1HomeOn('u1'), true);
 

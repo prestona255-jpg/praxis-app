@@ -1,0 +1,100 @@
+  FAIL  self-check (expected to FAIL)
+        got  1
+        want 2
+
+F1 the CSS block
+  PASS  the begin marker, once  = 1
+  PASS  the end marker, once  = 1
+  PASS    begin before end  = true
+  PASS    the block and its closing line feed are the kit's 11,698 bytes (ASCII: chars = bytes)  = 11698
+  PASS    it ends the file  = true
+  PASS  no hex colour in the block  = false
+  PASS  the 16 px rule names the panel's field  = 1
+  PASS    and the by-hand fields on the Shelf  = 1
+  PASS    and the by-hand fields on Search  = 1
+
+F2 the words
+  PASS  every worded string is in views.js (45 of them)  = 
+  PASS  the Capture chip says Find a book  = 1
+  PASS  "Searched on this phone" is gone  = 0
+  PASS  "coming here next" is gone  = 0
+  PASS  "...ve gathered is searchable here." once only (the earlier Search page)  = 1
+  PASS    and that one is the earlier Search page's line  = 1
+
+F3 the source
+  PASS  no innerHTML between the R2 markers in views.js  = 0
+  PASS  no ES5+ syntax there  = 
+  PASS  no innerHTML in the three lookup functions  = 0
+  PASS  no ES5+ syntax there  = 
+  PASS  integrations.js defines openLibrarySearch, once  = 1
+  PASS  integrations.js defines openLibraryEditions, once  = 1
+  PASS  integrations.js defines findBooks, once  = 1
+  PASS  every function the R2 block defines is defined once in views.js and integrations.js (58 of them)  = 
+  PASS    and there are functions to check  = true
+  PASS  the R2 block saves through scanCommitBook  = 1
+  PASS  the R2 block deletes through deleteBook, behind its created list  = 1
+  PASS    and Undo checks that list first  = 1
+  PASS  the R2 block never creates a record itself  = false
+  PASS  no storage key in the R2 block (sv / ls never called)  = 0
+  PASS  the switch is r1Switch(uid, findbook, new, old, true)  = 1
+  PASS  All books is on by default and off with Find a book  = 1
+  PASS  the pill keeps openShelfEditor for findbook=old  = 1
+  PASS  openShelfEditor is still defined, once  = 1
+
+F4 openLibrarySearch
+  PASS  one GET  = 1
+  PASS    to the search URL with the six fields and limit 10  = https://openlibrary.org/search.json?q=teach%20to&fields=key,title,author_name,first_publish_year,cover_i,edition_count&limit=10
+  PASS    with a 6 s timer  = true
+  PASS  answered once, err null  = true
+  PASS  a doc with no title is skipped  = 2
+  PASS  title  = Teaching to Transgress
+  PASS  author  = bell hooks
+  PASS  year (a string, as volumeToBook gives it)  = 1994
+  PASS  coverUrl  = https://covers.openlibrary.org/b/id/3881117-M.jpg
+  PASS  coverCandidates  = true
+  PASS  isbn / publisher / description empty  = ||
+  PASS  pageCount null, rawCategories []  = true
+  PASS  workKey and editionCount kept  = /works/OL15053159W 10
+  PASS  two authors joined  = Stefano Harney, Fred Moten
+  PASS  no year, no cover: null, null, []  = true
+  PASS  no edition_count: 0  = 0
+  PASS  an empty answer is ([], null)  = true
+  PASS  a failed fetch is ([], err)  = true
+  PASS  an HTTP 503 is ([], err 503)  = true
+  PASS  an answer that is not JSON is ([], err)  = true
+  PASS  no answer yet: nothing called back  = 0
+  PASS  at 6 s: ([], err timeout)  = true
+
+F5 openLibraryEditions
+  PASS  one GET to the work's editions, limit 50  = https://openlibrary.org/works/OL1870518W/editions.json?limit=50
+  PASS    with a 6 s timer  = true
+  PASS  kept: a year and a publisher; English or none first, newest first; 8 at most  = 2021 Capitan Swing / 2018 Bloomsbury Academic / 2014 Routledge / 2005 Continuum / 2000 Continuum / 1990 Continuum / 1972 Penguin / 1970 Herder and Herder
+  PASS  the other language comes only after those (cut at 8 here)  = -1
+  PASS  an edition: isbn_13, no pages: the edition name is its detail  = 9788412281842 | null | Second edition | null
+  PASS  an edition: isbn_10, pages, a cover  = 0826400477 | 186 | 186 pages | https://covers.openlibrary.org/b/id/15223639-M.jpg
+  PASS  a cover id of -1 is no cover  = null
+  PASS  nothing extra on an edition  = 6
+  PASS  no editions: ([], null)  = true
+  PASS  a key that is not a work key asks nothing and fails  = true
+  PASS  a failed fetch is ([], err)  = true
+
+F6 findBooks
+  PASS  Open Library answers: ok, and Google Books is not asked  = ok 0
+  PASS    its item  = 1 Teaching to Transgress 2
+  PASS  Open Library empty: Google Books asked, ok  = ok 1 1
+  PASS    mapped by volumeToBook with volumeIsbn, editionCount 0, no workKey  = Teaching Community 9780415968188 0 []
+  PASS  Open Library failing: Google Books asked, ok  = ok 1
+  PASS  both could not ask: down  = down 0
+  PASS  Open Library empty, Google Books failing: none (a true no-match was had)  = none
+  PASS  Open Library failing, Google Books empty: none  = none
+  PASS  both empty: none  = none
+  PASS  four digits are words: Open Library is asked  = 1 0
+  PASS  an ISBN goes to resolveBook, not Open Library's search  = 1 0 0
+  PASS    asked as kind isbn with the digits  = isbn 9781501314131
+  PASS    a strong answer: one item, ok  = ok 1 Pedagogy of the Oppressed 9781501314131
+  PASS    lookupFailed: down  = down
+  PASS    a final X is an ISBN too; no match: none  = 082640047X none
+  PASS  offline: offline, and nothing is asked  = offline 0 0 0
+  PASS  offline with an ISBN: offline, nothing asked  = offline 0
+
+83/83 passed

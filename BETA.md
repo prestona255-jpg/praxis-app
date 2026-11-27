@@ -5,6 +5,7 @@ Build order re-ruled 2026-11-25 (main at db457de, v3.341).
 Order after R1 re-ruled 2026-11-25 (main at f6fe2c4, v3.342): the book page, then Find a book, then LC2.
 Order after R3 re-ruled 2026-11-26 (main at 93fe836, v3.343): LC2 (the sky), then Find a book.
 LC2-b ruled 2026-11-26 from the LC2 phone check (main at f6dc239, v3.344): the sky to the top on a phone's Home, then Find a book.
+Find a book (R2) built 2026-11-26 on f95eb93 (v3.346); next in the order: the remaining rooms (R4, R5).
 
 This page leads on three things: the first beta's SCOPE, the BUILD ORDER, and the
 OPEN BLOCKERS. Where BOARD.md, docs/studio/sequence.md, docs/launch-runway.md,
@@ -64,7 +65,7 @@ the demo page last. Every row finishes before the first invite.
 | R3 | rooms | Book page and artifact (L4b-3b); Back returns to where the book was opened from | small | pushed 93fe836, live as praxis-v3.343, Checks 36 of 36, Preston's phone check passed 26 Nov |
 | LC2 | rooms | The blue sky and sunset burst (r88, r89, r90), its own build after the book page and before Find a book (ruled 26 Nov 2026); js/hand.js unlocked for it only | small | pushed f6dc239, live as praxis-v3.344, Checks 37 of 37; Preston's phone check 26 Nov: Home good, its brown top strip ruled into LC2-b |
 | LC2-b | rooms | The sky to the top on a phone's Home: no gap, the sky under a see-through praxis bar, the status strip the sky's blue while the sky is under it (ruled 26 Nov 2026 from the LC2 phone check; sky only, Home only, phones only) | small | built 26 Nov, v3.345 |
-| R2 | rooms | Find a book: a search field replaces the Add a book form (NEW, ruled 23 Nov; after the book page, re-ruled 25 Nov; after LC2 and LC2-b, re-ruled 26 Nov); carries R1's residuals R-1, C-1, C-2 | small | to be drawn |
+| R2 | rooms | Find a book: a search field replaces the Add a book form (NEW, ruled 23 Nov; after the book page, re-ruled 25 Nov; after LC2 and LC2-b, re-ruled 26 Nov); carries R1's residuals R-1, C-1, C-2 | small | built 26 Nov, v3.346 (picker built: 0.6 passed 7 of 7); closes R-1, R-2, C-1, C-2 |
 | R4 | rooms | Notebook and a note (L4b-3c); Undo for a deleted note (BR-13) | small | patch to be cut fresh |
 | R5 | rooms | You, Settings, Your data, What Yumi sees, About (L4b-3e, two builds); the lasting not-synced line and the Export words (BR-30) | small | patch to be cut fresh |
 | F2 | features | Deeper Yumi, her complexity and character (ruled in 23 Nov; built after the rooms (re-ruled 25 Nov); D2 still lands before any invite) | sized at its pre-flight | in design, its own chat |

@@ -1,0 +1,3 @@
+PARSE OK: js/views.js
+PARSE OK: js/integrations.js
+PARSE OK: sw.js

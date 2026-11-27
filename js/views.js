@@ -582,6 +582,7 @@ function renderRoute() {
   var parts = rest.split('/');
   // R1: Search's Back returns to where it was opened from; coming straight back from a result keeps what was typed.
   if (parts[0] === 'search' && olPrev.split('/')[0] !== 'search') { r1Arrive(olPrev); }
+  if (olPrev !== rest) { r2Route(parts[0], olPrev); }   // R2: the Shelf's Find a book panel comes back with Back from a book it opened; R-1 forgets r1Out at a room
   // L4.3: the Lenses page's Back returns to wherever the reader came from.
   if (parts[0] !== 'lenses' && parts[0] !== 'lens') { lxLastRoute = rest || 'home'; }   // L4b-2a: Lenses -> Open Lens -> Back must not loop
   // L4b-2a: Open Lens's Back returns to the room it was opened from. A page opened
@@ -1565,6 +1566,7 @@ function renderSearch() {
 //   7. Two sides, "Your library" (the default) and "All books". "All books" is
 //      built and switched OFF until Find a book (R2) gives it a catalogue
 //      (?allbooks=on|off, kept the same way as the two room switches).
+//      R2: on by default since v3.346, and off whenever ?findbook=old.
 // Nothing here writes to the cloud or changes what is saved or synced. The only
 // stored things are the three switches and the recents list, all on this device
 // under keys that end in the reader's uid, so the account sweep
@@ -1601,7 +1603,7 @@ function r1Switch(uid, name, onWord, offWord, dflt) {
 }
 function r1HomeOn(uid) { return r1Switch(uid, 'home', 'new', 'old', true); }
 function r1SearchOn(uid) { return r1Switch(uid, 'search', 'new', 'old', true); }
-function r1AllBooksOn(uid) { return r1Switch(uid, 'allbooks', 'on', 'off', false); }
+function r1AllBooksOn(uid) { var a = r1Switch(uid, 'allbooks', 'on', 'off', true), f = r2FindOn(uid); return a && f; }   // R2: on by default; off whenever Find a book is off
 
 // ---------------------------------------------------------------- MATCHING
 // Every word, any order, accents and case ignored. r1Fold makes the one plain
@@ -1834,7 +1836,8 @@ function r1FromLabel() {
 // back from a result that was opened FROM Search keeps the origin and what was
 // typed; any other arrival is a new visit.
 function r1Arrive(prev) {
-  if (prev && prev === r1Out) { return; }
+  if (prev && prev === r1Out) { r1Out = ''; return; }   // R2: R-1, the way back is used once
+  r1Out = '';   // R2: R-1, a fresh visit forgets the last result's way back
   r1From = prev || 'home';
   r1St.fresh = true;
 }
@@ -1976,6 +1979,7 @@ function r1NoteRow(uid, item, fn) {
   return row;
 }
 function r1SearchRender(host, uid) {
+  if (r1St.fresh) { r2SearchReset(); }   // R2: a fresh visit to Search starts All books' answers afresh
   if (r1St.fresh) { r1St = { q: '', scope: ((r1From || '').split('/')[0] === 'notebook') ? 'notes' : 'all', side: 'mine', more: 0, fresh: false }; }
   if (typeof ensureLensLooks === 'function') { ensureLensLooks(uid); }   // a lens mark is never blank on a cold load
   var ix = r1Index(uid), deb = null, twoSides = r1AllBooksOn(uid);
@@ -2021,7 +2025,7 @@ function r1SearchRender(host, uid) {
   chips.setAttribute('aria-label', 'What to search');
   var under = lxEl('div', 'r1-under');
   under.appendChild(chips);
-  var footLine = lxEl('p', 'ol-foot', 'Searched on this phone. The Journal is never searched.');
+  var footLine = lxEl('p', 'ol-foot', 'Searched on this device. The Journal is never searched.');   // R2: C-1
   under.appendChild(footLine);
   top.appendChild(under);
   col.appendChild(top);
@@ -2130,15 +2134,13 @@ function r1SearchRender(host, uid) {
       ls0.appendChild(lensRows(ix.lenses));
       (rec.length ? aside : main).appendChild(ls0);
     }
-    if (!rec.length && !ix.lenses.length) { main.appendChild(lxEl('p', 'ol-foot', 'Everything you\u2019ve gathered is searchable here.')); }
+    if (!rec.length && !ix.lenses.length) { main.appendChild(lxEl('p', 'ol-foot', 'Your books, notes and lenses are searchable here.')); }   // R2: C-2
   }
-  // The "All books" side. Off until Find a book (R2) gives it a catalogue; with
-  // the switch on it says so and offers the Shelf's own door.
+  // The "All books" side: Find a book's rows (R2), in the full-width holder.
   function paintAllBooks() {
-    var s = olSect('All books', null);
-    s.appendChild(lxEl('p', 'ol-foot', 'Finding a book you don\u2019t have yet is coming here next. Until then, add one from the Shelf.'));
-    s.appendChild(lxBtn('r1-more', 'Go to the Shelf', function () { location.hash = '#books'; }));
-    main.appendChild(s);
+    var holder = lxEl('div', 'fb-body');   // R2: the rows of Find a book; their code is in the R2 block
+    wide.appendChild(holder);   // R2:
+    r2SearchPaint(holder, input, uid, go, function () { ix = r1Index(uid); }, function (v) { r1St.q = v; });   // R2:
   }
   // Three holders: on a phone they read as one column, in this order; on a wide screen the books run the full
   // width and the other two sit side by side under them.
@@ -2155,16 +2157,25 @@ function r1SearchRender(host, uid) {
     res.innerHTML = '';
     wide = lxEl('div', 'r1-wide'); main = lxEl('div', 'r1-main'); aside = lxEl('div', 'r1-aside');
     res.appendChild(wide); res.appendChild(main); res.appendChild(aside);
+    var allSide = (r1St.side === 'all');   // R2: C3, the field's hint and name follow the side
+    input.setAttribute('placeholder', allSide ? 'Title, author or ISBN' : 'A title, an author, a note, a lens');   // R2:
+    input.setAttribute('aria-label', allSide ? 'Find a book by title, author or ISBN' : 'Search your shelf, notes and lenses');   // R2:
     if (r1St.side === 'all') {
       chips.style.display = 'none'; footLine.style.display = 'none';
       paintAllBooks();
       return;
     }
+    if (r2Search) { r2Search.alive = false; }   // R2: Your library showing: a late All books answer is not drawn
     chips.style.display = ''; footLine.style.display = '';
     paintChips(m);
     if (!q) { paintIdle(); return; }
     if (!r1Total(m)) {
-      main.appendChild(lxEl('p', 'ol-foot', 'Nothing on your shelf, in your notes or among your lenses matches \u201c' + q + '\u201d.'));
+      var r2NoneLine = lxEl('p', 'ol-foot', 'Nothing on your shelf, in your notes or among your lenses matches \u201c' + q + '\u201d.');   // R2: the existing line, unchanged
+      if (!twoSides) { main.appendChild(r2NoneLine); return; }   // R2: as before when there is no All books side
+      var r2NoneBody = lxEl('div', 'fb-body');   // R2: C4, under the line a way to All books with the words kept
+      r2NoneBody.appendChild(r2NoneLine);   // R2:
+      r2NoneBody.appendChild(lxBtn('fb-hand', 'Look for \u201c' + q + '\u201d in All books', function () { r1St.side = 'all'; r1St.more = 0; paint(); }));   // R2:
+      main.appendChild(r2NoneBody);   // R2:
       return;
     }
     if (m.books.length && (sc === 'all' || sc === 'books')) {
@@ -2211,10 +2222,12 @@ function r1SearchRender(host, uid) {
   // ~100 ms debounce; the field itself is never redrawn, so it keeps its focus and caret.
   input.addEventListener('input', function () {
     r1St.q = input.value; r1St.more = 0; r1St.typedAt = Date.now();
+    if (r1St.side === 'all' && r2Search) { r2Input(r2Search); return; }   // R2: All books asks Find a book's lookup, after its own pause
     if (deb) { clearTimeout(deb); }
     deb = setTimeout(function () { deb = null; if (page.parentNode) { paint(); } }, 100);
   });
   input.addEventListener('keydown', function (ev) {
+    if (ev.keyCode === 13 && r1St.side === 'all' && r2Search) { ev.preventDefault(); r2Enter(r2Search); return; }   // R2: Enter asks at once
     if (ev.keyCode === 13) { if (deb) { clearTimeout(deb); deb = null; } paint(); input.blur(); }   // the keyboard's Search key shows the results and lowers the keyboard
   });
   paint();
@@ -2227,6 +2240,732 @@ function r1SearchRender(host, uid) {
   }
 }
 // === R1 -- end ===
+
+// === R2 FIND A BOOK -- begin
+// BETA.md row R2; docs/checkpoints/r2.md; the drawing is praxis-r2-kit-26nov.zip
+// (drawing/index.html at 390, drawing/desktop.html at 1360). A search field replaces
+// the typed Add a book form on the Shelf: the reader types a few letters, sees books
+// with covers, taps one, and it is on the shelf. The same rows fill the "All books"
+// side of Search. The lookup is findBooks (integrations.js).
+// What this saves, and only through the app's own doors:
+//   * a new book through scanCommitBook, the door every Scan add already saves through;
+//     then year, publisher, pageCount and rawCategories (fields ensureBookFields
+//     already carries) through markBookPending, markBooksDirty and saveState;
+//   * Undo through deleteBook, and only for a book this same visit created;
+//   * a status by the write the book page's Reading status row makes.
+// One per-device switch, ?findbook=new|old (r1Switch), default new. At old the
+// Shelf, Search and Capture are as they were before R2. Nothing typed, found or
+// cached is stored: it lives in memory for one visit.
+// Every word from a lookup goes in by textContent or setAttribute, never as markup.
+// =====================================================================
+var R2_SVGNS = 'http://www.w3.org/2000/svg';
+var R2_ICON = {
+  find:  [['circle', { cx: '11', cy: '11', r: '7' }], ['path', { d: 'M20 20l-3.6-3.6' }]],
+  x:     [['path', { d: 'M6 6l12 12M18 6L6 18' }]],
+  plus:  [['path', { d: 'M12 5v14M5 12h14' }]],
+  check: [['path', { d: 'M5 12.5l4.5 4.5L19 7.5' }]],
+  chev:  [['path', { d: 'M9 6l6 6-6 6' }]],
+  bar:   [['path', { d: 'M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3' }], ['path', { d: 'M7 8v8M10 8v8M13 8v8M17 8v8' }]],
+  shelf: [['path', { d: 'M4 4h4v16H4zM10 4h4v16h-4zM16 5l4-1 1 15-4 1z' }]]
+};
+var R2_ST = [['reading', 'Reading'], ['will-read', 'Will read'], ['read', 'Have read']];
+var r2Shelf = null;    // the Shelf's panel: one visit (its words, its answers, what it added)
+var r2Search = null;   // Search's "All books" side: one visit
+var r2Out = '';        // the book page last opened FROM the panel (Back brings the panel back)
+var r2Back = false;    // the Shelf is being drawn on that way back
+var r2Want = false;    // Capture's "Find a book" asked for the panel on the way to the Shelf
+
+function r2FindOn(uid) { return r1Switch(uid, 'findbook', 'new', 'old', true); }
+
+// ---------------------------------------------------------------- SMALL PARTS
+function r2Svg(name, attrs) {
+  var s = document.createElementNS(R2_SVGNS, 'svg'), parts = R2_ICON[name], i, k, p;
+  s.setAttribute('viewBox', '0 0 24 24');
+  s.setAttribute('aria-hidden', 'true');
+  if (attrs) { for (k in attrs) { if (Object.prototype.hasOwnProperty.call(attrs, k)) { s.setAttribute(k, attrs[k]); } } }
+  for (i = 0; i < parts.length; i++) {
+    p = document.createElementNS(R2_SVGNS, parts[i][0]);
+    for (k in parts[i][1]) { if (Object.prototype.hasOwnProperty.call(parts[i][1], k)) { p.setAttribute(k, parts[i][1][k]); } }
+    s.appendChild(p);
+  }
+  return s;
+}
+function r2Trim(s) { return (typeof s === 'string') ? s.replace(/^\s+|\s+$/g, '') : ''; }
+// The ISBN in what was typed (spaces and hyphens removed), or ''.
+function r2Isbn(q) {
+  var d = r2Trim(q).replace(/[\s-]/g, '');
+  return (/^[0-9]{13}$/.test(d) || /^[0-9]{9}[0-9Xx]$/.test(d)) ? d.toUpperCase() : '';
+}
+function r2Key(q) { return r2Trim(q).toLowerCase().replace(/\s+/g, ' '); }
+// What is asked for: three characters or more, unless it is five or more digits that are not yet an ISBN.
+function r2Askable(q) {
+  var d = q.replace(/[\s-]/g, '');
+  if (/^[0-9]+[Xx]?$/.test(d) && d.length >= 5 && !r2Isbn(q)) { return false; }
+  return q.length >= 3;
+}
+function r2StLabel(s) { var n = normalizeStatus(s), i; for (i = 0; i < R2_ST.length; i++) { if (R2_ST[i][0] === n) { return R2_ST[i][1]; } } return 'Reading'; }
+// A cover is used only from Open Library's cover host or the Google Books hosts the
+// existing cover code builds (googleBooksLargestCover), and only over https.
+function r2CoverOk(u) { return typeof u === 'string' && /^https:\/\/(covers\.openlibrary\.org|books\.google\.com|books\.googleusercontent\.com)\//.test(u); }
+function r2Covers(item) {
+  var out = [], c = (item.coverCandidates instanceof Array) ? item.coverCandidates : [], i;
+  if (r2CoverOk(item.coverUrl)) { out.push(item.coverUrl); }
+  for (i = 0; i < c.length; i++) { if (r2CoverOk(c[i]) && out.indexOf(c[i]) === -1) { out.push(c[i]); } }
+  return out;
+}
+// The no-cover tile: the title's first letter, a leading The, A or An skipped.
+function r2Tile(span, title) {
+  var t = r2Trim(title).replace(/^(the|a|an)\s+/i, '');
+  span.className = 'fb-cov is-none';
+  span.setAttribute('aria-hidden', 'true');
+  span.textContent = t ? t.charAt(0).toUpperCase() : '';
+  return span;
+}
+function r2Cover(item) {
+  var span = lxEl('span', 'fb-cov'), urls = r2Covers(item), k = 0;
+  if (!urls.length) { return r2Tile(span, item.title); }
+  var img = lxEl('img');
+  img.setAttribute('alt', '');
+  img.setAttribute('decoding', 'async');
+  function next() {
+    k = k + 1;
+    if (k < urls.length) { img.setAttribute('src', urls[k]); return; }
+    if (img.parentNode) { img.parentNode.removeChild(img); }
+    r2Tile(span, item.title);
+  }
+  img.addEventListener('error', next);
+  img.addEventListener('load', function () { if (img.naturalWidth < 2) { next(); } });   // a 1 px stand-in is no cover
+  img.setAttribute('src', urls[0]);
+  span.appendChild(img);
+  return span;
+}
+function r2Go(icon) { var g = lxEl('span', 'fb-go'); g.setAttribute('aria-hidden', 'true'); g.appendChild(r2Svg(icon)); return g; }
+
+// ---------------------------------------------------------------- ONE VISIT
+function r2NewCtx(room, uid) {
+  return { room: room, uid: uid, el: null, inp: null, x: null, body: null, h: null, head: null, done: null,
+           cache: {}, flight: {}, curKey: '', timer: null, list: null, adds: [], created: {}, openItem: null,
+           first: false, alive: true, onOpen: null, onChange: null, setQ: null };
+}
+function r2Clear(ctx) { ctx.body.textContent = ''; ctx.list = null; r2Shape(ctx); }
+function r2Put(ctx, node) { ctx.body.appendChild(node); r2Shape(ctx); }
+// The panel's results holder adds no box of its own (as in the drawing): its pieces sit in the panel's column.
+function r2Shape(ctx) { if (ctx.room === 'shelf') { ctx.body.style.display = ctx.body.firstChild ? 'contents' : 'none'; } }
+function r2Line(ctx, text) { r2Clear(ctx); r2Put(ctx, lxEl('p', 'fb-line', text)); }
+function r2Hold(ctx, node) { return !!(node && ctx.body && ctx.body.contains(node)); }
+
+// The two scan doors, as rows that say what each does.
+function r2Way(icon, name, line, route) {
+  var row = lxEl('div', 'fb-row is-way'), ic = lxEl('span', 'fb-ico'), tx = lxEl('span', 'fb-tx');
+  ic.setAttribute('aria-hidden', 'true');
+  ic.appendChild(r2Svg(icon));
+  row.appendChild(ic);
+  tx.appendChild(lxEl('b', '', name));
+  tx.appendChild(lxEl('small', '', line));
+  row.appendChild(tx);
+  row.appendChild(r2Go('chev'));
+  var hit = lxBtn('fb-hit', '', function () { location.hash = route; });
+  hit.setAttribute('aria-label', name);
+  row.appendChild(hit);
+  return row;
+}
+function r2Ways() {
+  var l = lxEl('div', 'fb-list');
+  l.appendChild(r2Way('bar', 'Scan a book', 'Point the camera at its barcode or cover.', '#scan'));
+  l.appendChild(r2Way('shelf', 'Scan a shelf', 'One photo adds a whole row of books.', '#scan/shelf'));
+  return l;
+}
+// Nothing typed: (on Search, the line,) the two scan rows, and every book added in this visit.
+function r2Idle(ctx) {
+  var i, l = null;
+  r2Clear(ctx);
+  if (ctx.room === 'search') { r2Put(ctx, lxEl('p', 'fb-line', 'Find any book and add it to your shelf.')); }
+  r2Put(ctx, r2Ways());
+  for (i = 0; i < ctx.adds.length; i++) {
+    if (!l) { l = lxEl('div', 'fb-list'); }
+    l.appendChild(r2Row(ctx, ctx.adds[i]));
+  }
+  if (l) { ctx.list = l; r2Put(ctx, l); }
+}
+
+// ---------------------------------------------------------------- TYPING
+// now: ask at once (a side switched to, a page come back to) instead of after the pause.
+function r2Input(ctx, now) {
+  var raw = ctx.inp.value, q = r2Trim(raw), d;
+  if (ctx.x) { ctx.x.hidden = raw.length === 0; }
+  if (ctx.timer) { clearTimeout(ctx.timer); ctx.timer = null; }
+  ctx.curKey = '';
+  if (!q) { r2Idle(ctx); return; }
+  d = q.replace(/[\s-]/g, '');
+  if (/^[0-9]+[Xx]?$/.test(d) && d.length >= 5 && !r2Isbn(q)) { r2Line(ctx, 'An ISBN has 10 or 13 digits. Keep typing.'); return; }
+  if (q.length < 3) { r2Line(ctx, 'Type 3 letters or more.'); return; }
+  if (now) { r2Run(ctx, q, false); return; }
+  ctx.timer = setTimeout(function () { ctx.timer = null; r2Run(ctx, q, false); }, 350);
+}
+function r2Enter(ctx) {
+  var q = r2Trim(ctx.inp.value);
+  if (ctx.timer) { clearTimeout(ctx.timer); ctx.timer = null; }
+  if (r2Askable(q)) { r2Run(ctx, q, false); }
+}
+// The same words are asked for once a visit; only the answer to the latest words is drawn.
+function r2Run(ctx, q, retry) {
+  var key = r2Key(q), hit = ctx.cache['k:' + key];
+  ctx.curKey = key;
+  if (hit && !retry) { r2Show(ctx, q, hit); return; }
+  if (!retry && r2Hold(ctx, ctx.list)) { ctx.list.className = 'fb-list is-stale'; } else { r2Wait(ctx); }
+  if (ctx.flight['k:' + key]) { return; }   // already asked: its answer draws when it lands
+  ctx.flight['k:' + key] = true;
+  findBooks(q, function (items, outcome) {
+    delete ctx.flight['k:' + key];
+    var entry = { items: (items instanceof Array) ? items.slice(0, 10) : [], outcome: outcome, isbn: r2Isbn(q) };
+    if (outcome === 'ok' || outcome === 'none') { ctx.cache['k:' + key] = entry; }
+    if (!ctx.alive || ctx.curKey !== key) { return; }   // an older answer, or a visit that has ended
+    r2Show(ctx, r2Trim(ctx.inp.value) || q, entry);
+  });
+}
+// Three placeholder rows while the first answer is on its way.
+function r2Wait(ctx) {
+  var l = lxEl('div', 'fb-list'), i, r, c, tx;
+  l.setAttribute('aria-busy', 'true');
+  for (i = 0; i < 3; i++) {
+    r = lxEl('div', 'fb-row is-wait');
+    r.appendChild(lxEl('span', 'fb-cov'));
+    tx = lxEl('span', 'fb-tx');
+    tx.style.alignSelf = 'center'; tx.style.gap = '10px'; tx.style.width = '100%';   // as the drawing's waitHtml
+    tx.appendChild(lxEl('span', 'fb-wait is-long'));
+    tx.appendChild(lxEl('span', 'fb-wait is-short'));
+    r.appendChild(tx);
+    c = lxEl('span');
+    r.appendChild(c);
+    l.appendChild(r);
+  }
+  r2Clear(ctx);
+  r2Put(ctx, l);
+}
+function r2Show(ctx, q, entry) {
+  var i, l;
+  r2Clear(ctx);
+  if (entry.outcome === 'ok' && entry.items.length) {
+    l = lxEl('div', 'fb-list');
+    for (i = 0; i < entry.items.length && i < 10; i++) {
+      entry.items[i]._byIsbn = !!entry.isbn;
+      l.appendChild(r2Row(ctx, entry.items[i]));
+    }
+    ctx.list = l;
+    r2Put(ctx, l);
+    r2Put(ctx, lxBtn('fb-hand', 'Can\u2019t find it? Add it by hand', function () { r2Hand(ctx); }));
+    return;
+  }
+  if (entry.outcome === 'offline') {
+    r2Put(ctx, r2Card('You\u2019re offline', 'Finding a book needs a connection. You can still add one by hand.',
+      [r2HandBtn(ctx, true), r2RetryBtn(ctx)]));
+    return;
+  }
+  if (entry.outcome === 'down') {
+    r2Put(ctx, r2Card('The book lookup isn\u2019t answering', 'Try again in a minute, or add the book by hand.',
+      [r2RetryBtn(ctx), r2HandBtn(ctx, false)]));
+    return;
+  }
+  r2Put(ctx, r2Card('No book matches \u201c' + q + '\u201d',
+    entry.isbn ? 'Check the number, or add the book by hand.' : 'Check the spelling or try the author\u2019s name. You can also add it by hand.',
+    [r2HandBtn(ctx, true)]));
+}
+function r2Card(title, text, btns) {
+  var n = lxEl('div', 'fb-note'), w = lxEl('div', 'fb-btns'), i;
+  n.setAttribute('role', 'status');
+  n.appendChild(lxEl('b', '', title));
+  n.appendChild(lxEl('p', '', text));
+  for (i = 0; i < btns.length; i++) { w.appendChild(btns[i]); }
+  n.appendChild(w);
+  return n;
+}
+function r2HandBtn(ctx, main) { return lxBtn('fb-btn' + (main ? ' is-main' : ''), 'Add it by hand', function () { r2Hand(ctx); }); }
+function r2RetryBtn(ctx) {
+  return lxBtn('fb-btn', 'Try again', function () { var q = r2Trim(ctx.inp.value); if (r2Askable(q)) { r2Run(ctx, q, true); } });
+}
+
+// ---------------------------------------------------------------- A ROW
+// The book this item already is on the shelf (an exact match, or the same title and author), or null.
+function r2Owned(uid, item) {
+  var m;
+  if (!uid) { return null; }
+  if (item._own && state.books && state.books[item._own]) { return item._own; }
+  m = findShelfMatch(uid, { title: item.title, author: item.author || '', isbn: item.isbn || '' });
+  if (m && m.tier === 'exact') { return m.id; }
+  return findShelfBookByIdentity(uid, item.title, item.author || '');
+}
+function r2Row(ctx, item) {
+  var added = !!(item._id && ctx.created[item._id] && state.books && state.books[item._id]);
+  var ownId = added ? null : r2Owned(ctx.uid, item);
+  var row = lxEl('div', 'fb-row' + (added ? ' is-added' : (ownId ? ' is-owned' : '')));
+  var tx = lxEl('span', 'fb-tx'), yr = item._year || item.year || '', au = item.author || '';
+  var meta = au + ((au && yr) ? ' \u00b7 ' : '') + (yr ? String(yr) : '');
+  if (item._byIsbn && item.isbn) { meta = meta + (meta ? ' \u00b7 ' : '') + 'ISBN ' + item.isbn; }
+  item._row = row;
+  row.appendChild(r2Cover(item));
+  tx.appendChild(lxEl('b', '', item.title));
+  tx.appendChild(lxEl('small', '', meta));
+  if (added) {
+    var on = lxEl('span', 'fb-on'), dot = lxEl('span', '', '\u00a0\u00b7');
+    on.appendChild(document.createTextNode('On your shelf'));
+    dot.setAttribute('aria-hidden', 'true');
+    on.appendChild(dot);
+    on.appendChild(lxBtn('fb-undo', 'Undo', function () { r2Undo(ctx, item); }));
+    tx.appendChild(on);
+    row.appendChild(tx);
+    row.appendChild(r2Go('check'));
+    row.appendChild(r2Seg(ctx, item._id));
+    return row;
+  }
+  if (ownId) {
+    tx.appendChild(lxEl('span', 'fb-on', 'On your shelf \u00b7 ' + r2StLabel(state.books[ownId].status)));
+    row.appendChild(tx);
+    row.appendChild(r2Go('chev'));
+    var open = lxBtn('fb-hit', '', function () { r2OpenBook(ctx, ownId); });
+    open.setAttribute('aria-label', 'Open ' + item.title + ', already on your shelf');
+    row.appendChild(open);
+    return row;
+  }
+  var edl = null;
+  if (item.workKey && item.editionCount >= 2 && item._eds !== null) {
+    var eds = lxBtn('fb-eds', 'Editions', function () { r2Eds(ctx, item); });
+    eds.appendChild(r2Svg('chev'));
+    eds.setAttribute('aria-expanded', (item._edsOpen && item._eds) ? 'true' : 'false');
+    tx.appendChild(eds);
+    if (item._edsOpen && item._eds) { edl = r2EdList(ctx, item); }
+  }
+  row.appendChild(tx);
+  row.appendChild(r2Go('plus'));
+  var plus = lxBtn('fb-hit', '', function () { r2Add(ctx, item, null); });
+  plus.setAttribute('aria-label', 'Add ' + item.title + (au ? ' by ' + au : '') + ' to your shelf');
+  row.appendChild(plus);
+  if (edl) { row.appendChild(edl); }
+  return row;
+}
+// Redraw one item's row where it stands. Focus that was inside the row goes to the new row's first button.
+function r2Swap(ctx, item) {
+  var old = item._row, ae = document.activeElement, had = !!(old && ae && old.contains(ae)), n, b;
+  if (!old || !old.parentNode) { return; }
+  n = r2Row(ctx, item);
+  old.parentNode.replaceChild(n, old);
+  if (had) { b = n.querySelector('button'); if (b) { try { b.focus({ preventScroll: true }); } catch (e) { b.focus(); } } }
+}
+function r2Seg(ctx, id) {
+  var seg = lxEl('div', 'fb-seg'), cur = normalizeStatus(state.books[id] ? state.books[id].status : ''), i;
+  seg.setAttribute('role', 'group');
+  seg.setAttribute('aria-label', 'Reading status');
+  for (i = 0; i < R2_ST.length; i++) {
+    (function (k, name) {
+      var b = lxBtn('', name, function () { r2SetStatus(ctx, id, k, seg); });
+      b.setAttribute('data-st', k);
+      b.setAttribute('aria-pressed', cur === k ? 'true' : 'false');
+      seg.appendChild(b);
+    })(R2_ST[i][0], R2_ST[i][1]);
+  }
+  return seg;
+}
+// The status write the book page's Reading status row makes (views.js renderBookDetail): the status;
+// the first time a book goes 'read', finishedAt; then markBooksDirty and saveState.
+function r2SetStatus(ctx, id, k, seg) {
+  var b = state.books ? state.books[id] : null, bs, i;
+  if (!b || normalizeStatus(b.status) === k) { return; }
+  b.status = k;
+  if (k === 'read' && !b.finishedAt) { b.finishedAt = Date.now(); }
+  markBooksDirty();
+  saveState();
+  bs = seg.getElementsByTagName('button');
+  for (i = 0; i < bs.length; i++) { bs[i].setAttribute('aria-pressed', bs[i].getAttribute('data-st') === k ? 'true' : 'false'); }
+  r2Behind(ctx);
+}
+function r2OpenBook(ctx, id) {
+  if (ctx.onOpen) { ctx.onOpen('#book/' + id); return; }   // Search: its own go(), so Back keeps the words
+  r2Out = 'book/' + id;
+  location.hash = '#book/' + id;
+}
+
+// ---------------------------------------------------------------- EDITIONS
+function r2Eds(ctx, item) {
+  var other = ctx.openItem;
+  if (item._edsOpen) { item._edsOpen = false; ctx.openItem = null; r2Swap(ctx, item); return; }
+  if (item._eds) {
+    if (other && other !== item) { other._edsOpen = false; r2Swap(ctx, other); }
+    item._edsOpen = true; ctx.openItem = item; r2Swap(ctx, item); return;
+  }
+  if (item._edsAsking) { return; }
+  item._edsAsking = true;
+  openLibraryEditions(item.workKey, function (list, err) {
+    item._edsAsking = false;
+    if (err || !(list instanceof Array) || list.length < 2) { item._eds = null; r2Swap(ctx, item); return; }   // the link goes away quietly
+    item._eds = list;
+    other = ctx.openItem;
+    if (other && other !== item) { other._edsOpen = false; r2Swap(ctx, other); }
+    item._edsOpen = true;
+    ctx.openItem = item;
+    r2Swap(ctx, item);
+  });
+}
+function r2EdList(ctx, item) {
+  var l = lxEl('div', 'fb-edl'), i;
+  for (i = 0; i < item._eds.length; i++) {
+    (function (ed) {
+      var row = lxEl('div', 'fb-ed'), tx = lxEl('span', 'fb-tx');
+      row.appendChild(r2Cover({ title: item.title, coverUrl: ed.coverUrl || item.coverUrl, coverCandidates: [] }));
+      tx.appendChild(lxEl('b', '', ed.year + ' \u00b7 ' + ed.publisher));
+      tx.appendChild(lxEl('small', '', ed.detail || ''));
+      row.appendChild(tx);
+      row.appendChild(r2Go('plus'));
+      var plus = lxBtn('fb-hit', '', function () { r2Add(ctx, item, ed); });
+      plus.setAttribute('aria-label', 'Add the ' + ed.year + ' ' + ed.publisher + ' edition of ' + item.title);
+      row.appendChild(plus);
+      l.appendChild(row);
+    })(item._eds[i]);
+  }
+  return l;
+}
+
+// ---------------------------------------------------------------- ADD, UNDO
+function r2AddsPush(ctx, item) { if (ctx.adds.indexOf(item) === -1) { ctx.adds.push(item); } }
+function r2AddsDrop(ctx, item) { var i = ctx.adds.indexOf(item); if (i !== -1) { ctx.adds.splice(i, 1); } }
+// Save one book. ed: the edition picked, or null. Returns the book's id, or null when signed out.
+function r2Save(ctx, item, ed, status) {
+  var uid = ctx.uid, out = {}, cov, spec, id, b, ch = false, yr, pub, pc, me = getCurrentUser();
+  if (!me || me.uid !== uid) { return null; }   // a visit belongs to one reader; scanCommitBook saves for the signed-in one
+  cov = ed ? (ed.coverUrl || (ed.isbn ? null : item.coverUrl)) : item.coverUrl;
+  if (!r2CoverOk(cov)) { cov = null; }
+  spec = { title: item.title, author: item.author || '', isbn: ed ? (ed.isbn || '') : (item.isbn || ''),
+           coverUrl: cov, coverCandidates: ed ? (cov ? [cov] : []) : r2Covers(item), status: status || 'will-read' };
+  if (!spec.coverUrl && spec.coverCandidates.length) { spec.coverUrl = spec.coverCandidates[0]; }
+  var ownId = r2Owned(uid, ed ? { title: spec.title, author: spec.author, isbn: spec.isbn } : item);
+  if (ownId) { item._own = ownId; return ownId; }   // never added twice
+  id = scanCommitBook(spec, null, out);
+  if (!id) { return null; }
+  if (out.folded) { item._own = out.existingId; return id; }
+  if (!out.created) { return id; }
+  ctx.created[id] = true;
+  item._id = id;
+  item._year = ed ? ed.year : null;
+  b = state.books[id];
+  yr = ed ? ed.year : item.year;
+  pub = ed ? ed.publisher : item.publisher;
+  pc = ed ? ed.pageCount : item.pageCount;
+  if (yr) { b.year = String(yr); ch = true; }
+  if (typeof pub === 'string' && pub) { b.publisher = pub; ch = true; }
+  if (typeof pc === 'number' && pc > 0) { b.pageCount = pc; ch = true; }
+  if (item.rawCategories instanceof Array && item.rawCategories.length) { b.rawCategories = item.rawCategories.slice(); ch = true; }
+  // added as Have read (the by-hand form): stamp finishedAt, as the book page and r2SetStatus do the first time a book goes 'read'
+  if (b.status === 'read' && !b.finishedAt) { b.finishedAt = Date.now(); ch = true; }
+  if (ch) { markBookPending(uid, id); markBooksDirty(); saveState(); }
+  // no cover: ask by title and author, as the typed Add a book does (scanCommitBook already asks by ISBN)
+  if (!spec.coverUrl && !spec.isbn && typeof fetchAndApplyCoverByTitle === 'function') {
+    fetchAndApplyCoverByTitle(id, spec.title, spec.author, function () { r2Behind(ctx); });
+  }
+  r2AddsPush(ctx, item);
+  return id;
+}
+function r2Add(ctx, item, ed) {
+  var row = item._row, bs, i;
+  if (item._busy) { return; }
+  item._busy = true;
+  bs = row ? row.getElementsByTagName('button') : [];
+  for (i = 0; i < bs.length; i++) { bs[i].disabled = true; }   // a second tap cannot add twice
+  var id = r2Save(ctx, item, ed, 'will-read');
+  item._busy = false;
+  if (!id) { for (i = 0; i < bs.length; i++) { bs[i].disabled = false; } return; }
+  item._edsOpen = false;
+  if (ctx.openItem === item) { ctx.openItem = null; }
+  r2Swap(ctx, item);
+  r2Behind(ctx);
+  if (ctx.onChange) { ctx.onChange(); }
+}
+// Undo reaches only a book this visit created, while the reader is still in the room that added it
+// (r2Route empties the created list when they leave it: from then on the book is simply on the shelf).
+function r2Undo(ctx, item) {
+  var id = item._id, me = getCurrentUser();
+  if (!id || ctx.created[id] !== true) { return; }
+  if (!me || me.uid !== ctx.uid) { return; }
+  deleteBook(ctx.uid, id);
+  delete ctx.created[id];
+  item._id = null;
+  item._year = null;
+  r2AddsDrop(ctx, item);
+  if (!r2Trim(ctx.inp.value)) { r2Idle(ctx); } else { r2Swap(ctx, item); }
+  r2Behind(ctx);
+  if (ctx.onChange) { ctx.onChange(); }
+}
+
+// ---------------------------------------------------------------- BY HAND
+function r2Hand(ctx) {
+  var prefill = r2Trim(ctx.inp.value), isIsbn = /^[0-9\s-]{9,}[Xx]?$/.test(prefill), pick = 'will-read', i;
+  if (ctx.timer) { clearTimeout(ctx.timer); ctx.timer = null; }
+  ctx.curKey = '';
+  r2Clear(ctx);
+  var form = lxEl('form', 'fb-form');
+  form.id = 'fb-form';
+  form.setAttribute('novalidate', 'novalidate');
+  function field(id, label, val, numeric) {
+    var l = lxEl('label', 'fb-lab', label), f = lxEl('input', 'fb-in');
+    l.setAttribute('for', id);
+    f.id = id;
+    f.setAttribute('type', 'text');
+    f.setAttribute('autocomplete', 'off');
+    if (numeric) { f.setAttribute('inputmode', 'numeric'); }
+    f.value = val;
+    l.appendChild(f);
+    form.appendChild(l);
+    return f;
+  }
+  var t = field('fb-ht', 'Title', isIsbn ? '' : prefill, false);
+  var a = field('fb-ha', 'Author', '', false);
+  var n = field('fb-hi', 'ISBN, if you have it', isIsbn ? prefill : '', true);
+  var seg = lxEl('div', 'fb-seg');
+  seg.id = 'fb-hs';
+  seg.setAttribute('role', 'group');
+  seg.setAttribute('aria-label', 'Reading status');
+  for (i = 0; i < R2_ST.length; i++) {
+    (function (k, name) {
+      var b = lxBtn('', name, function () {
+        var bs = seg.getElementsByTagName('button'), j;
+        pick = k;
+        for (j = 0; j < bs.length; j++) { bs[j].setAttribute('aria-pressed', bs[j] === b ? 'true' : 'false'); }
+      });
+      b.setAttribute('aria-pressed', k === pick ? 'true' : 'false');
+      seg.appendChild(b);
+    })(R2_ST[i][0], R2_ST[i][1]);
+  }
+  form.appendChild(seg);
+  var btns = lxEl('div', 'fb-btns'), save = lxEl('button', 'fb-btn is-main', 'Add to shelf');
+  btns.style.marginTop = '0';   // as the drawing's handForm
+  save.type = 'submit';
+  save.id = 'fb-hsave';
+  btns.appendChild(save);
+  btns.appendChild(lxBtn('fb-btn', 'Back to search', function () { r2Input(ctx, true); try { ctx.inp.focus({ preventScroll: true }); } catch (e) { ctx.inp.focus(); } }));
+  form.appendChild(btns);
+  function ok() { save.disabled = !r2Trim(t.value); }   // no book is ever saved without a title
+  t.addEventListener('input', ok);
+  n.addEventListener('input', ok);
+  ok();
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    if (save.disabled || !r2Trim(t.value)) { return; }
+    var item = { title: r2Trim(t.value), author: r2Trim(a.value), year: null, isbn: r2Trim(n.value).replace(/[\s-]/g, '').toUpperCase(),
+                 coverUrl: null, coverCandidates: [], publisher: '', pageCount: null, description: '', rawCategories: [], workKey: '', editionCount: 0 };
+    var id = r2Save(ctx, item, null, pick);
+    if (!id) { return; }
+    r2AddsPush(ctx, item);   // an add, or the book already on the shelf, listed under the scan rows
+    ctx.inp.value = '';
+    if (ctx.setQ) { ctx.setQ(''); }
+    r2Idle(ctx);
+    if (ctx.x) { ctx.x.hidden = true; }
+    r2Behind(ctx);
+    if (ctx.onChange) { ctx.onChange(); }
+  });
+  r2Put(ctx, form);
+  try { t.focus({ preventScroll: true }); } catch (e2) { t.focus(); }
+}
+
+// ---------------------------------------------------------------- THE PANEL ON THE SHELF
+function r2BuildPanel(ctx) {
+  var fb = lxEl('div', 'fb'), head = lxEl('div', 'fb-head'), field = lxEl('label', 'fb-field'), inp = lxEl('input'), body = lxEl('div');
+  fb.id = 'fb';
+  fb.setAttribute('role', 'search');
+  fb.setAttribute('aria-label', 'Find a book');
+  ctx.h = lxEl('h2', 'fb-h', 'Find a book');
+  head.appendChild(ctx.h);
+  ctx.done = lxBtn('fb-done', 'Done', function () { r2Close(true); });
+  ctx.done.id = 'fb-done';
+  head.appendChild(ctx.done);
+  fb.appendChild(head);
+  field.appendChild(r2Svg('find'));
+  inp.id = 'fb-q';
+  inp.setAttribute('type', 'search');
+  inp.setAttribute('inputmode', 'search');
+  inp.setAttribute('enterkeyhint', 'search');
+  inp.setAttribute('autocomplete', 'off');
+  inp.setAttribute('autocorrect', 'off');
+  inp.setAttribute('autocapitalize', 'off');
+  inp.setAttribute('spellcheck', 'false');
+  inp.setAttribute('placeholder', 'Title, author or ISBN');
+  inp.setAttribute('aria-label', 'Find a book by title, author or ISBN');
+  field.appendChild(inp);
+  var x = lxBtn('fb-x', '', function () { inp.value = ''; r2Input(ctx); inp.focus(); });
+  x.id = 'fb-x';
+  x.setAttribute('aria-label', 'Clear');
+  x.hidden = true;
+  x.appendChild(r2Svg('x', { fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round' }));
+  field.appendChild(x);
+  fb.appendChild(field);
+  body.id = 'fb-body';
+  body.setAttribute('aria-live', 'polite');
+  fb.appendChild(body);
+  inp.addEventListener('input', function () { r2Input(ctx); });
+  inp.addEventListener('keydown', function (ev) {
+    if (ev.keyCode === 13) { ev.preventDefault(); r2Enter(ctx); }
+    if (ev.keyCode === 27 && !ctx.first) { r2Close(true); }
+  });
+  ctx.el = fb; ctx.head = head; ctx.inp = inp; ctx.x = x; ctx.body = body;
+}
+// An empty shelf: the panel is always there, headed for the first book, with no Done.
+function r2SetFirst(ctx, first) {
+  ctx.first = !!first;
+  ctx.el.className = 'fb' + (first ? ' is-first' : '');
+  ctx.h.textContent = first ? 'Find your first book' : 'Find a book';
+  if (first && ctx.done.parentNode) { ctx.head.removeChild(ctx.done); }
+  if (!first && !ctx.done.parentNode) { ctx.head.appendChild(ctx.done); }
+}
+function r2PanelCtx(uid) {
+  if (!r2Shelf || r2Shelf.uid !== uid) {
+    r2Drop();
+    r2Shelf = r2NewCtx('shelf', uid);
+    r2BuildPanel(r2Shelf);
+    r2Idle(r2Shelf);
+  }
+  return r2Shelf;
+}
+// Forget the Shelf's visit: its words, its answers and what it may Undo.
+function r2Drop() {
+  if (!r2Shelf) { return; }
+  r2Shelf.alive = false;
+  if (r2Shelf.timer) { clearTimeout(r2Shelf.timer); }
+  if (r2Shelf.el && r2Shelf.el.parentNode) { r2Shelf.el.parentNode.removeChild(r2Shelf.el); }
+  r2Shelf = null;
+}
+// Bring the panel's top to 8 px under the top of a phone's page, and just under the top bar from 760.
+function r2Reveal(ctx, focus) {
+  var el = ctx.el, off = 8, nav, top;
+  if (!el || !document.body.contains(el)) { return; }
+  if (focus) { try { ctx.inp.focus({ preventScroll: true }); } catch (e) { ctx.inp.focus(); } }
+  if (window.matchMedia && window.matchMedia('(min-width: 760px)').matches) {
+    nav = document.querySelector('.app-nav');
+    if (nav) { off = nav.offsetHeight + 8; }
+  } else {
+    // a phone: the Shelf's compact bar (fixed, 60 px) shows once its head has scrolled away, and would sit
+    // over the panel's heading and Done; the panel's top goes 8 px under it
+    nav = document.querySelector('.shelf.sh3 .sh3-bar');
+    if (nav && nav.offsetHeight) { off = nav.offsetHeight + 8; }
+  }
+  top = el.getBoundingClientRect().top + (window.pageYOffset || 0) - off;
+  window.scrollTo(0, top > 0 ? top : 0);
+}
+// The Add a book pill (and Capture's chip when the Shelf is already showing).
+function r2Open(uid) {
+  var host = document.getElementById('shelf-editor-host'), ctx;
+  if (!host || !uid) { return; }
+  ctx = r2PanelCtx(uid);
+  if (ctx.el.parentNode !== host) { host.textContent = ''; host.appendChild(ctx.el); }
+  r2SetFirst(ctx, r1ShelfIds(uid).length === 0);
+  r2Reveal(ctx, true);
+}
+function r2Close(giveBackFocus) {
+  r2Drop();
+  if (giveBackFocus) { var pill = document.querySelector('.shelf.sh3 .sh3-add'); if (pill) { pill.focus(); } }
+}
+// Called at the end of renderShelf, signed in. Puts the panel back after a redraw (an add, a sync
+// landing), opens it on an empty shelf, on the way back from a book opened from it, and from Capture.
+function r2Mount(uid, empty) {
+  var host = document.getElementById('shelf-editor-host'), want = r2Want, back = r2Back, ctx;
+  r2Want = false;
+  r2Back = false;
+  if (!host || !uid || !r2FindOn(uid)) { return; }
+  if (!(empty || want || back || (r2Shelf && r2Shelf.uid === uid))) { return; }
+  ctx = r2PanelCtx(uid);
+  if (ctx.el.parentNode !== host) { host.textContent = ''; host.appendChild(ctx.el); }
+  r2SetFirst(ctx, empty);
+  if (back) { r2Input(ctx, true); }   // the same words and list, redrawn from memory: what was added is now on the shelf
+  if (want || back) { r2Reveal(ctx, want); }
+  // any redraw (an add, a sync landing, a cover arriving): the focus and caret held before it come back
+  var k = r2Keep;
+  r2Keep = null;
+  if (k && ctx.el.contains(k.el) && document.activeElement !== k.el) {
+    try { k.el.focus({ preventScroll: true }); } catch (e) { k.el.focus(); }
+    if (k.s0 !== null) { try { k.el.setSelectionRange(k.s0, k.s1); } catch (e2) {} }
+  }
+}
+// Called at the top of renderShelf, before the Shelf is emptied: what inside the panel holds the focus.
+var r2Keep = null;
+function r2KeepFocus() {
+  var ae = document.activeElement;
+  r2Keep = null;
+  if (!r2Shelf || !r2Shelf.el || !ae || !r2Shelf.el.contains(ae)) { return; }
+  r2Keep = { el: ae, s0: null, s1: null };
+  if (ae.tagName === 'INPUT') { try { r2Keep.s0 = ae.selectionStart; r2Keep.s1 = ae.selectionEnd; } catch (e) {} }
+}
+// The Shelf behind the panel shows an add, an Undo or a status change at once; the panel keeps its
+// words, its list, its scroll and the cursor (it is the same element, put back in the redrawn Shelf).
+function r2Behind(ctx) {
+  var y;
+  if (ctx.room !== 'shelf' || ctx !== r2Shelf || location.hash.replace(/^#/, '').split('/')[0] !== 'books') { return; }
+  if (!ctx.el || !document.body.contains(ctx.el)) { return; }
+  y = window.pageYOffset || 0;
+  renderShelf();   // r2KeepFocus / r2Mount carry the focus and caret across
+  window.scrollTo(0, y);
+}
+
+// ---------------------------------------------------------------- ROUTES
+// renderRoute calls this on every arrival at a new route, with the route before.
+function r2Route(p0, prev) {
+  // R-1 (R1's residual): r1Out, the result last opened from Search, is forgotten once the reader
+  // goes to a room, so old words and an old Back cannot come back by another path.
+  if (r1Out && (p0 === 'home' || p0 === 'books' || p0 === 'notebook' || p0 === 'profile' || p0 === 'lenses')) { r1Out = ''; }
+  // Undo ends when the reader leaves the room a book was added in (the red-team's F1: a book opened,
+  // given notes or an artifact, then Undone on the way back would take those with it).
+  if (p0 !== 'books' && r2Shelf) { r2Shelf.created = {}; }
+  if (p0 !== 'search' && r2Search) { r2Search.created = {}; }
+  // the panel's way back is forgotten at a room, as r1Out is
+  if (r2Out && (p0 === 'home' || p0 === 'notebook' || p0 === 'profile' || p0 === 'lenses' || p0 === 'search')) { r2Out = ''; }
+  if (p0 !== 'books' || (prev || '').split('/')[0] === 'books') { return; }
+  // Arriving at the Shelf: straight back from a book the panel opened keeps the panel (once);
+  // any other arrival is a new visit.
+  var back = !!(r2Out && prev === r2Out && r2Shelf);
+  r2Out = '';
+  r2Back = back;
+  if (!back) { r2Drop(); }
+}
+
+// ---------------------------------------------------------------- SEARCH, ALL BOOKS
+function r2SearchReset() {
+  if (r2Search) { r2Search.alive = false; if (r2Search.timer) { clearTimeout(r2Search.timer); } }
+  r2Search = null;
+}
+// Draw the side into holder (div.fb-body, in Search's full-width holder), with Search's own field.
+function r2SearchPaint(holder, input, uid, go, onChange, setQ) {
+  if (!r2Search || r2Search.uid !== uid) { r2SearchReset(); r2Search = r2NewCtx('search', uid); }
+  var ctx = r2Search;
+  if (ctx.timer) { clearTimeout(ctx.timer); ctx.timer = null; }
+  holder.id = 'fb-body';
+  holder.setAttribute('aria-live', 'polite');
+  ctx.body = holder; ctx.inp = input; ctx.onOpen = go; ctx.onChange = onChange; ctx.setQ = setQ; ctx.alive = true;
+  r2Input(ctx, true);
+}
+
+// ---------------------------------------------------------------- CAPTURE
+// One more chip after "Scan a book" in the Capture sheet, drawn only while Find a book is on.
+function r2CapChip() {
+  var u = getCurrentUser(), on = !!(u && u.uid && r2FindOn(u.uid));
+  var modes = document.querySelector('.capdoor-modes'), chip, ic, scan;
+  if (!modes) { return; }
+  chip = modes.querySelector('.capdoor-mode[data-mode="find"]');
+  if (!on) { if (chip) { modes.removeChild(chip); } return; }
+  if (chip) { return; }
+  chip = lxBtn('capdoor-mode is-seat', '', function () { r2FromCapture(); });
+  chip.setAttribute('data-mode', 'find');
+  chip.setAttribute('aria-pressed', 'false');
+  ic = lxEl('span', 'ic');
+  ic.appendChild(r2Svg('find', { width: '13', height: '13', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.2', 'stroke-linecap': 'round' }));
+  chip.appendChild(ic);
+  chip.appendChild(document.createTextNode('Find a book'));
+  scan = modes.querySelector('.capdoor-mode[data-mode="scan"]');
+  modes.insertBefore(chip, scan ? scan.nextSibling : null);
+}
+// It leaves the sheet the way "Scan a book" does, goes to the Shelf and opens the panel, cursor in the field.
+function r2FromCapture() {
+  var u = getCurrentUser();
+  capClose();
+  if (!u || !u.uid) { return; }
+  if (location.hash.replace(/^#/, '').split('/')[0] === 'books' && document.getElementById('shelf-editor-host')) { r2Open(u.uid); return; }
+  r2Want = true;
+  location.hash = '#books';
+}
+// === R2 FIND A BOOK -- end
 
 // HOME (renderHome on .lum-amber-deep) -- Amber threshold per design/"Wave 2 The
 // Shell.html" MINUS the nav rail. Variants A/B draw ONLY through the locked
@@ -5484,6 +6223,7 @@ var SHELF_THEMES = [
 function renderShelf() {
   var host = document.getElementById(APP_EL_ID);
   if (!host) { return; }
+  r2KeepFocus();   // R2: Find a book's panel keeps its focus and caret through the redraw
   host.innerHTML = '';
 
   // Purge stale handlers + release any scroll-lock (twins of the live cleanup;
@@ -5744,7 +6484,7 @@ function renderShelf() {
   addBtn.type = 'button';
   addBtn.className = 'sh3-add';
   addBtn.textContent = 'Add a book';
-  addBtn.addEventListener('click', function () { openShelfEditor(); });
+  addBtn.addEventListener('click', function () { if (r2FindOn(user.uid)) { r2Open(user.uid); return; } openShelfEditor(); });   // R2: the pill opens Find a book (the typed form at ?findbook=old)
   controls.appendChild(addBtn);
 
   // The status chips (L4b-3a): All, Reading, Will read, Have read, each with its count over the whole
@@ -5892,6 +6632,7 @@ function renderShelf() {
   // buildCaptureDoor fires BEFORE this render on a cold route change, so without
   // this call the door would keep the CSS constant for the life of the visit.
   capUpdateCreateDoorPos();
+  r2Mount(user.uid, allBooks.length === 0);   // R2: Find a book's panel, put back (or opened) in the redrawn Shelf
 }
 
 // 3a (R2): deterministic per-arc hue from the Universal field spectrum
@@ -7009,7 +7750,10 @@ function renderShelfCase() {
     var ezLine = document.createElement('p');
     ezLine.className = 'shelf-empty-zero-line';
     ezLine.textContent = 'Your shelf is open — add your first book: scan a spine, search a title, or paste a whole list.';
+    var ezU = getCurrentUser(), ezFind = !!(ezU && ezU.uid && r2FindOn(ezU.uid));   // R2: with Find a book its panel is open above, so
+    if (ezFind) { ezLine.textContent = 'Your shelf is empty. Each book you add shows up here.'; }   // R2: the line is reworded
     ez.appendChild(ezLine);
+    if (ezFind) { root.appendChild(ez); root.className = 'sh3-case' + (mode === 'lenses' ? ' is-lens' : '') + (shelfSearchQuery ? ' is-finding' : ''); return; }   // R2: and "+ Add a book" is not drawn
     var ezAdd = document.createElement('button');
     ezAdd.type = 'button';
     ezAdd.className = 'btn btn-primary shelf-empty-zero-add';
@@ -27383,6 +28127,7 @@ function capOpen(opts) {
   opts = opts || {};
   var u = getCurrentUser();
   capOwnerUid = u ? u.uid : null;
+  r2CapChip();   // R2: the "Find a book" chip after "Scan a book", drawn only while Find a book is on
   var key = opts.targetKey || capCurrentBookKey() || 'inbox';
   capTarget = capFindTarget(key);
   capSetChip();
