@@ -70,7 +70,9 @@ The log is written as the run goes; its last lines are the summary and `RIG-DONE
   `, then STOPPED in [Sx]` when a scenario threw), and `RIG-DONE`.
 - A launcher exits 0 when `RIG-DONE` was printed, the last summary line reads "0 failed" and the run was not
   stopped; 1 when a check failed or the run stopped; 2 when `RIG-DONE` never came within the timeout (900 s
-  unless told).
+  unless told), or when a rig server already answers on port 8800 before the run starts (another run, or one left
+  behind: its log would take this run's lines). The log is read while the server appends to it, so it is read
+  with the writer's writes allowed, and Chrome and the server are stopped however the run ends (27 Nov 2026).
 - `run.ps1`: `powershell -NoProfile -ExecutionPolicy Bypass -File tools/rig/run.ps1 -Suite <name> -Tree <folder> -Label <text> -Out <log file>`
 - `run.py`: `python3 -I tools/rig/run.py --suite <name> --tree <folder> --label <text> --out <log file>`
 

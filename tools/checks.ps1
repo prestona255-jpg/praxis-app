@@ -3,9 +3,10 @@
 # Takes no arguments, and runs from any folder: the repo root is the parent of the folder this file is in,
 # so a copy of the tree checks itself. Windows PowerShell 5.1, cscript and the installed Chrome; nothing is
 # downloaded and nothing inside the repo is written (logs go to a new folder under %TEMP%).
-# What runs, in order: two self checks (the parse check must reject a broken file; the rig must not pass a suite
-# that does not exist), the parse check on sw.js, js/*.js and assets/*.js, every cscript harness in $Harnesses
-# below, and every rig suite in tools/rig/scenarios/ (picked up by itself). One PASS or FAIL line per check.
+# What runs, in order: three self checks (the parse check must reject a broken file; the rig must not pass a suite
+# that does not exist; a script that crashes must be caught although cscript exits 0), the parse check on sw.js,
+# js/*.js and assets/*.js, every cscript harness in $Harnesses below (a harness that crashes FAILS, whatever its
+# exit code), and every rig suite in tools/rig/scenarios/ (picked up by itself). One PASS or FAIL line per check.
 # Exit: 0 when every check passed; 1 when any check failed; 2 when this script itself could not finish.
 # A NEW HARNESS is added as one line in $Harnesses, and nowhere else.
 # With PRAXIS_PROVE_RED=true a last check fails on purpose (the workflow's "prove red" run).
@@ -112,10 +113,21 @@ function Record([string]$id, [bool]$pass, [int]$code, [double]$secs, [string]$de
   [void]$script:results.Add(@{ id = $id; pass = $pass; secs = $s; detail = $detail })
 }
 
-# A cscript check. $wantCode is the exit code that means PASS.
+# cscript's own error line ("<file>(3, 1) JavaScript runtime error: ..."), or ''. cscript EXITS 0 after a runtime
+# error, so a harness that died part-way used to score PASS on its exit code alone (R2-10: on 2026-11-26 tools/r1-test
+# died after 33 of its checks and Checks still printed "PASS harness r1-test exit 0").
+function Cscript-Crash([string]$out) {
+  $m = [regex]::Match($out, '(?m)^.*\(\d+,\s*\d+\)\s+(Microsoft\s+)?(JavaScript|JScript)\s+(runtime|compilation)\s+error.*$')
+  if ($m.Success) { return $m.Value.Trim() }
+  return ''
+}
+
+# A cscript check. $wantCode is the exit code that means PASS; a script that crashed fails, whatever its exit code.
 function Check-Cscript([string]$id, [string[]]$cscriptArgs, [int]$wantCode, [string]$fixedDetail) {
   $r = Run-Command 'cscript.exe' (@('//nologo', '//E:jscript') + $cscriptArgs) $CscriptTimeoutSec
   if ($r.timedOut) { Record $id $false $r.code $r.secs 'timed out' $r.out; return }
+  $crash = Cscript-Crash $r.out
+  if ($crash) { Record $id $false $r.code $r.secs ('crashed: ' + $crash) $r.out; return }
   $detail = $fixedDetail; if (-not $detail) { $detail = Last-Line $r.out }
   Record $id ($r.code -eq $wantCode) $r.code $r.secs $detail $r.out
 }
@@ -190,6 +202,12 @@ try {
   [IO.File]::WriteAllText($broken, 'var x = ;;; function {{{', (New-Object System.Text.UTF8Encoding($false)))
   Check-Cscript 'self parse-rejects-broken' @('tools/parse-check', $broken) 1 'wanted exit 1'
   Check-Rig 'self rig-missing-suite' 'no-such-suite' 'none' (Join-Path $logDir 'rig-none.txt') 1 'wanted exit 1'
+  # a harness that dies part-way must be seen as dead: cscript exits 0 here, and the crash line must still be caught
+  $crashJs = Join-Path $logDir 'crash.js'
+  [IO.File]::WriteAllText($crashJs, "WScript.Echo('before');`nvar a = null;`na.b();`nWScript.Echo('after');`n", (New-Object System.Text.UTF8Encoding($false)))
+  $rc = Run-Command 'cscript.exe' @('//nologo', '//E:jscript', $crashJs) $CscriptTimeoutSec
+  $seen = Cscript-Crash $rc.out
+  Record 'self harness-crash-fails' ([bool]$seen) $rc.code $rc.secs ('cscript exit ' + $rc.code + ', crash seen: ' + ([bool]$seen)) $rc.out
 
   # The parse check on every served script.
   $targets = New-Object System.Collections.ArrayList

@@ -1,0 +1,56 @@
+== R3 behaviour rig on 0e2da52 run.ps1, append held 1.5 s ==
+
+[setup] a reader with three books; one carries an artifact with words
+  PASS  setup the cloud holds the two artifacts and Book S not moved
+
+[T0] one device signs in and adds a book
+  PASS  T0 the book reaches the cloud
+
+0e2da52 run.ps1 beside an orphan: 1 / 1 passed, 0 failed
+RIG-DONE
+
+[s] no signal: the artifact's words changed on its page, "This moved me" turned on; closed; signal back; reopened
+  PASS  s the new artifact page is drawn, Edit opens the field
+  PASS  s Save
+  PASS  s More about this book opens
+  PASS  s "This moved me" turns on
+  PASS  s on the device at once; the cloud still the old (offline)
+  PASS  s after reopen: the words and moved-me kept, on the device and in the cloud
+  PASS  s a second device reads both
+
+[r] an existing artifact: Edit, every word cleared, Save; then spaces only, Save
+  PASS  r cleared: Save is disabled and refused; the stored words and stamp unchanged; the field still open
+  PASS  r spaces only: Save is disabled and refused; the stored words unchanged
+  PASS  r the book page then offers Open it, not Write
+  PASS  r the cloud still holds the words
+
+[a] an artifact with a title and an empty body: the new book page offers Open it, not Write
+  PASS  a the artifact is stored with an empty body, on the device and in the cloud
+  PASS  a the book page offers Open it and not Write your artifact
+
+[b] Open it, Edit, words, Save; closed; reopened; a second device
+  PASS  b Open it goes to the artifact page
+  PASS  b Edit opens the field
+  PASS  b Save
+  PASS  b on the device at once
+  PASS  b after a close and reopen: on the device and in the cloud
+  PASS  b a second device reads the words
+
+[c] Write your artifact with a title and no words, then spaces only: Save disabled, nothing stored
+  PASS  c Write your artifact is offered and opens the editor with the title filled in
+  PASS  c a title and no words: Save disabled, no artifact stored
+  PASS  c spaces only: Save disabled, no artifact stored
+  PASS  c the cloud holds no artifact for the book
+
+[d] Write your artifact with a title and words still saves: the new page, the switch off, the earlier page
+  PASS  d the new page: Save enabled, the words stored, then Open it offered
+  PASS  d switch off: the book page is still the new page
+  PASS  d switch off: the words stored, and the earlier artifact page shows them
+  PASS  d the earlier page (drawn signed in) offers its Write
+  PASS  d the earlier page: the guard holds (no words: disabled), then the words are stored
+  PASS  d the three artifacts reach the cloud
+  PASS  d signed out: the earlier page is drawn and offers no Write (nothing can be saved signed out)
+  PASS  page errors on every device
+
+0e2da52 run.ps1, append held 1.5 s: 32 / 32 passed, 0 failed
+RIG-DONE

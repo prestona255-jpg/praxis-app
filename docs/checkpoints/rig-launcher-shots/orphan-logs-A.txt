@@ -1,0 +1,6 @@
+orphan-before: the orphan's own log (A) grew from 201 to 2804 bytes during the _template run; its new lines included:
+[T0] one device signs in and adds a book
+  PASS  T0 the book reaches the cloud
+0e2da52 run.ps1 beside an orphan: 1 / 1 passed, 0 failed
+RIG-DONE
+orphan-after: the orphan's log (A) stayed at 0 bytes.

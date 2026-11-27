@@ -1,0 +1,10 @@
+Exception calling "ReadAllText" with "1" argument(s): "The process cannot access the file '%USERPROFILE%\AppData\Loca
+l\Temp\claude\01cb6bf1cfc53657\a039b568-f16f-47c6-b1d4-6ad85fae86ca\scratchpad\fix1-before.txt' because it is being 
+used by another process."
+At %TEMP%\claude\01cb6bf1cfc53657\a039b568-f16f-47c6-b1d4-6ad85fae86ca\scratchpad\t1\tools\
+rig\run.ps1:36 char:7
++   if ([IO.File]::ReadAllText($Out).Contains('RIG-DONE')) { $done = $t ...
++       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : IOException
+ 
